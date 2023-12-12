@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
+
+  <div class="topnav">
+    <a href="/">Create a Transaction</a>
+    <a href="/ApplePay">Create an Apple Pay Transaction</a>
+    <a class="active" href="/3D-Secure">Create a 3D Secure Transaction</a>
+    <a href="/recent-transactions">Transaction Search</a>
+    <b class = "nobutton">Happy Halloween!</b>
+  </div>
+</head>
+
+<body>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+  <form action="/transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm" class="formStyle">
+  <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
+    <div class="container">
+      <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
+      <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Enter your information below to complete payment.</p>
+    </div>
+  </div>
+
+  <h5>Personal Information:</h5>
+    <div class="form-row">
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="firstName">First Name</label>
+        <input class="form-control inputClass" name="firstName" id="first-name" placeholder="First" required>
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="lastName">Last Name</label>
+        <input class="form-control inputClass" name="lastName" id="last-name" placeholder="Last" required>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label class = "labelStyle" for="emailAddress">Email</label>
+        <input class="form-control inputClass" name="email" id="email-address" placeholder="@.com">
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label class = "labelStyle" for="phoneNumber">Phone Number</label>
+        <input class="form-control inputClass" name="phoneNumber" id="phone-number" placeholder="(555) 555-5555">
+      </div>
+    </div>
+
+  <h5>Shipping/Billing Information:</h5>
+    <div class="form-row">
+      <div class="col-md-4 mb-3">
+        <label class = "labelStyle" for="streetAddress">Address</label>
+        <input class="form-control inputClass" name="streetAddress" id="street-address" placeholder="110 N Carpenter St">
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="additionalAddress">Apartment #, Suite #, PO Box #</label>
+        <input class="form-control inputClass" name="additionalAddress" id="additional-address" placeholder="#7">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="countryCode">Country</label>
+        <input class="form-control inputClass" name="countryCode" id="country-code" placeholder="US">
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="regionCode">Region/State</label>
+        <input class="form-control inputClass" name="regionCode" id="region-code" placeholder="IL">
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="cityName">City</label>
+        <input class="form-control inputClass" name="cityName" id="city-name" placeholder="Chicago">
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="postalCode">Postal/ZIP Code</label>
+        <input class="form-control inputClass" name="postalCode" id="postal-code" placeholder="60634">
+      </div>
+    </div>
+
+    <h5 class = "h5Padding">Card Information:</h5>
+    <div class = "form-row">
+      <div class = "col-md-2 mb-3">
+        <label class = "labelStyle" for="Amount">Amount</label>
+        <input class="form-control inputClass" name="amount" id="amount" placeholder="99.99" required>
+      </div>
+      <div class = "col mb-3">
+        <label class = "labelStyle" for="card-number">Card Number</label>
+        <div class="form-control inputClass" id="card-number"></div>
+      </div>
+    </div>
+      
+    <div class="form-row">
+      <div class = "col-md-2 mb-3">
+        <label class = "labelStyle" for="saveCardCheck">Save your card for future use?</label>
+        <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+      </div>
+      <div class = "col-md-5 mb-3">
+        <label class = "labelStyle" for="cvv">CVV</label>
+        <div class="form-control inputClass" id="cvv"></div>
+      </div>
+      <div class = "col-md-5 mb-3">
+        <label class = "labelStyle" for="expiration-date">Expiration Date</label>
+        <div class="form-control inputClass" id="expiration-date"></div>
+      </div>
+    </div>
+
+    <div>
+      <input id='payment-nethod-nonce' name= 'PaymentMethodNonce' type='hidden' />
+    </div>
+
+    <div>
+      <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
+    </div>
+    
+    <div class = "submitButton">
+      <input class="btn btn-outline-primary buttonStyle" type="submit" value="Pay"  disabled/>
+    </div>
+
+    <div class = "submitButton">
+      <label class = "labelStyle" for="autofillButton">Press this button to autofill the above fields</label>
+      <input class="btn btn-outline-primary buttonStyle" id="autofillButton" type="submit" value="Autofill"  disabled/>
+    </div>
+
+  </form>
+
+  
+</body>
+
+{{!-- <div id="checkout-message" name="checkoutMessage"></div> --}}
+
+{{!-- <span hidden id="client-token">{{clientToken}}</span> --}}
+
+<script>
+  var form = document.querySelector('#hosted-fields-form');
+  var submit = document.querySelector('input[type="submit"]');
+  var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
+  var theNonce = document.querySelector('#payment-nethod-nonce');
+  var deviceDataString = document.querySelector('#device-data-string');
+
+  console.log("Client token: " + clientToken);
+
+  // Creating a form validation to catch any bad input
+  function inputValidation() {
+    let numberInputted = document.forms["checkoutForm"]["amount"].value;
+    let emailInputted = document.forms["checkoutForm"]["email-address"].value;
+    let phoneInputted = document.forms["checkoutForm"]["phone-number"].value;
+    let saveCardCheckboxBool = document.forms["checkoutForm"]["saveCardCheck"].checked;
+    // Found this email regex on Stack Overflow. Seems to work well!
+    let reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+    let regionInputted = document.forms["checkoutForm"]["region-code"].value;
+    let countryInputted = document.forms["checkoutForm"]["country-code"].value;
+
+    console.log("Region length: " + regionInputted.length);
+    console.log("Checkbox value: " + saveCardCheckboxBool); 
+    console.log("Country test: " + /^[a-zA-Z]+$/.test(countryInputted));
+
+    // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
+    if (saveCardCheckboxBool == false) {
+      // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
+      console.log("nope, it's not checked");
+      document.forms["checkoutForm"].action = "/3DS-transaction-with-nonce";
+    } else {
+      // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
+      console.log("yep, it's checked")
+      document.forms["checkoutForm"].action = "/transaction-with-token";
+    }
+
+    let formDestination = document.forms["checkoutForm"].action;
+    console.log("Form action: " + formDestination);
+
+    // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
+    if (isNaN(numberInputted) || numberInputted == "") {
+      console.log("Amount field value: " + numberInputted);
+      alert("Please enter a number.");
+      return false;
+    }
+    // Making sure the number is positive and not 0.
+    else if (((Number(numberInputted) * -1) > 0) || (Number(numberInputted) * Number(numberInputted) == 0)) {
+      console.log("Amount field value: " + numberInputted);
+      alert("Please enter a positive number.");
+      return false;
+    }
+    // Checking that the email inputted is a valid email address. It'll cause a validation error on the customer.create() call otherwise.
+    else if ((emailInputted != "") && (reg.test(emailInputted) == false)) {
+      alert("Please enter a valid email address.");
+      return false;
+    }
+    // Checking that if a phone number is entered, it's actually a number.
+    else if ((isNaN(phoneInputted))) {
+      alert("Please enter a valid phone number.");
+      return false;
+    }
+    // Checking for actual ISO 3166-2 sub-divison codes and alpha-2 country codes is a bit complicated.
+    // We're gonna settle for simply checking that these values are only two places instead.
+    else if ((countryInputted.length > 0) && (countryInputted.length != 2)) {
+      alert("Please enter a valid country code.");
+      return false;
+    }
+    // Also checking that the country code is not a number as none of the alpha-2 codes are numerical. Found this on SO again!
+    else if ((countryInputted.length > 0) && ((/^[a-zA-Z]+$/.test(countryInputted)) == false)) {
+      alert("Please enter a valid country code.");
+      return false;
+    }
+    else if ((regionInputted.length > 0) && (regionInputted.length != 2)) {
+      alert("Please enter a valid region code.");
+      return false;
+    }
+    // Having this return true here instead. That'll be assigned to a value and checked later.
+    else {
+      return true;
+    }
+  }
+
+  braintree.client.create({
+    // Insert your tokenization key here
+    authorization: clientToken,
+// CLIENT_AUTHORIZATION
+// 'sandbox_q7qnvz9t_pzrgxphnvtycmdhq'
+// CLIENT_TOKEN_FROM_SERVER
+  }, function (clientErr, clientInstance) {
+    if (clientErr) {
+      console.error(clientErr);
+      return;
+    }
+
+  braintree.dataCollector.create({
+    client: clientInstance
+  }, function (err, dataCollectorInstance) {
+    if (err) {
+      // Handle error in creation of data collector
+      console.error(err);
+      return;
+    }
+    // At this point, you should access the dataCollectorInstance.deviceData value and provide it
+    // to your server, e.g. by injecting it into your form as a hidden input.
+    var deviceData = dataCollectorInstance.deviceData;
+    console.log(deviceData);
+    deviceDataString.value = deviceData;
+  });
+
+    // Create a hostedFields component to initialize the form
+  braintree.hostedFields.create({
+    client: clientInstance,
+    // Customize the Hosted Fields.
+    // More information can be found at:
+    // https://developers.braintreepayments.com/guides/hosted-fields/styling/javascript/v3
+    styles: {
+      'input': {
+        'font-size': '14px',
+        'color': '#ff8e51'
+      },
+      'input.invalid': {
+        'color': 'red'
+      },
+      'input.valid': {
+        'color': 'green'
+      }
+    },
+    // Configure which fields in your card form will be generated by Hosted Fields instead
+    fields: {
+      number: {
+        container: '#card-number',
+        placeholder: '4000 0000 0000 1000'
+      },
+      cvv: {
+        container: '#cvv',
+        placeholder: '123'
+      },
+      expirationDate: {
+        container: '#expiration-date',
+        placeholder: '01/2026'
+      }
+    }
+  }, function (hostedFieldsErr, instance) {
+    if (hostedFieldsErr) {
+      console.error(hostedFieldsErr);
+      return;
+    }
+
+    braintree.threeDSecure.create({
+      version: 2, // Will use 3DS2 whenever possible
+      client: clientInstance
+    }, function (threeDSecureErr, threeDSecureInstance) {
+      if (threeDSecureErr) {
+      // Handle error in 3D Secure component creation
+      return;
+      }
+      threeDSecure = threeDSecureInstance;
+    });
+
+    // Once the fields are initialized enable the submit button
+    submit.removeAttribute('disabled');
+
+    // Initialize the form submit event
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      // Validating here so that we make sure the amount value is all good before it's passed into verifyCard().
+      // It'll cause errors in the verifyCard() call otherwise.
+      // inputValidation() returns true or false now. If false, stop there. If true, move forward with the tokenization and submission of the form.
+      var inputChecker = inputValidation();
+      console.log("Input verified value: " + inputChecker);
+
+      if (inputChecker == false) {
+        return;
+      }
+      else {
+        // When the user clicks on the 'Submit payment' button this code will send the
+        // encrypted payment information in a variable called a payment method nonce
+        instance.tokenize(function (tokenizeErr, payload) {
+          if (tokenizeErr) {
+            console.error(tokenizeErr);
+            return;
+          }
+          else {
+            // Checking that the nonce and BIN can successfully be accessed.
+            console.log("First nonce on client: " + payload.nonce);
+            console.log("BIN on client: " + payload.details.bin);
+
+            // The original nonce in hand, now creating a 3DS-enriched nonce with a verifyCard() call
+
+            // onLookupComplete is deprecated, so replacing that with this event listener instead.
+            threeDSecure.on('lookup-complete', function (data, next) {
+              next();
+            });
+
+            threeDSecure.verifyCard({
+              nonce: payload.nonce,
+              bin: payload.details.bin,
+              amount: document.forms["checkoutForm"]["amount"].value,
+              email: document.forms["checkoutForm"]["email-address"].value,
+              // 'ol faithful.
+              challengeRequested: true,
+              /*onLookupComplete: function (data, next) {
+                next();
+              }*/
+              billingAddress: {
+                givenName: document.forms["checkoutForm"]["first-name"].value,
+                surname: document.forms["checkoutForm"]["last-name"].value,
+                phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+                streetAddress: document.forms["checkoutForm"]["street-address"].value,
+                extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+                locality: document.forms["checkoutForm"]["city-name"].value,
+                region: document.forms["checkoutForm"]["region-code"].value,
+                postalCode: document.forms["checkoutForm"]["postal-code"].value,
+                countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
+              },
+              additionalInformation: {
+                workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+                shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
+                shippingSurname: document.forms["checkoutForm"]["last-name"].value,
+                shippingAddress: {
+                  streetAddress: document.forms["checkoutForm"]["street-address"].value,
+                  extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+                  locality: document.forms["checkoutForm"]["city-name"].value,
+                  region: document.forms["checkoutForm"]["region-code"].value,
+                  postalCode: document.forms["checkoutForm"]["postal-code"].value,
+                  countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
+                },
+                shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
+                // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
+                shippingMethod: "03",
+                shippingMethodIndicator: "01",
+                productCode: "GEN"
+              },
+              // Collecting 3DS device data as well.
+              collectDeviceData: true
+            }, function (verifyError, payload) {
+              if (verifyError) {
+                console.error(verifyError);
+              }
+              else {
+                console.log("3DS nonce on client: " + payload.nonce);
+                console.log("Liability shift status: " + payload.liabilityShifted);
+                console.log("Liability shift possible status: " + payload.liabilityShiftPossible);
+
+                // Doing some liability shift checking. If liability is shifted, submit the form. Else, try again with a different card.
+                // Liability has shifted
+                if (payload.liabilityShifted) {
+                  console.log("Liability shift flow triggered")
+                  theNonce.value = payload.nonce;
+                  // Submitting the form here on this checkout to allow the form validation to run before the amount is passed in the verifyCard call.
+                  form.submit()
+                }
+                // Liability might have shifted, just gonna submit this one too anyway.
+                else if (payload.liabilityShiftPossible) {
+                  console.log("Liability shift possible flow triggered")
+                  theNonce.value = payload.nonce;
+                  form.submit()
+                }
+                // No liability shift. Use another card!
+                else {
+                  console.log("No liability shift & no liability shift possible flow triggered")
+                  alert("Card not able to be authenticated with 3D Secure - please use a different card.");
+                  return false;
+                }
+
+              }
+            });
+            }
+          });
+        }
+      }, false);
+    });
+  });
+/*
+        $.ajax({
+          type: 'POST',
+          url: '/checkout',
+          data: {'paymentMethodNonce': payload.nonce}
+        }).done(function(result) {
+          // Since the following code will overwrite the contents of
+          // your page with a success or error message, first teardown
+          // the Hosted Fields form to remove any extra event listeners
+          // and iframes that the Braintree SDK added to your page
+          instance.teardown(function (teardownErr) {
+            if (teardownErr) {
+              console.error('Could not tear down the Hosted Fields form!');
+            } else {
+              console.info('Hosted Fields form has been torn down!');
+              // Remove the 'Submit payment' button
+              $('#hosted-fields-form').remove();
+            }
+          });
+
+          if (result.success) {
+            $('#checkout-message').html('<h1>Success!</h1><p>Your payment was successful.</p><p>Refresh to make another transaction.</p>');
+          } else {
+            $('#checkout-message').html('<h1>Error</h1><p>Check your console.</p>');
+          }
+        });
+      });
+    }, false);
+  }); */
+</script>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
+
+  <div class="topnav">
+    <a class="active" href="/">Create a Transaction</a>
+    <a href="/ApplePay">Create an Apple Pay Transaction</a>
+    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
+    <a href="/recent-transactions">Transaction Search</a>
+    <b class = "nobutton">Happy Halloween!</b>
+  </div>
+</head>
+
+<body>
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+  <form action="/transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm" class="formStyle">
+  <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
+    <div class="container">
+      <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
+      <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Enter your information below to complete payment.</p>
+    </div>
+  </div>
+
+  <h5>Personal Information:</h5>
+    <div class="form-row">
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="firstName">First Name</label>
+        <input class="form-control inputClass" name="firstName" id="first-name" placeholder="First" required>
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <label class = "labelStyle" for="lastName">Last Name</label>
+        <input class="form-control inputClass" name="lastName" id="last-name" placeholder="Last" required>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label class = "labelStyle" for="emailAddress">Email</label>
+        <input class="form-control inputClass" name="email" id="email-address" placeholder="@.com">
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label class = "labelStyle" for="phoneNumber">Phone Number</label>
+        <input class="form-control inputClass" name="phoneNumber" id="phone-number" placeholder="(555) 555-5555">
+      </div>
+    </div>
+
+    <h5 class = "h5Padding">Card Information:</h5>
+    <div class = "form-row">
+      <div class = "col-md-2 mb-3">
+        <label class = "labelStyle" for="Amount">Amount</label>
+        <input class="form-control inputClass" name="amount" id="amount" placeholder="99.99" required>
+      </div>
+      <div class = "col mb-3">
+        <label class = "labelStyle" for="card-number">Card Number</label>
+        <div class="form-control inputClass" id="card-number"></div>
+      </div>
+    </div>
+      
+    <div class="form-row">
+      <div class = "col-md-2 mb-3">
+        <label class = "labelStyle" for="saveCardCheck">Save your card for future use?</label>
+        <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+      </div>
+      <div class = "col-md-5 mb-3">
+        <label class = "labelStyle" for="cvv">CVV</label>
+        <div class="form-control inputClass" id="cvv"></div>
+      </div>
+      <div class = "col-md-5 mb-3">
+        <label class = "labelStyle" for="expiration-date">Expiration Date</label>
+        <div class="form-control inputClass" id="expiration-date"></div>
+      </div>
+    </div>
+
+    <div>
+      <input id='payment-nethod-nonce' name= 'PaymentMethodNonce' type='hidden' />
+    </div>
+
+    <div>
+      <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
+    </div>
+    
+    <div class = "submitButton">
+        <input class="btn btn-outline-primary buttonStyle" type="submit" value="Pay"  disabled/>
+    </div>
+
+  </form>
+
+  
+</body>
+
+{{!-- <div id="checkout-message" name="checkoutMessage"></div> --}}
+
+{{!-- <span hidden id="client-token">{{clientToken}}</span> --}}
+
+<script>
+  var form = document.querySelector('#hosted-fields-form');
+  var submit = document.querySelector('input[type="submit"]');
+  var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
+  var theNonce = document.querySelector('#payment-nethod-nonce');
+  var deviceDataString = document.querySelector('#device-data-string');
+
+  console.log("Client token: " + clientToken);
+
+  // Creating a form validation to catch any bad input
+  function inputValidation() {
+    let numberInputted = document.forms["checkoutForm"]["amount"].value;
+    let emailInputted = document.forms["checkoutForm"]["email-address"].value;
+    let phoneInputted = document.forms["checkoutForm"]["phone-number"].value;
+    let saveCardCheckboxBool = document.forms["checkoutForm"]["saveCardCheck"].checked;
+    // Found this email regex on Stack Overflow. Seems to work well!
+    let reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
+
+    console.log("Checkbox value: " + saveCardCheckboxBool); 
+    console.log("Email value: " + emailInputted);
+
+    // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
+    if (saveCardCheckboxBool == false) {
+      // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
+      console.log("nope, it's not checked");
+      document.forms["checkoutForm"].action = "/transaction-with-nonce";
+    } else {
+      // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
+      console.log("yep, it's checked")
+      document.forms["checkoutForm"].action = "/transaction-with-token";
+    }
+
+    let formDestination = document.forms["checkoutForm"].action;
+    console.log("Form action: " + formDestination);
+
+    // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
+    if (isNaN(numberInputted) || numberInputted == "") {
+      console.log("Amount field value: " + numberInputted);
+      alert("Please enter a number.");
+      return false;
+    }
+    // Making sure the number is positive and not 0.
+    else if (((Number(numberInputted) * -1) > 0) || (Number(numberInputted) * Number(numberInputted) == 0)) {
+      console.log("Amount field value: " + numberInputted);
+      alert("Please enter a positive number.");
+      return false;
+    }
+    // Checking that the email inputted is a valid email address. It'll cause a validation error on the customer.create() call otherwise.
+    else if ((emailInputted != "") && (reg.test(emailInputted) == false)) {
+      alert("Please enter a valid email address.");
+      return false;
+    }
+    // Checking that if a phone number is entered, it's actually a number.
+    else if ((isNaN(phoneInputted))) {
+      alert("Please enter a valid phone number.");
+      return false;
+    }
+    // All input checked and valid, submit everything over to the server for processing.
+    else {
+      form.submit()
+    }
+  }
+
+  braintree.client.create({
+    // Insert your tokenization key here
+    authorization: clientToken,
+    // CLIENT_AUTHORIZATION
+    // 'sandbox_q7qnvz9t_pzrgxphnvtycmdhq'
+    // CLIENT_TOKEN_FROM_SERVER
+  }, function (clientErr, clientInstance) {
+    if (clientErr) {
+      console.error(clientErr);
+      return;
+    }
+
+  braintree.dataCollector.create({
+    client: clientInstance
+  }, function (err, dataCollectorInstance) {
+    if (err) {
+      // Handle error in creation of data collector
+      console.error(err);
+      return;
+    }
+    // At this point, you should access the dataCollectorInstance.deviceData value and provide it
+    // to your server, e.g. by injecting it into your form as a hidden input.
+    var deviceData = dataCollectorInstance.deviceData;
+    console.log(deviceData);
+    deviceDataString.value = deviceData;
+  });
+
+    // Create a hostedFields component to initialize the form
+  braintree.hostedFields.create({
+    client: clientInstance,
+    // Customize the Hosted Fields.
+    // More information can be found at:
+    // https://developers.braintreepayments.com/guides/hosted-fields/styling/javascript/v3
+    styles: {
+      'input': {
+        'font-size': '14px',
+        'color': '#ff8e51'
+      },
+      'input.invalid': {
+        'color': 'red'
+      },
+      'input.valid': {
+        'color': 'green'
+      }
+    },
+    // Configure which fields in your card form will be generated by Hosted Fields instead
+    fields: {
+      number: {
+        container: '#card-number',
+        placeholder: '4111 1111 1111 1111'
+      },
+      cvv: {
+        container: '#cvv',
+        placeholder: '123'
+      },
+      expirationDate: {
+        container: '#expiration-date',
+        placeholder: '10/2025'
+      }
+    }
+  }, function (hostedFieldsErr, instance) {
+    if (hostedFieldsErr) {
+      console.error(hostedFieldsErr);
+      return;
+    }
+
+    // Once the fields are initialized enable the submit button
+    submit.removeAttribute('disabled');
+
+    // Initialize the form submit event
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      // When the user clicks on the 'Submit payment' button this code will send the
+      // encrypted payment information in a variable called a payment method nonce
+      instance.tokenize(function (tokenizeErr, payload) {
+        if (tokenizeErr) {
+          console.error(tokenizeErr);
+          return;
+        }
+        else {
+          theNonce.value = payload.nonce;
+          console.log("Nonce on client: " + payload.nonce);
+          // Returning the form validation function instead which will submit the form if all of the input is valid.
+          //form.submit()
+          return inputValidation();
+        }
+        });
+      }, false);
+    });
+  });
+/*
+        $.ajax({
+          type: 'POST',
+          url: '/checkout',
+          data: {'paymentMethodNonce': payload.nonce}
+        }).done(function(result) {
+          // Since the following code will overwrite the contents of
+          // your page with a success or error message, first teardown
+          // the Hosted Fields form to remove any extra event listeners
+          // and iframes that the Braintree SDK added to your page
+          instance.teardown(function (teardownErr) {
+            if (teardownErr) {
+              console.error('Could not tear down the Hosted Fields form!');
+            } else {
+              console.info('Hosted Fields form has been torn down!');
+              // Remove the 'Submit payment' button
+              $('#hosted-fields-form').remove();
+            }
+          });
+
+          if (result.success) {
+            $('#checkout-message').html('<h1>Success!</h1><p>Your payment was successful.</p><p>Refresh to make another transaction.</p>');
+          } else {
+            $('#checkout-message').html('<h1>Error</h1><p>Check your console.</p>');
+          }
+        });
+      });
+    }, false);
+  }); */
+</script>

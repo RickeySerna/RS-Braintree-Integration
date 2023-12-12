@@ -1,0 +1,170 @@
+body {
+  margin: 0;
+  font-family: Garamond, Papyrus, 'Times New Roman', Times, serif, Arial, Helvetica, sans-serif;
+}
+
+.txnSearchBackground {
+  border: 10px inset #E66C2C;
+  background-color: black;
+  text-align: center;
+}
+
+.tableLabel {
+  color: #E66C2C;
+}
+
+.topnav {
+  background-color: rgb(0, 0, 0);
+  overflow: hidden;
+  padding-right: 0px;
+  padding-left: 0px;
+}
+
+.topnav a {
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  font-size: 17px;
+}
+
+.topnav a:hover {
+  background-color: #881EE4;
+  color: black;
+}
+
+.topnav a.active {
+  background-color: #E66C2C;
+  color: black;
+}
+
+.topnav b {
+  float: right;
+  color: #E66C2C;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: underline;
+  font-size: 17px;
+}
+
+.evenSpread {
+  table-layout: auto;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+}
+
+.evenSpread th {
+  background-color: #E66C2C;
+  color: white;
+}
+
+.evenSpread tr {
+  background-color: rgb(243, 121, 77);
+  color: white;
+}
+
+.evenSpread tr:nth-child(even) {
+  background-color: #ff9258;
+}
+
+.evenSpread tr:hover {
+  background-color: #000000;
+}
+
+.footerStyle {
+  color: #E66C2C;
+  padding-bottom: 25px;
+}
+
+.submitButton {
+  text-align: center;
+}
+
+.applePayButtonStyle {
+  background-image: url("applepaybutton.png");
+  background-size: 100%;
+  height: 100px;
+  width: 476px;
+  margin: auto;
+}
+
+.pumpkinDanceStyle {
+  background-image: url("pumpkindance.gif");
+  background-size: 100%;
+  height: 240px;
+  width: 320px;
+  margin: auto;
+}
+
+.formStyle {
+  font-family: Garamond, Papyrus, 'Times New Roman', Times, serif, Arial, Helvetica, sans-serif;
+  padding-left: 30px;
+  padding-right: 30px;
+  padding-top: 20px;
+  padding-bottom: 50px;
+  background-image: url("halloween.jpg");
+  /*Changing this to 100% to just fill the page, independent of whatever device is being used to open the page.*/
+  background-size: 100%;
+  color: white;
+}
+
+.resultStyle {
+  background-image: url("halloween.jpg");
+  /*Same as above!*/
+  background-size: 100%;
+}
+
+.applePayStyle {
+  background-image: url("halloween.jpg");
+  background-size: 100%;
+}
+
+.txnHeaderPadding {
+  padding-bottom: 25px;
+}
+
+.h5Padding {
+  padding-top: 10px;
+}
+
+h5 {
+  color: #E66C2C;
+}
+
+.labelStyle {
+  color: #ff8e51;
+}
+
+.form-control.inputClass {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+}
+
+.form-control.inputClass:focus {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+}
+
+ .btn-outline-primary.buttonStyle {
+  background-color: #e66d2c;
+  color: black;
+  border-color: white;
+ }
+
+ .btn-outline-primary.buttonStyle:hover {
+  background-color: black;
+  color: #e66d2c;
+  border-color: #e66d2c;
+ }
+
+ h1 {
+  text-align: center;
+  padding-top: 75px;
+ }
+
+.lead.subtitle {
+  text-align: center;
+  font-size: 25px;
+}

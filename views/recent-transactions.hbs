@@ -1,0 +1,111 @@
+<head>
+  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
+</head>
+<body>
+  <div class="topnav">
+    <a href="/">Create a Transaction</a>
+    <a href="/ApplePay">Create an Apple Pay Transaction</a>
+    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
+    <a class="active" href="/recent-transactions">Transaction Search</a>
+    <b class = "nobutton">Happy Halloween!</b>
+  </div>
+
+  <div class = "txnSearchBackground">
+    <h1 class = "tableLabel">Transactions in the Last 3 Months</h1>
+    <p>
+      <table class="evenSpread" id="txn-table">
+        <thead>
+          <tr>
+            <th scope = "col">#</th>
+            <th scope = "col">Transaction ID</th>
+            <th scope = "col">Amount</th>
+            <th scope = "col">Name</th>
+            <th scope = "col">Customer ID</th>
+            <th scope = "col">Status</th>
+            <th scope = "col">Date</th>
+            <th scope = "col">Email</th>
+            <th scope = "col">Phone Number</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </p>
+      <tfoot>
+        <div class = "footerStyle">
+          <span id="footer-content">Total amount successfully transacted: $</span>
+        </div>
+      </tfoot>
+  </div>
+</body>
+
+<script>
+const txnIDArray = [{{#each txnSearchResults}}'{{this.id}}', {{/each}}]
+const amountArray = [{{#each txnSearchResults}}'{{this.amount}}', {{/each}}]
+const firstNameArray = [{{#each txnSearchResults}}'{{this.customer.firstName}}', {{/each}}]
+const lastNameArray = [{{#each txnSearchResults}}'{{this.customer.lastName}}', {{/each}}]
+const customerIDArray = [{{#each txnSearchResults}}'{{this.customer.id}}', {{/each}}]
+const statusArray = [{{#each txnSearchResults}}'{{this.status}}', {{/each}}]
+const dateArray = [{{#each txnSearchResults}}'{{this.createdAt}}', {{/each}}]
+const emailArray = [{{#each txnSearchResults}}'{{this.customer.email}}', {{/each}}]
+const phoneArray = [{{#each txnSearchResults}}'{{this.customer.phone}}', {{/each}}]
+const resultAmount = {{txnCount}}
+let totalAmount = 0;
+
+const correctDates = dateArray.map((dates) => {
+  new Date(dates);
+  //console.log(dates);
+  return dates.substring(0, 10);
+})
+
+function totalCalculator () {
+  let totalAmountIndex = 0;
+
+  for (const element of amountArray) {
+    if (statusArray[totalAmountIndex] == "settled") {
+      totalAmount += parseFloat(element);
+      totalAmountIndex++;
+    }
+    else if (statusArray[totalAmountIndex] == "submitted_for_settlement") {
+      totalAmount += parseFloat(element);
+      totalAmountIndex++;
+    }
+    else if (statusArray[totalAmountIndex] == "authorized") {
+      totalAmount += parseFloat(element);
+      totalAmountIndex++;
+    } 
+    else if (statusArray[totalAmountIndex] == "settling") {
+      totalAmount += parseFloat(element);
+      totalAmountIndex++;
+    }
+    else {
+      totalAmountIndex++;
+    }
+  };
+  console.log("Index reached: " + totalAmountIndex);
+};
+
+totalCalculator();
+
+// Cutting off the total at 2 decimal places and rounding it down, always.
+let fixedTotal = Math.floor(totalAmount * 100)/100;
+console.log("Total amount: " + fixedTotal);
+$('#footer-content').append(`${fixedTotal}`);
+
+txnIDArray.forEach((element, index) =>{
+  actualPlace = index += 1;
+  $('#txn-table > tbody:last-child').append(
+    `<tr id="table-contents">
+      <th scope = "row">${actualPlace}</th>
+      <td>${element}</td>
+      <td>$${amountArray[index-1]}</td>
+      <td>${firstNameArray[index-1]} ${lastNameArray[index-1]}</td>
+      <td>${customerIDArray[index-1]}</td>
+      <td>${statusArray[index-1]}</td>
+      <td>${correctDates[index-1]}</td>
+      <td>${emailArray[index-1]}</td>
+      <td>${phoneArray[index-1]}</td>
+    </tr>`
+    )
+  })
+</script>

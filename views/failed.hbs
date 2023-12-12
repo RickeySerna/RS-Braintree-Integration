@@ -1,0 +1,22 @@
+<head>
+  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
+</head>
+<body class = "resultStyle">
+  <div class="topnav">
+    <a href="/">Create a Transaction</a>
+    <a href="/ApplePay">Create an Apple Pay Transaction</a>
+    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
+    <a href="/recent-transactions">Transaction Search</a>
+    <b class = "nobutton">Happy Halloween!</b>
+  </div>
+
+  <div>
+    <div class="jumbotron jumbotron-fluid" style="background-color: rgba(156, 29, 29, 0);">
+      <div class="container">
+        <h1 class="display-4" style="color: #E66C2C;">Sorry, {{transactionResponse.transaction.customer.firstName}}.</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">It looks like something went wrong with your payment attempt.</p>
+        <p class="lead subtitle" style="color: #E66C2C;">Please try again at a later time, try again with a different card, or reach out to your banking partner.</p>
+      </div>
+    </div>
+  </div>
+</body>

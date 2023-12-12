@@ -1,0 +1,155 @@
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
+
+  <div class="topnav">
+    <a href="/">Create a Transaction</a>
+    <a class="active" href="/ApplePay">Create an Apple Pay Transaction</a>
+    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
+    <a href="/recent-transactions">Transaction Search</a>
+    <b class = "nobutton">Happy Halloween!</b>
+  </div>
+</head>
+
+<body class = "applePayStyle">
+  <div id="applePayDiv" style="display:none;">
+    <form id="applePayForm" action="/apple-pay-transaction" method="post">
+
+      <div class="container">
+        <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please ensure that you are using Safari and the HTTPS connection. <a href="https://localhost:8000">https://localhost:8000</a></p>
+      </div>
+					
+      <div style = "text-align:center">
+        <p class="lead subtitle" style="color: #E66C2C;">Press the Apple Pay button below to complete payment!</p>
+        <input class = "applePayButtonStyle" type="image" name="saveForm" id="pay-by-apple"/>
+        <input type="hidden" name="payment_method_nonce" value="">
+      </div>
+
+    </form>
+  </div>
+
+</body>
+
+<script>
+var clientToken = '{{{clientToken}}}';
+console.log("Client token in Apple Pay: " + clientToken);
+
+/*if (!window.ApplePaySession) {
+  console.error('This device does not support Apple Pay');
+}
+
+if (!ApplePaySession.canMakePayments()) {
+  console.error('This device is not capable of making Apple Pay payments');
+}*/
+
+
+
+if (window.ApplePaySession && ApplePaySession.supportsVersion(2) && ApplePaySession.canMakePayments()) {
+  console.log('This device supports version 3 Apple Pay. Woohoo!');
+  // This device supports version 3 of Apple Pay.
+} else {
+  console.log("This device does NOT support Apple Pay. If you're using a browser other than Safari, switch to Safari!");
+}
+
+braintree.client.create({
+  authorization: clientToken
+}, function (clientErr, clientInstance) {
+  if (clientErr) {
+    console.error('Error creating client:', clientErr);
+    return;
+  }
+
+  braintree.applePay.create({
+    client: clientInstance
+  }, function (applePayErr, applePayInstance) {
+    if (applePayErr) {
+      console.error('Error creating applePayInstance:', applePayErr);
+      return;
+    }
+
+      btApplePayInstance = applePayInstance;
+      document.getElementById("applePayDiv").style.display = "inline";
+  });
+});
+
+// Button event listener, you have to place the var session = new ApplePaySession() inside this listener or else you'll get an error!
+document.getElementById("pay-by-apple").addEventListener("click", function(e){
+// Prevent form from submitting before buyer goes through Apple Pay authorization
+e.preventDefault();
+
+var paymentRequest =  btApplePayInstance.createPaymentRequest({
+  total: {
+    label: 'Test merchant',
+    amount: 15
+    },
+    
+    // You can setup the required fields here, so the buyer would be prompted to provide them during checkout!
+    requiredBillingContactFields: ["postalAddress"]
+});
+
+console.log(paymentRequest.countryCode);
+console.log(paymentRequest.currencyCode);
+console.log(paymentRequest.merchantCapabilities);
+console.log(paymentRequest.supportedNetworks);
+        
+  // Declare a variable for ApplePaySession
+var session = new ApplePaySession(1, paymentRequest);
+        
+        // Validate merchant URL, this is the domain you enter in GW Apple Pay settings. If you don't have your website's domain in GW, your APP Pay integration will fail!
+        session.onvalidatemerchant = function (event) {
+            btApplePayInstance.performValidation({
+                validationURL: event.validationURL,
+                displayName: 'Test merchant'
+            }, function (validationErr, merchantSession) {
+                if (validationErr) {
+                    // You should show an error to the user, e.g. 'Apple Pay failed to load.'
+                    console.error('Error validating merchant:', validationErr);
+                    session.abort();
+                    return;
+                }
+                session.completeMerchantValidation(merchantSession);
+            });
+        };
+        
+        // onpaymentauthorized callback can be used to retrieve details such as shipping address.
+        session.onpaymentauthorized = function (event) {
+        
+        // Apple Pay token is returned here via event.payment.token
+		
+		
+            if (event.payment.shippingContact){
+                
+                // Shipping address returned!
+                console.log('Your shipping address is:', event.payment.shippingContact);
+            }
+			
+	    // tokenize method tokenizes the buyer Apple Pay account and creates a payment nonce.
+            btApplePayInstance.tokenize({
+                token: event.payment.token
+            }, function (tokenizeErr, payload) {
+                if (tokenizeErr) {
+                    console.error('Error tokenizing Apple Pay:', tokenizeErr);
+                    session.completePayment(ApplePaySession.STATUS_FAILURE);
+                    console.log(payload.nonce);
+                    return;
+                }
+                session.completePayment(ApplePaySession.STATUS_SUCCESS);
+				
+                // Payment nonce retrieved
+		alert("Payment nonce is " + payload.nonce + " . Send it to your server-side to create a transaction!" + "\n\n" + "Entire payload returned: " + JSON.stringify(payload, null, 4) + "\n\n" + "Your shipping address is: \n" + JSON.stringify(event.payment.shippingContact), null, 4);
+				
+		// Add the nonce to the form
+		document.forms["applePayForm"].elements["payment_method_nonce"].value = payload.nonce;
+
+		//Automatically submit the form
+		document.getElementById("applePayForm").submit();
+                
+            });
+        }
+        
+        // You have to use the session.begin function to start your Apple Pay session or nothing will work!
+        session.begin();
+
+});
+</script>
