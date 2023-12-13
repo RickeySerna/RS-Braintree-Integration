@@ -209,6 +209,96 @@ app.post('/3DS-transaction-with-nonce', (req, res, next) => {
   });
 });
 
+app.post('/3DS-transaction-with-token', (req, res, next) => {
+  const PaymentMethodNonce = req.body.PaymentMethodNonce;
+  // Using toFixed to round the amount after the second decimal. So if a long floating point is entered, it's cut off at the 2nd decimal.
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  const first = req.body.firstName;
+  const last = req.body.lastName;
+  const email = req.body.email;
+  const phone = req.body.phoneNumber;
+  const streetAddress = req.body.streetAddress;
+  const adtlAddress = req.body.additionalAddress;
+  const city = req.body.cityName;
+  const region = req.body.regionCode;
+  const postCode = req.body.postalCode;
+  const country = req.body.countryCode;
+  const DeviceDataString = req.body.DeviceDataString;
+
+  console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);
+  console.log("Device data string in server, 3DS token checkout: " + DeviceDataString);
+
+  const thisCustomer = gateway.customer.create({
+    firstName: first,
+    lastName: last,
+    email: email,
+    phone: phone,
+    paymentMethodNonce:PaymentMethodNonce,
+    deviceData: DeviceDataString,
+    creditCard: {
+      billingAddress: {
+        firstName: first,
+        lastName: last,
+        streetAddress: streetAddress,
+        extendedAddress: adtlAddress,
+        locality: city,
+        region: region,
+        countryCodeAlpha2: country,
+        postalCode: postCode
+      },
+      options: {
+        verifyCard: true,
+        verificationAmount: "1"
+      }
+    }
+  }, (error, result) => {
+    if (result.success == true) {
+      let cusResponseObject = result;
+      // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
+      // Then we'll pass that back to the client to be run through verifyCard() again.
+      gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, function(err, response) {
+        if (response.success == true) {
+          const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
+          console.log("Nonce generated from token:" + nonceGeneratedFromToken);
+
+          // Need to figure out how to use verifyCard() from the client here
+          
+/*          gateway.transaction.sale({
+            amount: amountFromClient,
+            paymentMethodNonce: nonceGeneratedFromToken,
+            options: {
+              // This option requests the funds from the transaction
+              // once it has been authorized successfully
+              submitForSettlement: true
+            },
+            deviceData: DeviceDataString
+          }, (error, result) => {
+            console.log("Transaction ID: " + result.transaction.id);
+            console.log("Transaction status: " + result.transaction.status);
+            if (result.success == true) {
+              console.log("Successful transaction status: " + result.transaction.status);
+              res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            } else {
+              if (result.transaction.status == "processor_declined") {
+                console.log("Declined transaction status: " + result.transaction.status);
+                res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              }
+              else {
+                console.log("Failed transaction status: " + result.transaction.status);
+                res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              }
+            }
+          });*/
+        } else {
+          res.json(response);
+        }
+      });
+    } else {
+      res.json(result);
+    };
+  });
+});
+
 app.get('/recent-transactions', (req, res) => {
   var threeMonthsAgo = Date.today().addMonths(-3);
   var txnSearchResults = [];
