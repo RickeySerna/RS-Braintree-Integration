@@ -337,12 +337,25 @@ app.get('/ApplePay', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
     res.render('ApplePay', {
       clientToken: response.clientToken,
-      title: 'Spooky Apple Pay!'
+      title: 'AHHHHH!pple Pay'
 	  });
   });
 });
 
 app.post('/apple-pay-transaction', (req, res, next) => {
+
+});
+
+app.get('/GooglePay', (req, res) => {
+  gateway.clientToken.generate({}, (err, response) => {
+    res.render('GooglePay', {
+      clientToken: response.clientToken,
+      title: 'Ghoulgle Pay'
+	  });
+  });
+});
+
+app.post('/google-pay-transaction', (req, res, next) => {
 
 });
 

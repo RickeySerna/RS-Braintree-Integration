@@ -1,0 +1,70 @@
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
+
+  <div class="topnav">
+    <a href="/">Create a Transaction</a>
+    <a class="active" href="/ApplePay">Create an Apple Pay Transaction</a>
+    <a class="active" href="/GooglePay">Create a Google Pay Transaction</a>
+    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
+    <a href="/recent-transactions">Transaction Search</a>
+    <b class = "nobutton">Happy Halloween!</b>
+  </div>
+</head>
+
+<body class = "googlePayStyle">
+  <div id="googlePayDiv" style="display:none;">
+    <form id="googlePayForm" action="/google-pay-transaction" method="post">
+
+      <div class="container">
+        <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Thanks for choosing Google Pay.</p>
+      </div>
+					
+      <div style = "text-align:center">
+        <p class="lead subtitle" style="color: #E66C2C;">Press the Google Pay button below to complete payment!</p>
+        <input class = "applePayButtonStyle" type="image" name="saveForm" id="pay-by-apple"/>
+        <input type="hidden" name="payment_method_nonce" value="">
+      </div>
+
+    </form>
+  </div>
+
+</body>
+
+<script>
+var clientToken = '{{{clientToken}}}';
+console.log("Client token in Google Pay: " + clientToken);
+
+braintree.client.create({
+  authorization: clientToken
+}, function (clientErr, clientInstance) {
+    if (clientErr) {
+        console.error('Error creating client:', clientErr);
+        return;
+    }
+    else {
+        var paymentsClient = new google.payments.api.PaymentsClient({
+        environment: 'TEST' // Or 'PRODUCTION'
+        });
+
+        braintree.googlePayment.create({
+        client: clientInstance, // From braintree.client.create, see below for full example
+        googlePayVersion: 2
+        // googleMerchantId: 'merchant-id-from-google' // Optional in sandbox; if set in sandbox, this value must be a valid production Google Merchant ID
+        }, function (err, googlePaymentInstance) {
+            paymentsClient.isReadyToPay({
+                // see https://developers.google.com/pay/api/web/reference/object#IsReadyToPayRequest for all options
+                apiVersion: 2,
+                apiVersionMinor: 0,
+                allowedPaymentMethods: googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods,
+                existingPaymentMethodRequired: true
+            }).then(function (isReadyToPay) {
+                if (isReadyToPay.result) {
+                // Set up Google Pay button
+                }
+            });
+        });
+    }
+});
+</script>

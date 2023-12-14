@@ -121,6 +121,11 @@ body {
   background-size: 100%;
 }
 
+.googlePayStyle {
+  background-image: url("halloween.jpg");
+  background-size: 100%;
+}
+
 .txnHeaderPadding {
   padding-bottom: 25px;
 }
