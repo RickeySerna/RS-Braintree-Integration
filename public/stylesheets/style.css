@@ -90,6 +90,10 @@ body {
   margin: auto;
 }
 
+.googlePayButtonStyle {
+  margin: auto;
+}
+
 .pumpkinDanceStyle {
   background-image: url("pumpkindance.gif");
   background-size: 100%;
