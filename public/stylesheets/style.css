@@ -146,6 +146,11 @@ h5 {
   color: #ff8e51;
 }
 
+.GPlabelStyle {
+  color: #ff8e51;
+  margin : center;
+}
+
 .form-control.inputClass {
   background-color: #e66d2c45;
   color: #ff8e51;
@@ -154,6 +159,12 @@ h5 {
 .form-control.inputClass:focus {
   background-color: #e66d2c45;
   color: #ff8e51;
+}
+
+.form-control.GPinputClass {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+  margin : 0 auto;
 }
 
  .btn-outline-primary.buttonStyle {

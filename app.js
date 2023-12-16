@@ -360,11 +360,14 @@ app.get('/GooglePay', (req, res) => {
 
 app.post('/google-pay-transaction', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+
+  console.log("Amount from GP client: " + amountFromClient);
   console.log("GP nonce in the server: " + GPPaymentMethodNonce);
 
 
   const thisGooglePayTransaction = gateway.transaction.sale({
-    amount: "10",
+    amount: amountFromClient,
     paymentMethodNonce: GPPaymentMethodNonce,
 /*    customer: {
       firstName: first,

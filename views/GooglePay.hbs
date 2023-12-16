@@ -1,7 +1,4 @@
 <head>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <link rel="stylesheet" type="text/css" href="/public/stylesheets/style.css"/>
-
   <div class="topnav">
     <a href="/">Create a Transaction</a>
     <a href="/ApplePay">Create an Apple Pay Transaction</a>
@@ -20,11 +17,20 @@
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
         <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Thanks for choosing Google Pay.</p>
       </div>
+
+      <div class="form-row justify-content-md-center">
+        <div class = "col-md-2 mb-3">
+          <label class = "GPlabelStyle" for="Amount">Amount</label>
+          <input class="form-control GPinputClass" name="amount" id="amount" placeholder="99.99" required>
+        </div>
+      </div>
 					
       <div style = "text-align:center">
-        <p class="lead subtitle" style="color: #E66C2C;">Press the Google Pay button below to complete payment!</p>
-        <!-- Creating a container for the Google Pay button that is generated later, also setting it's size. -->
-        <div id="googlePayButtonContainer" style="width: 800px; height: 100px; margin: auto;"></div>
+        <div>
+          <p class="lead subtitle" style="color: #E66C2C;">Press the Google Pay button below to complete payment!</p>
+          <!-- Creating a container for the Google Pay button that is generated later, also setting it's size. -->
+          <div id="googlePayButtonContainer" style="width: 800px; height: 100px; margin: auto;"></div>
+        </div>
         <div>
           <input id='gp-payment-method-nonce' name = 'GPPaymentMethodNonce' type='hidden' />
         </div>
@@ -97,6 +103,9 @@ else {
         button.addEventListener("click", function(event) {
         event.preventDefault();
 
+        var amountFromForm = document.forms["googlePayForm"]["amount"].value;
+        console.log("Amount from Google Pay form: " + amountFromForm);
+
         // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
         // Essentially just setting the parameters for the transaction. 
         var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
@@ -104,7 +113,7 @@ else {
             transactionInfo: {
               currencyCode: "USD",
               totalPriceStatus: "FINAL",
-              totalPrice: "10.00" // Your amount
+              totalPrice: amountFromForm // Your amount
             }
           }
         );
