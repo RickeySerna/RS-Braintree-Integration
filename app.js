@@ -361,6 +361,38 @@ app.get('/GooglePay', (req, res) => {
 app.post('/google-pay-transaction', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
   console.log("GP nonce in the server: " + GPPaymentMethodNonce);
+
+
+  const thisGooglePayTransaction = gateway.transaction.sale({
+    amount: "10",
+    paymentMethodNonce: GPPaymentMethodNonce,
+/*    customer: {
+      firstName: first,
+      lastName: last,
+      phone: phone,
+      email: email
+    },*/
+    options: {
+      submitForSettlement: true
+    }
+//    deviceData: DeviceDataString
+  }, (error, result) => {
+    console.log("Transaction ID: " + result.transaction.id);
+    if (result.success) {
+      console.log("Successful transaction status: " + result.transaction.status);
+      res.render('success', {transactionResponse: result, title: 'Success!'});
+    } else {
+      if (result.transaction.status == "processor_declined") {
+        console.log("Declined transaction status: " + result.transaction.status);
+        res.render('processordeclined', {transactionResponse: result});
+      } else {
+        console.log("Failed transaction status: " + result.transaction.status);
+        res.render('failed', {transactionResponse: result});
+      }
+    }
+  });
+
+
 });
 
 app.get('/3D-Secure', (req, res) => {

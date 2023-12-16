@@ -93,49 +93,49 @@ else {
       // Browser supports Google Pay, setting everything up from here.
       if (isReadyToPay.result) {
 
-          // Event listener waiting for the above button to be clicked.
-          button.addEventListener("click", function(event) {
-          event.preventDefault();
+        // Event listener waiting for the above button to be clicked.
+        button.addEventListener("click", function(event) {
+        event.preventDefault();
 
-          // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
-          // Essentially just setting the parameters for the transaction. 
-          var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
-            {
-              transactionInfo: {
-                currencyCode: "USD",
-                totalPriceStatus: "FINAL",
-                totalPrice: "10.00" // Your amount
-              }
+        // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
+        // Essentially just setting the parameters for the transaction. 
+        var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
+          {
+            transactionInfo: {
+              currencyCode: "USD",
+              totalPriceStatus: "FINAL",
+              totalPrice: "10.00" // Your amount
             }
-          );
+          }
+        );
 
-          // Determining what's required from the customer.
-          // See all available options at https://developers.google.com/pay/api/web/reference/object
-          var cardPaymentMethod = paymentDataRequest.allowedPaymentMethods[0];
-          cardPaymentMethod.parameters.billingAddressRequired = true;
-          cardPaymentMethod.parameters.billingAddressParameters = {
-            format: "FULL",
-            phoneNumberRequired: false
-          };
+        // Determining what's required from the customer.
+        // See all available options at https://developers.google.com/pay/api/web/reference/object
+        var cardPaymentMethod = paymentDataRequest.allowedPaymentMethods[0];
+        cardPaymentMethod.parameters.billingAddressRequired = true;
+        cardPaymentMethod.parameters.billingAddressParameters = {
+          format: "FULL",
+          phoneNumberRequired: false
+        };
 
-          paymentsClient.loadPaymentData(paymentDataRequest).then(function (paymentData) {
-            googlePaymentInstance.parseResponse(paymentData, function (err,result) {
-              if (err) {
-                console.error(err);
-              }
-              console.log("loadPaymentData Response:", paymentData);
-              console.log("parseResponse Response:", result);
+        paymentsClient.loadPaymentData(paymentDataRequest).then(function (paymentData) {
+          googlePaymentInstance.parseResponse(paymentData, function (err,result) {
+            if (err) {
+              console.error(err);
+            }
+            console.log("loadPaymentData Response:", paymentData);
+            console.log("parseResponse Response:", result);
 
-              // Adding the nonce to the hidden nonce field in the form.
-              theGPNonce.value = result.nonce;
-              console.log("Google Pay nonce: " + theGPNonce.value);
-              form.submit();
-            });
-          }).catch(function (err) {
-            // Handle errors
-            console.error(err);
-            });
+            // Adding the nonce to the hidden nonce field in the form, then submitting it.
+            theGPNonce.value = result.nonce;
+            console.log("Google Pay nonce: " + theGPNonce.value);
+            form.submit();
           });
+        }).catch(function (err) {
+          // Handle errors
+          console.error(err);
+          });
+        });
       }
     });
   });
