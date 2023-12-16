@@ -23,9 +23,11 @@
 					
       <div style = "text-align:center">
         <p class="lead subtitle" style="color: #E66C2C;">Press the Google Pay button below to complete payment!</p>
-        <!-- Creating a container for the Google Pay button that is generated later, also setting it's size -->
+        <!-- Creating a container for the Google Pay button that is generated later, also setting it's size. -->
         <div id="googlePayButtonContainer" style="width: 800px; height: 100px; margin: auto;"></div>
-        <input type="hidden" name="payment_method_nonce" value="">
+        <div>
+          <input id='gp-payment-method-nonce' name = 'GPPaymentMethodNonce' type='hidden' />
+        </div>
       </div>
 
     </form>
@@ -34,7 +36,11 @@
 </body>
 
 <script>
+var form = document.querySelector('#googlePayForm');
+var submit = document.querySelector('input[type="submit"]');
 var clientToken = '{{{clientToken}}}';
+var theGPNonce = document.querySelector('#gp-payment-method-nonce');
+
 console.log("Client token in Google Pay: " + clientToken);
 
 braintree.client.create({
@@ -58,8 +64,23 @@ else {
     if (err) {
       console.error(err);
     }
+
+    // Setting up Google Pay button with Google's API
+    const GPcontainer = document.getElementById('googlePayButtonContainer');
+    const button = paymentsClient.createButton({
+      buttonColor: 'black',
+      buttonType: 'checkout',
+      buttonLocale: 'it',
+      buttonSizeMode: 'fill',
+      onClick: () => {},
+      allowedPaymentMethods: [] // use the same payment methods as for the loadPaymentData() API call
+    });
+    // Adding the Google Pay button we generated to the container above.
+    GPcontainer.appendChild(button);
+
     // Everything was instantiated properly, revealing the form now.
     document.getElementById("googlePayDiv").style.display = "inline";
+
     // This function checks that the users browser supports Google Pay.
     // If the browser supports Google Pay, isReadyToPay returns true - https://developers.google.com/pay/api/web/reference/client#isReadyToPay
     paymentsClient.isReadyToPay({
@@ -72,58 +93,49 @@ else {
       // Browser supports Google Pay, setting everything up from here.
       if (isReadyToPay.result) {
 
-      // Setting up Google Pay button with Google's API
-      const GPcontainer = document.getElementById('googlePayButtonContainer');
-      const button = paymentsClient.createButton({
-        buttonColor: 'black',
-        buttonType: 'checkout',
-        buttonLocale: 'it',
-        buttonSizeMode: 'fill',
-        onClick: () => {},
-        allowedPaymentMethods: [] // use the same payment methods as for the loadPaymentData() API call
-      });
-      // Adding the Google Pay button we generated to the container above.
-      GPcontainer.appendChild(button);
+          // Event listener waiting for the above button to be clicked.
+          button.addEventListener("click", function(event) {
+          event.preventDefault();
 
-      // Event listener waiting for the above button to be clicked.
-      button.addEventListener("click", function(event) {
-      event.preventDefault();
+          // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
+          // Essentially just setting the parameters for the transaction. 
+          var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
+            {
+              transactionInfo: {
+                currencyCode: "USD",
+                totalPriceStatus: "FINAL",
+                totalPrice: "10.00" // Your amount
+              }
+            }
+          );
 
-      // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
-      // Essentially just setting the parameters for the transaction. 
-      var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
-        {
-          transactionInfo: {
-            currencyCode: "USD",
-            totalPriceStatus: "FINAL",
-            totalPrice: "10.00" // Your amount
-          }
-        }
-      );
+          // Determining what's required from the customer.
+          // See all available options at https://developers.google.com/pay/api/web/reference/object
+          var cardPaymentMethod = paymentDataRequest.allowedPaymentMethods[0];
+          cardPaymentMethod.parameters.billingAddressRequired = true;
+          cardPaymentMethod.parameters.billingAddressParameters = {
+            format: "FULL",
+            phoneNumberRequired: false
+          };
 
-      // Determining what's required from the customer.
-      // See all available options at https://developers.google.com/pay/api/web/reference/object
-      var cardPaymentMethod = paymentDataRequest.allowedPaymentMethods[0];
-      cardPaymentMethod.parameters.billingAddressRequired = true;
-      cardPaymentMethod.parameters.billingAddressParameters = {
-        format: "FULL",
-        phoneNumberRequired: false
-      };
+          paymentsClient.loadPaymentData(paymentDataRequest).then(function (paymentData) {
+            googlePaymentInstance.parseResponse(paymentData, function (err,result) {
+              if (err) {
+                console.error(err);
+              }
+              console.log("loadPaymentData Response:", paymentData);
+              console.log("parseResponse Response:", result);
 
-      paymentsClient.loadPaymentData(paymentDataRequest).then(function (paymentData) {
-        googlePaymentInstance.parseResponse(paymentData, function (err,result) {
-          if (err) {
+              // Adding the nonce to the hidden nonce field in the form.
+              theGPNonce.value = result.nonce;
+              console.log("Google Pay nonce: " + theGPNonce.value);
+              form.submit();
+            });
+          }).catch(function (err) {
+            // Handle errors
             console.error(err);
-          }
-          console.log("loadPaymentData Response:", paymentData);
-          console.log("parseResponse Response:", result);
-          console.log("Google Pay nonce: " + result.nonce);
-        });
-      }).catch(function (err) {
-        // Handle errors
-        console.error(err);
-        });
-      });
+            });
+          });
       }
     });
   });

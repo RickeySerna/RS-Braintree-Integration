@@ -193,6 +193,9 @@ app.post('/3DS-transaction-with-nonce', (req, res, next) => {
     },
     deviceData: DeviceDataString
   }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
@@ -356,7 +359,8 @@ app.get('/GooglePay', (req, res) => {
 });
 
 app.post('/google-pay-transaction', (req, res, next) => {
-
+  const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
+  console.log("GP nonce in the server: " + GPPaymentMethodNonce);
 });
 
 app.get('/3D-Secure', (req, res) => {
