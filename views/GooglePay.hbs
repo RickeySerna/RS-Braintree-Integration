@@ -31,8 +31,15 @@
           <!-- Creating a container for the Google Pay button that is generated later, also setting it's size. -->
           <div id="googlePayButtonContainer" style="width: 800px; height: 100px; margin: auto;"></div>
         </div>
+
+        <!-- Hidden input for the nonce. -->
         <div>
           <input id='gp-payment-method-nonce' name = 'GPPaymentMethodNonce' type='hidden' />
+        </div>
+
+        <!-- Hidden input for the payment data, to send address info to the server. -->
+        <div>
+          <input id='gp-payment-data' name = 'GPPaymentData' type='hidden' />
         </div>
       </div>
 
@@ -46,6 +53,7 @@ var form = document.querySelector('#googlePayForm');
 var submit = document.querySelector('input[type="submit"]');
 var clientToken = '{{{clientToken}}}';
 var theGPNonce = document.querySelector('#gp-payment-method-nonce');
+var GPPaymentData = document.querySelector('#gp-payment-data');
 
 console.log("Client token in Google Pay: " + clientToken);
 
@@ -134,10 +142,14 @@ else {
             }
             console.log("loadPaymentData Response:", paymentData);
             console.log("parseResponse Response:", result);
+            console.log("Google Pay nonce: " + result.nonce);
+
+            // Adding the payment data to the hidden input field to use the address info in the server.
+            // Also encoding it using JSON.stringify to make sure that it remains an object in the server.
+            GPPaymentData.value = JSON.stringify(paymentData);
 
             // Adding the nonce to the hidden nonce field in the form, then submitting it.
             theGPNonce.value = result.nonce;
-            console.log("Google Pay nonce: " + theGPNonce.value);
             form.submit();
           });
         }).catch(function (err) {

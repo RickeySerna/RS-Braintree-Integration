@@ -361,20 +361,44 @@ app.get('/GooglePay', (req, res) => {
 app.post('/google-pay-transaction', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
+  // Decoding the encoded payment data from client/Google.
+  const GPPaymentData = JSON.parse(req.body.GPPaymentData);
 
   console.log("Amount from GP client: " + amountFromClient);
   console.log("GP nonce in the server: " + GPPaymentMethodNonce);
+  // Making sure that the object was properly decoded.
+  console.log("Address from payment data in server: " + GPPaymentData.paymentMethodData.info.billingAddress.address1);
 
 
   const thisGooglePayTransaction = gateway.transaction.sale({
     amount: amountFromClient,
     paymentMethodNonce: GPPaymentMethodNonce,
-/*    customer: {
-      firstName: first,
-      lastName: last,
-      phone: phone,
-      email: email
-    },*/
+    customer: {
+      // Google Pay just includes the full name as one variable, so these functions will extract the first and last names from that full name string.
+      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+      phone: "248-434-5508"
+    },
+    billing: {
+      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+      streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
+      extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
+      locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
+      region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
+      postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
+      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
+    },
+    shipping: {
+      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+      streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
+      extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
+      locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
+      region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
+      postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
+      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
+    },
     options: {
       submitForSettlement: true
     }
