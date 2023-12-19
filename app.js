@@ -63,6 +63,9 @@ app.post('/transaction-with-token', (req, res, next) => {
       }
     }
   }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
     if (result.success == true) {
       let cusResponseObject = result;
       gateway.transaction.sale({
@@ -75,6 +78,9 @@ app.post('/transaction-with-token', (req, res, next) => {
         },
         deviceData: DeviceDataString
       }, (error, result) => {
+        if (error) {
+          console.error(error);
+        }
         console.log("Transaction ID: " + result.transaction.id);
         console.log("Transaction status: " + result.transaction.status);
         if (result.success == true) {
@@ -124,6 +130,9 @@ app.post('/transaction-with-nonce', (req, res, next) => {
     },
     deviceData: DeviceDataString
   }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
@@ -358,7 +367,7 @@ app.get('/GooglePay', (req, res) => {
   });
 });
 
-app.post('/google-pay-transaction', (req, res, next) => {
+app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
   // Decoding the encoded payment data from client/Google.
@@ -377,7 +386,9 @@ app.post('/google-pay-transaction', (req, res, next) => {
       // Google Pay just includes the full name as one variable, so these functions will extract the first and last names from that full name string.
       firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
       lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
-      phone: "248-434-5508"
+      // Google is being rather annoying and throwing an error on the client when I require a phone number, so I'm hardcoding a number in instead.
+      phone: "248-434-5508",
+      email: GPPaymentData.email
     },
     billing: {
       firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
@@ -390,14 +401,14 @@ app.post('/google-pay-transaction', (req, res, next) => {
       countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
     },
     shipping: {
-      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
-      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
-      streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
-      extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
-      locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
-      region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
-      postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
-      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
+      firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
+      streetAddress: GPPaymentData.shippingAddress.address1,
+      extendedAddress: GPPaymentData.shippingAddress.address2,
+      locality: GPPaymentData.shippingAddress.locality,
+      region: GPPaymentData.shippingAddress.administrativeArea,
+      postalCode: GPPaymentData.shippingAddress.postalCode,
+      countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
     },
     options: {
       submitForSettlement: true
@@ -418,7 +429,9 @@ app.post('/google-pay-transaction', (req, res, next) => {
       }
     }
   });
+});
 
+app.post('/google-pay-transaction-with-token', (req, res, next) => {
 
 });
 

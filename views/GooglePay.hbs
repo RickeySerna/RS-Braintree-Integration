@@ -11,7 +11,7 @@
 
 <body class = "googlePayStyle">
   <div id="googlePayDiv" style="display:none;">
-    <form id="googlePayForm" action="/google-pay-transaction" method="post">
+    <form id="googlePayForm" action="/google-pay-transaction-with-nonce" method="post">
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
@@ -19,6 +19,10 @@
       </div>
 
       <div class="form-row justify-content-md-center">
+        <div class = "col-md-2 mb-3">
+          <label class = "labelStyle" for="saveCardCheck">Save your card for future use?</label>
+          <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+        </div>
         <div class = "col-md-2 mb-3">
           <label class = "GPlabelStyle" for="Amount">Amount</label>
           <input class="form-control GPinputClass" name="amount" id="amount" placeholder="99.99" required>
@@ -56,6 +60,42 @@ var theGPNonce = document.querySelector('#gp-payment-method-nonce');
 var GPPaymentData = document.querySelector('#gp-payment-data');
 
 console.log("Client token in Google Pay: " + clientToken);
+
+// Form validation to check that the amount inputted is valid and to direct traffic to the nonce or token flow.
+function inputValidation() {
+  let amountInputted = document.forms["googlePayForm"]["amount"].value;
+  let saveCardCheckboxBool = document.forms["googlePayForm"]["saveCardCheck"].checked;
+
+    // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
+  if (saveCardCheckboxBool == false) {
+    // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
+    console.log("nope, it's not checked");
+    document.forms["googlePayForm"].action = "/google-pay-transaction-with-nonce";
+  } else {
+    // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
+    console.log("yep, it's checked")
+    document.forms["googlePayForm"].action = "/google-pay-transaction-with-token";
+  }
+
+  let formDestination = document.forms["googlePayForm"].action;
+  console.log("Form action: " + formDestination);
+
+  // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
+  if (isNaN(amountInputted) || amountInputted == "") {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a number.");
+    return false;
+  }
+  // Making sure the number is positive and not 0.
+  else if (((Number(amountInputted) * -1) > 0) || (Number(amountInputted) * Number(amountInputted) == 0)) {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a positive number.");
+    return false;
+  }
+  else {
+    return true;
+  }
+}
 
 braintree.client.create({
   authorization: clientToken
@@ -95,6 +135,8 @@ else {
     // Everything was instantiated properly, revealing the form now.
     document.getElementById("googlePayDiv").style.display = "inline";
 
+    console.log("This is what this is making: ", googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods);
+
     // This function checks that the users browser supports Google Pay.
     // If the browser supports Google Pay, isReadyToPay returns true - https://developers.google.com/pay/api/web/reference/client#isReadyToPay
     paymentsClient.isReadyToPay({
@@ -111,51 +153,70 @@ else {
         button.addEventListener("click", function(event) {
         event.preventDefault();
 
-        var amountFromForm = document.forms["googlePayForm"]["amount"].value;
-        console.log("Amount from Google Pay form: " + amountFromForm);
+        // Checking that the input from the form is set, also directing traffic based on the save card checkbox.
+        var inputChecker = inputValidation();
+        console.log("Input verified value: " + inputChecker);
 
-        // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
-        // Essentially just setting the parameters for the transaction. 
-        var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
-          {
-            transactionInfo: {
-              currencyCode: "USD",
-              totalPriceStatus: "FINAL",
-              totalPrice: amountFromForm // Your amount
+        // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+        if (inputChecker == false) {
+          return;
+        }
+        // The function returned true, moving forward with tokenization!
+        else {
+
+          var amountFromForm = document.forms["googlePayForm"]["amount"].value;
+
+          // Creating the configuration for the eventual loadPaymentData call which will ultimately create the nonce.
+          // Essentially just setting the parameters for the transaction. 
+          var paymentDataRequest = googlePaymentInstance.createPaymentDataRequest(
+            { 
+              merchantInfo: {
+                merchantName: "Gardensound Inc.",
+              },
+              transactionInfo: {
+                currencyCode: "USD",
+                totalPriceStatus: "FINAL",
+                totalPrice: amountFromForm
+              },
+              emailRequired: true,
+              shippingAddressRequired: true,
+              shippingAddressParameters: {
+                phoneNumberRequired: true
+              }
             }
+          );
+
+          // Determining what's required from the customer.
+          // See all available options at https://developers.google.com/pay/api/web/reference/object
+          var cardPaymentMethod = paymentDataRequest.allowedPaymentMethods[0];
+          cardPaymentMethod.parameters.billingAddressRequired = true;
+          cardPaymentMethod.parameters.billingAddressParameters = {
+            format: "FULL",
+            phoneNumberRequired: false
+          };
+
+          paymentsClient.loadPaymentData(paymentDataRequest).then(function (paymentData) {
+            googlePaymentInstance.parseResponse(paymentData, function (err,result) {
+              if (err) {
+                console.error(err);
+              }
+              console.log("loadPaymentData Response:", paymentData);
+              console.log("parseResponse Response:", result);
+              console.log("Google Pay nonce: " + result.nonce);
+
+              // Adding the payment data to the hidden input field to use the address info in the server.
+              // Also encoding it using JSON.stringify to make sure that it remains an object in the server.
+              GPPaymentData.value = JSON.stringify(paymentData);
+
+              // Adding the nonce to the hidden nonce field in the form, then submitting it.
+              theGPNonce.value = result.nonce;
+              form.submit();
+            });
+          }).catch(function (err) {
+            // Handle errors
+            console.error(err);
+            });
           }
-        );
-
-        // Determining what's required from the customer.
-        // See all available options at https://developers.google.com/pay/api/web/reference/object
-        var cardPaymentMethod = paymentDataRequest.allowedPaymentMethods[0];
-        cardPaymentMethod.parameters.billingAddressRequired = true;
-        cardPaymentMethod.parameters.billingAddressParameters = {
-          format: "FULL",
-          phoneNumberRequired: false
-        };
-
-        paymentsClient.loadPaymentData(paymentDataRequest).then(function (paymentData) {
-          googlePaymentInstance.parseResponse(paymentData, function (err,result) {
-            if (err) {
-              console.error(err);
-            }
-            console.log("loadPaymentData Response:", paymentData);
-            console.log("parseResponse Response:", result);
-            console.log("Google Pay nonce: " + result.nonce);
-
-            // Adding the payment data to the hidden input field to use the address info in the server.
-            // Also encoding it using JSON.stringify to make sure that it remains an object in the server.
-            GPPaymentData.value = JSON.stringify(paymentData);
-
-            // Adding the nonce to the hidden nonce field in the form, then submitting it.
-            theGPNonce.value = result.nonce;
-            form.submit();
-          });
-        }).catch(function (err) {
-          // Handle errors
-          console.error(err);
-          });
         });
       }
     });
