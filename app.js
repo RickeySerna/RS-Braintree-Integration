@@ -59,7 +59,8 @@ app.post('/transaction-with-token', (req, res, next) => {
     paymentMethodNonce:PaymentMethodNonce,
     creditCard: {
       options: {
-        verifyCard: true
+        verifyCard: true,
+        verificationAmount: "1"
       }
     }
   }, (error, result) => {
@@ -374,10 +375,9 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
   const GPPaymentData = JSON.parse(req.body.GPPaymentData);
 
   console.log("Amount from GP client: " + amountFromClient);
-  console.log("GP nonce in the server: " + GPPaymentMethodNonce);
+  console.log("GP nonce in the server, nonce checkout: " + GPPaymentMethodNonce);
   // Making sure that the object was properly decoded.
   console.log("Address from payment data in server: " + GPPaymentData.paymentMethodData.info.billingAddress.address1);
-
 
   const thisGooglePayTransaction = gateway.transaction.sale({
     amount: amountFromClient,
@@ -432,7 +432,82 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
 });
 
 app.post('/google-pay-transaction-with-token', (req, res, next) => {
+  const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  // Decoding the encoded payment data from client/Google.
+  const GPPaymentData = JSON.parse(req.body.GPPaymentData);
 
+  console.log("Amount from GP client: " + amountFromClient);
+  console.log("GP nonce in the server, token checkout: " + GPPaymentMethodNonce);
+  // Making sure that the object was properly decoded.
+  console.log("Address from payment data in server: " + GPPaymentData.paymentMethodData.info.billingAddress.address1);
+
+  const thisCustomer = gateway.customer.create({
+    firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+    lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+    email: GPPaymentData.email,
+    phone: "248-434-5508",
+    paymentMethodNonce: GPPaymentMethodNonce,
+    creditCard: {
+      billingAddress: {
+        firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+        lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+        streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
+        extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
+        locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
+        region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
+        postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
+        countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
+      }
+    }
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    if (result.success == true) {
+      let cusResponseObject = result;
+      console.log("Google Pay token: " + result.customer.androidPayCards[0].token);
+      gateway.transaction.sale({
+        amount: amountFromClient,
+        paymentMethodToken: result.customer.androidPayCards[0].token,
+        shipping: {
+          firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
+          lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
+          streetAddress: GPPaymentData.shippingAddress.address1,
+          extendedAddress: GPPaymentData.shippingAddress.address2,
+          locality: GPPaymentData.shippingAddress.locality,
+          region: GPPaymentData.shippingAddress.administrativeArea,
+          postalCode: GPPaymentData.shippingAddress.postalCode,
+          countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
+        },
+        options: {
+          submitForSettlement: true
+        }
+//        deviceData: DeviceDataString
+      }, (error, result) => {
+        if (error) {
+          console.error(error);
+        }
+        console.log("Transaction ID: " + result.transaction.id);
+        console.log("Transaction status: " + result.transaction.status);
+        if (result.success == true) {
+          console.log("Successful transaction status: " + result.transaction.status);
+          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+        } else {
+          if (result.transaction.status == "processor_declined") {
+            console.log("Declined transaction status: " + result.transaction.status);
+            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          }
+          else {
+            console.log("Failed transaction status: " + result.transaction.status);
+            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          }
+        }
+      });
+    } else {
+      res.json(result);
+    };
+  });
 });
 
 app.get('/3D-Secure', (req, res) => {

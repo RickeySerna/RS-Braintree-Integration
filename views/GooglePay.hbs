@@ -143,6 +143,7 @@ else {
         // see https://developers.google.com/pay/api/web/reference/object#IsReadyToPayRequest for all options
         apiVersion: 2,
         apiVersionMinor: 0,
+        // This loads an allowedPaymentMethods object using information from the Braintree gateway, it's part of BT's Google Pay integration.
         allowedPaymentMethods: googlePaymentInstance.createPaymentDataRequest().allowedPaymentMethods,
         existingPaymentMethodRequired: true
     }).then(function (isReadyToPay) {
