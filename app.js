@@ -62,10 +62,8 @@ app.post('/transaction-with-token', (req, res, next) => {
         verifyCard: true,
         verificationAmount: "1"
       }
-    }/*,
-    deviceData: DeviceDataString*/
-    // Trying to pass device data into the verification as well, but looks like there's an issue with Fraud Protection in sandbox right now.
-    // ah well :D maybe tomorrow.
+    },
+    deviceData: DeviceDataString
   }, (error, result) => {
     if (error) {
       console.error(error);

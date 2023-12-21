@@ -20,12 +20,16 @@
 
       <div class="form-row justify-content-md-center">
         <div class = "col-md-2 mb-3">
-          <label class = "labelStyle" for="saveCardCheck">Save your card for future use?</label>
+          <label class = "GPlabelStyle" for="saveCardCheck">Save your card for future use?</label>
           <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
         </div>
         <div class = "col-md-2 mb-3">
           <label class = "GPlabelStyle" for="Amount">Amount</label>
           <input class="form-control GPinputClass" name="amount" id="amount" placeholder="99.99" required>
+        </div>
+        <div class = "col-md-2 mb-3">
+          <label class = "GPlabelStyle" for="3DSCardCheck">Create a 3D Secure authenticated transaction?</label>
+          <input class="form-control inputClass" type="checkbox" id="3DSCardCheck" name="3DSCheck" value="false">
         </div>
       </div>
 					
@@ -119,6 +123,18 @@ else {
       console.error(err);
     }
 
+    // Creaating the 3D Secure instance to run a 3DS authenticated Google Pay txn.
+    braintree.threeDSecure.create({
+      version: 2, // Will use 3DS2 whenever possible
+      client: clientInstance
+    }, function (threeDSecureErr, threeDSecureInstance) {
+      if (threeDSecureErr) {
+      // Handle error in 3D Secure component creation
+      return;
+      }
+      threeDSecure = threeDSecureInstance;
+    });
+
     // Setting up Google Pay button with Google's API
     const GPcontainer = document.getElementById('googlePayButtonContainer');
     const button = paymentsClient.createButton({
@@ -204,14 +220,110 @@ else {
               console.log("loadPaymentData Response:", paymentData);
               console.log("parseResponse Response:", result);
               console.log("Google Pay nonce: " + result.nonce);
+              console.log("Result of isNetworkTokenized: " + result.details.isNetworkTokenized);
 
               // Adding the payment data to the hidden input field to use the address info in the server.
               // Also encoding it using JSON.stringify to make sure that it remains an object in the server.
               GPPaymentData.value = JSON.stringify(paymentData);
 
-              // Adding the nonce to the hidden nonce field in the form, then submitting it.
-              theGPNonce.value = result.nonce;
-              form.submit();
+              var threeDSChecker = document.forms["googlePayForm"]["3DSCardCheck"].checked;
+              console.log("3DS box checked: " + threeDSChecker);
+
+              console.log("Email from paymentData: " + paymentData.email);
+              console.log("Address from paymentData: " + paymentData.paymentMethodData.info.billingAddress.address1);
+
+              // If the 3DS box is checked, we send the nonce into a verifyCard() call to create a 3DS transaction.
+              if (threeDSChecker == true) {
+                // Checking whether or not the Google Pay card is network tokenized. 3DS only eligible for non-NT GP cards.
+                if (result.details.isNetworkTokenized == false) {
+                  threeDSecure.on('lookup-complete', function (data, next) {
+                    next();
+                  });
+
+                  threeDSecure.verifyCard({
+                    nonce: result.nonce,
+                    bin: result.details.bin,
+                    amount: document.forms["googlePayForm"]["amount"].value,
+  /*                  email: document.forms["checkoutForm"]["email-address"].value,
+                    challengeRequested: true,
+                    onLookupComplete: function (data, next) {
+                      next();
+                    }
+                    billingAddress: {
+                      givenName: document.forms["checkoutForm"]["first-name"].value,
+                      surname: document.forms["checkoutForm"]["last-name"].value,
+                      phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+                      streetAddress: document.forms["checkoutForm"]["street-address"].value,
+                      extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+                      locality: document.forms["checkoutForm"]["city-name"].value,
+                      region: document.forms["checkoutForm"]["region-code"].value,
+                      postalCode: document.forms["checkoutForm"]["postal-code"].value,
+                      countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
+                    },
+                    additionalInformation: {
+                      workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+                      shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
+                      shippingSurname: document.forms["checkoutForm"]["last-name"].value,
+                      shippingAddress: {
+                        streetAddress: document.forms["checkoutForm"]["street-address"].value,
+                        extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+                        locality: document.forms["checkoutForm"]["city-name"].value,
+                        region: document.forms["checkoutForm"]["region-code"].value,
+                        postalCode: document.forms["checkoutForm"]["postal-code"].value,
+                        countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
+                      },
+                      shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
+                      // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
+                      shippingMethod: "03",
+                      shippingMethodIndicator: "01",
+                      productCode: "GEN"
+                    },*/
+                    // Collecting 3DS device data as well.
+                    collectDeviceData: true
+                  }, function (verifyError, payload) {
+                    if (verifyError) {
+                      console.error(verifyError);
+                    }
+                    else {
+                      console.log("3DS nonce on client: " + payload.nonce);
+                      console.log("Liability shift status: " + payload.liabilityShifted);
+                      console.log("Liability shift possible status: " + payload.liabilityShiftPossible);
+
+                      // Doing some liability shift checking. If liability is shifted, submit the form. Else, try again with a different card.
+                      // Liability has shifted
+                      if (payload.liabilityShifted) {
+                        console.log("Liability shift flow triggered")
+                        theGPNonce.value = payload.nonce;
+                        // Submitting the form here on this checkout to allow the form validation to run before the amount is passed in the verifyCard call.
+                        form.submit()
+                      }
+                      // Liability might have shifted, just gonna submit this one too anyway.
+                      else if (payload.liabilityShiftPossible) {
+                        console.log("Liability shift possible flow triggered")
+                        theGPNonce.value = payload.nonce;
+                        form.submit()
+                      }
+                      // No liability shift. Use another card!
+                      else {
+                        console.log("No liability shift & no liability shift possible flow triggered")
+                        alert("Card not able to be authenticated with 3D Secure - please use a different card.");
+                        return false;
+                      }
+                    }
+                  });
+                }
+                // Google Pay card was network tokenized and therefore not eligible for 3DS.
+                else {
+                  alert("Card not eligible for 3DS. Please use a non-network tokenized Google Pay card for 3DS!");
+                  return;
+                }
+              }
+              // 3DS box unchecked, just submitting the original Google Pay nonce to the server.
+              else {
+                // Adding the nonce to the hidden nonce field in the form, then submitting it.
+                theGPNonce.value = result.nonce;
+                form.submit();
+              }
             });
           }).catch(function (err) {
             // Handle errors
