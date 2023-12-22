@@ -372,6 +372,7 @@ app.get('/GooglePay', (req, res) => {
 app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
+  const DeviceDataString = req.body.DeviceDataString;
   // Decoding the encoded payment data from client/Google.
   const GPPaymentData = JSON.parse(req.body.GPPaymentData);
 
@@ -413,8 +414,8 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
     },
     options: {
       submitForSettlement: true
-    }
-//    deviceData: DeviceDataString
+    },
+    deviceData: DeviceDataString
   }, (error, result) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
@@ -435,6 +436,7 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
 app.post('/google-pay-transaction-with-token', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
+  const DeviceDataString = req.body.DeviceDataString;
   // Decoding the encoded payment data from client/Google.
   const GPPaymentData = JSON.parse(req.body.GPPaymentData);
 
@@ -483,8 +485,8 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
         },
         options: {
           submitForSettlement: true
-        }
-//        deviceData: DeviceDataString
+        },
+        deviceData: DeviceDataString
       }, (error, result) => {
         if (error) {
           console.error(error);

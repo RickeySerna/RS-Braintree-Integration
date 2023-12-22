@@ -49,6 +49,11 @@
         <div>
           <input id='gp-payment-data' name = 'GPPaymentData' type='hidden' />
         </div>
+
+        <!-- Hidden input for device data. -->
+        <div>
+          <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
+        </div>
       </div>
 
     </form>
@@ -62,6 +67,7 @@ var submit = document.querySelector('input[type="submit"]');
 var clientToken = '{{{clientToken}}}';
 var theGPNonce = document.querySelector('#gp-payment-method-nonce');
 var GPPaymentData = document.querySelector('#gp-payment-data');
+var deviceDataString = document.querySelector('#device-data-string');
 
 console.log("Client token in Google Pay: " + clientToken);
 
@@ -122,6 +128,22 @@ else {
     if (err) {
       console.error(err);
     }
+
+    // Creating the data collector instance to pass device data into Google Pay txns.
+    braintree.dataCollector.create({
+      client: clientInstance
+    }, function (err, dataCollectorInstance) {
+      if (err) {
+        // Handle error in creation of data collector
+        console.error(err);
+        return;
+      }
+      // At this point, you should access the dataCollectorInstance.deviceData value and provide it
+      // to your server, e.g. by injecting it into your form as a hidden input.
+      var deviceData = dataCollectorInstance.deviceData;
+      console.log(deviceData);
+      deviceDataString.value = deviceData;
+    });
 
     // Creaating the 3D Secure instance to run a 3DS authenticated Google Pay txn.
     braintree.threeDSecure.create({
@@ -244,40 +266,40 @@ else {
                     nonce: result.nonce,
                     bin: result.details.bin,
                     amount: document.forms["googlePayForm"]["amount"].value,
-  /*                  email: document.forms["checkoutForm"]["email-address"].value,
+                    email: paymentData.email,
                     challengeRequested: true,
-                    onLookupComplete: function (data, next) {
+/*                    onLookupComplete: function (data, next) {
                       next();
-                    }
+                    }*/
                     billingAddress: {
-                      givenName: document.forms["checkoutForm"]["first-name"].value,
-                      surname: document.forms["checkoutForm"]["last-name"].value,
-                      phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
-                      streetAddress: document.forms["checkoutForm"]["street-address"].value,
-                      extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
-                      locality: document.forms["checkoutForm"]["city-name"].value,
-                      region: document.forms["checkoutForm"]["region-code"].value,
-                      postalCode: document.forms["checkoutForm"]["postal-code"].value,
-                      countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
+                      givenName: (paymentData.paymentMethodData.info.billingAddress.name).substring(0, paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+                      surname: (paymentData.paymentMethodData.info.billingAddress.name).substring(paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+                      phoneNumber: "248-434-5508",
+                      streetAddress: paymentData.paymentMethodData.info.billingAddress.address1,
+                      extendedAddress: paymentData.paymentMethodData.info.billingAddress.address2,
+                      locality: paymentData.paymentMethodData.info.billingAddress.locality,
+                      region: paymentData.paymentMethodData.info.billingAddress.administrativeArea,
+                      postalCode: paymentData.paymentMethodData.info.billingAddress.postalCode,
+                      countryCodeAlpha2: paymentData.paymentMethodData.info.billingAddress.countryCode
                     },
                     additionalInformation: {
-                      workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
-                      shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
-                      shippingSurname: document.forms["checkoutForm"]["last-name"].value,
+                      workPhoneNumber: "248-434-5508",
+                      shippingGivenName: (paymentData.paymentMethodData.info.billingAddress.name).substring(0, paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+                      shippingSurname: (paymentData.paymentMethodData.info.billingAddress.name).substring(paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
                       shippingAddress: {
-                        streetAddress: document.forms["checkoutForm"]["street-address"].value,
-                        extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
-                        locality: document.forms["checkoutForm"]["city-name"].value,
-                        region: document.forms["checkoutForm"]["region-code"].value,
-                        postalCode: document.forms["checkoutForm"]["postal-code"].value,
-                        countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
+                        streetAddress: paymentData.paymentMethodData.info.billingAddress.address1,
+                        extendedAddress: paymentData.paymentMethodData.info.billingAddress.address2,
+                        locality: paymentData.paymentMethodData.info.billingAddress.locality,
+                        region: paymentData.paymentMethodData.info.billingAddress.administrativeArea,
+                        postalCode: paymentData.paymentMethodData.info.billingAddress.postalCode,
+                        countryCodeAlpha2: paymentData.paymentMethodData.info.billingAddress.countryCode
                       },
-                      shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
+                      shippingPhone: "248-434-5508",
                       // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
                       shippingMethod: "03",
                       shippingMethodIndicator: "01",
                       productCode: "GEN"
-                    },*/
+                    },
                     // Collecting 3DS device data as well.
                     collectDeviceData: true
                   }, function (verifyError, payload) {
