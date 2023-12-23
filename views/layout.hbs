@@ -21,6 +21,25 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <!-- includes jQuery -->
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+
+    <!-- Topnav will now be in every page, no need to update it on each page one by one. -->
+    <div class="topnav">
+      <a id="" href="/">Create a Transaction</a>
+      <a id="3D-Secure" href="/3D-Secure">Create a 3D Secure Transaction</a>
+      <a id="ApplePay" href="/ApplePay">Create an Apple Pay Transaction</a>
+      <a id="GooglePay" href="/GooglePay">Create a Google Pay Transaction</a>
+      <a id="recent-transactions" href="/recent-transactions">Transaction Search</a>
+      <b class = "nobutton">Happy Halloween!</b>
+    </div>
+    
+  <script>
+    // Grabbing the name of the page we're currently on and assigning it to a var.
+    var path = window.location.pathname;
+    var page = path.split("/").pop();
+    
+    // Adding the active class to the page we're on at the moment.
+    document.getElementById(page).classList.add("active");
+  </script>
   </head>
   <body>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
