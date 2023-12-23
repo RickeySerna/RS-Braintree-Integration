@@ -39,13 +39,19 @@ body {
   color: black;
 }
 
-.topnav b {
+.topnav a.side {
   float: right;
   color: #E66C2C;
   text-align: center;
   padding: 14px 16px;
   text-decoration: underline;
   font-size: 17px;
+  font-weight: bold;
+}
+
+.topnav a.side:hover {
+  color: #E66C2C;
+  background-color: black
 }
 
 .evenSpread {
