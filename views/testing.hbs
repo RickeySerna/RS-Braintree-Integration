@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<head>
+</head>
+
+<body class="formStyle">
+  <form action="/testing-result" id="hosted-fields-form" method="post"  name="checkoutForm">
+    <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
+        <div class="container">
+            <p class="lead subtitle" style="color: #E66C2C;">Press the button below to execute the API call.</p>
+        </div>
+    </div>
+
+    <div>
+      <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
+    </div>
+    
+    <div class = "submitButton">
+        <input class="btn btn-outline-primary buttonStyle" type="submit" value="Pay"/>
+    </div>
+  </form>
+</body>
+
+<script>
+  var form = document.querySelector('#hosted-fields-form');
+  var submit = document.querySelector('input[type="submit"]');
+  var clientToken = '{{{clientToken}}}'
+  var deviceDataString = document.querySelector('#device-data-string');
+
+  console.log("Client token: " + clientToken);
+
+  braintree.dataCollector.create({
+    client: clientInstance
+  }, function (err, dataCollectorInstance) {
+    if (err) {
+      // Handle error in creation of data collector
+      console.error(err);
+      return;
+    }
+    // At this point, you should access the dataCollectorInstance.deviceData value and provide it
+    // to your server, e.g. by injecting it into your form as a hidden input.
+    var deviceData = dataCollectorInstance.deviceData;
+    console.log(deviceData);
+    deviceDataString.value = deviceData;
+  });
+
+  form.submit();
+</script>

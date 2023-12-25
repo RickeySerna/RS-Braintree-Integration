@@ -151,6 +151,15 @@ app.post('/transaction-with-nonce', (req, res, next) => {
   });
 });
 
+app.get('/3D-Secure', (req, res) => {
+  gateway.clientToken.generate({}, (err, response) => {
+    res.render('3D-Secure', {
+      clientToken: response.clientToken,
+      title: 'Spooky 3D Secure!'
+	  });
+  });
+});
+
 app.post('/3DS-transaction-with-nonce', (req, res, next) => {
   const PaymentMethodNonce = req.body.PaymentMethodNonce;
   // Using toFixed to round the amount after the second decimal. So if a long floating point is entered, it's cut off at the 2nd decimal.
@@ -513,12 +522,28 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
   });
 });
 
-app.get('/3D-Secure', (req, res) => {
+app.get('/testing', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
-    res.render('3D-Secure', {
+    res.render('testing', {
       clientToken: response.clientToken,
-      title: 'Spooky 3D Secure!'
+      title: 'API Testing'
 	  });
+  });
+});
+
+app.post('/testing-result', (req, res, next) => {
+  const DeviceDataString = req.body.DeviceDataString;
+
+  gateway.subscription.create({
+    paymentMethodToken: "appleSubToken",
+    planId: "guitStrings"
+  }, (err, result) => {
+    if (err) {
+      console.error(err);
+    }
+    else {
+      res.json(result);
+    }
   });
 });
 
