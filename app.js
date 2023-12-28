@@ -10,6 +10,7 @@ const readable = require('stream').Readable;
 var createError = require('http-errors');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var io = require("./socketapi.js");
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -158,6 +159,7 @@ app.get('/3D-Secure', (req, res) => {
       title: 'Spooky 3D Secure!'
 	  });
   });
+  io.sendNotification();
 });
 
 app.post('/3DS-transaction-with-nonce', (req, res, next) => {
@@ -283,6 +285,8 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
         if (response.success == true) {
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
           console.log("Nonce generated from token:" + nonceGeneratedFromToken);
+//          socket.emit('hello', 'world');
+          //res.json(response);
 
           // Need to figure out how to use verifyCard() from the client here
           
