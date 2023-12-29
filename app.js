@@ -248,6 +248,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
   const postCode = req.body.postalCode;
   const country = req.body.countryCode;
   const DeviceDataString = req.body.DeviceDataString;
+  
 
   console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, 3DS token checkout: " + DeviceDataString);
@@ -280,13 +281,17 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
       let cusResponseObject = result;
       // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
       // Then we'll pass that back to the client to be run through verifyCard() again.
-      gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, function(err, response) {
+      gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
         if (response.success == true) {
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
           console.log("Nonce generated from token: " + nonceGeneratedFromToken);
           io.sendNonce(nonceGeneratedFromToken);
+          let nonce = await io.returnNonce();
+          console.log(nonce);
+          res.json(response);
+          /*
           var second3DSnonceFromVerifyCard = io.returnNonce();
-          console.log("Received the nonce we sent to the client back from the client: " + second3DSnonceFromVerifyCard);
+          console.log("Received the nonce we sent to the client back from the client: " + second3DSnonceFromVerifyCard);*/
 //          socket.emit('hello', 'world');
           //res.json(response);
 

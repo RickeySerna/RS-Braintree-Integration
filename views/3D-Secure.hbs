@@ -141,7 +141,9 @@
 
     socket.on('nonce-send', nonce => {
       console.log("Nonce from paymentMethodNonce.create() in server: " + nonce);
-      socket.emit('nonce-send-to-server', nonce);
+      socket.emit('nonce-send-to-server', nonce, function(nonce) {
+        console.log("Nonce received in client: " + nonce);
+      });
     });
 
   console.log("Client token: " + clientToken);
