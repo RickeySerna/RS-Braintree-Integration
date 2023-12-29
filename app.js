@@ -10,6 +10,7 @@ const readable = require('stream').Readable;
 var createError = require('http-errors');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var io = require("./socketapi.js");
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -282,7 +283,13 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
       gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, function(err, response) {
         if (response.success == true) {
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
-          console.log("Nonce generated from token:" + nonceGeneratedFromToken);
+          console.log("Nonce generated from token: " + nonceGeneratedFromToken);
+          io.sendNonce(nonceGeneratedFromToken);
+          const new3DSNonce = io.returnNonce();
+          console.log("Received the nonce we sent to the client back from the client: " + new3DSNonce);
+          setTimeout(1000);
+//          socket.emit('hello', 'world');
+          //res.json(response);
 
           // Need to figure out how to use verifyCard() from the client here
           

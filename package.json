@@ -15,6 +15,7 @@
     "hbs": "~4.0.4",
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
-    "number": "0.0.1"
+    "number": "0.0.1",
+    "socket.io": "^4.7.2"
   }
 }

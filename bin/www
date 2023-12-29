@@ -8,6 +8,8 @@ var app = require('../app');
 var debug = require('debug')('braintreetutorial:server');
 var http = require('http');
 var httpsApp = require('../app');
+var socketapi = require('../socketapi');
+var io = socketapi.io;
 
 // Creating variables for the HTTPS connection.
 const https = require('https');
@@ -33,6 +35,7 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+io.attach(server);
 
 /**
  * Listen on provided port, on all network interfaces.
