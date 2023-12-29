@@ -137,6 +137,13 @@
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
   var theNonce = document.querySelector('#payment-nethod-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
+//  var io = require("./socketapi.js");
+  const socket = io();
+
+    socket.on('nonce-send', nonce => {
+      console.log("Nonce from paymentMethodNonce.create() in server: " + nonce);
+      socket.emit('nonce-send-to-server', nonce);
+    });
 
   console.log("Client token: " + clientToken);
 
@@ -405,10 +412,7 @@
 
       // This is a separate verifyCard() call for the token flow. We use socket.IO to receive the nonce from paymentmethodnonce.create()
       // call in the server. We take that, pass is through verifyCard() again, then pass that back to the server.
-      const socket = io();
-      socket.on('hello', (arg) => {
-        console.log(arg); // 'world'
-      });/*
+      /*
       socket.on('nonce-received-from-server', (arg) => {
         console.log(arg); // 'world'
       });

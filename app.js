@@ -159,7 +159,6 @@ app.get('/3D-Secure', (req, res) => {
       title: 'Spooky 3D Secure!'
 	  });
   });
-  io.sendNotification();
 });
 
 app.post('/3DS-transaction-with-nonce', (req, res, next) => {
@@ -284,7 +283,11 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
       gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, function(err, response) {
         if (response.success == true) {
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
-          console.log("Nonce generated from token:" + nonceGeneratedFromToken);
+          console.log("Nonce generated from token: " + nonceGeneratedFromToken);
+          io.sendNonce(nonceGeneratedFromToken);
+          const new3DSNonce = io.returnNonce();
+          console.log("Received the nonce we sent to the client back from the client: " + new3DSNonce);
+          setTimeout(1000);
 //          socket.emit('hello', 'world');
           //res.json(response);
 
