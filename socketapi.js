@@ -4,22 +4,25 @@ var socketapi = {};
 
 socketapi.io = io;
 
-var newNonceFromVerifyCard = "";
-
-function addToNonceArray (n) {
-    newNonceFromVerifyCard = n;
-}
+var newNonceFromVerifyCard = "foo";
 
 io.on('connection', function(socket){
     console.log('A user connected');
     socket.on('nonce-send-to-server', (nonce) => {
-        addToNonceArray(nonce);
-        console.log("zzzzzzzzzzzzzzzzz: " + newNonceFromVerifyCard);
+        newNonceFromVerifyCard = nonce;
+        console.log("Nonce returned to server: " + newNonceFromVerifyCard);
+        alertNonce(newNonceFromVerifyCard)
     });
 });
 
+alertNonce(newNonceFromVerifyCard);
+
+function alertNonce (n) {
+    console.log(n);
+}
+
 socketapi.returnNonce = function() {
-    console.log("testing123: " + newNonceFromVerifyCard)
+    console.log("Nonce value returned in returnNonce(): " + newNonceFromVerifyCard)
     return newNonceFromVerifyCard;
 }
 

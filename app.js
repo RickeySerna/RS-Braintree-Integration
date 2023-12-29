@@ -285,9 +285,8 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
           console.log("Nonce generated from token: " + nonceGeneratedFromToken);
           io.sendNonce(nonceGeneratedFromToken);
-          const new3DSNonce = io.returnNonce();
-          console.log("Received the nonce we sent to the client back from the client: " + new3DSNonce);
-          setTimeout(1000);
+          var second3DSnonceFromVerifyCard = io.returnNonce();
+          console.log("Received the nonce we sent to the client back from the client: " + second3DSnonceFromVerifyCard);
 //          socket.emit('hello', 'world');
           //res.json(response);
 

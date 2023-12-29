@@ -137,8 +137,7 @@
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
   var theNonce = document.querySelector('#payment-nethod-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
-//  var io = require("./socketapi.js");
-  const socket = io();
+  var socket = io();
 
     socket.on('nonce-send', nonce => {
       console.log("Nonce from paymentMethodNonce.create() in server: " + nonce);
