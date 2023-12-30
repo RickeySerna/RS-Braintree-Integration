@@ -4,6 +4,38 @@ var socketapi = {};
 
 socketapi.io = io;
 
+/*let noncePromise;
+
+io.on('connection', function(socket){
+    socket.on('nonce-send-to-server', (nonce) => {
+        console.log("Nonce received from client in socketapi.js: " + nonce);
+        noncePromise && noncePromise.resolve(nonce);
+    });
+});
+
+socketapi.returnNonce = function() {
+    noncePromise = new Promise((resolve, reject) => {
+        noncePromise.resolve = resolve;
+    });
+    return noncePromise;
+}*/
+
+let nonceResolver;
+
+io.on('connection', function(socket){
+    socket.on('nonce-send-to-server', (nonce) => {
+        console.log("Nonce received from client in socketapi.js: " + nonce);
+        nonceResolver && nonceResolver(nonce);
+    });
+});
+
+socketapi.returnNonce = function() {
+    return new Promise((resolve, reject) => {
+        nonceResolver = resolve;
+    });
+}
+
+/*
 let noncePromise = new Promise((resolve, reject) => {
     io.on('connection', function(socket){
         socket.on('nonce-send-to-server', (nonce) => {
@@ -16,17 +48,10 @@ let noncePromise = new Promise((resolve, reject) => {
 socketapi.returnNonce = function() {
     return noncePromise;
 }
+*/
 
-socketapi.sendNotification = function() {
-    io.sockets.emit('hello', {msg: 'Hello World!'});
-}
-
-socketapi.sendNonce = function(nonce) {
-    io.sockets.emit('nonce-send', nonce);
-}
-
-socketapi.receiveNonce = function(socket) {
-    io.sockets.emit('nonce-send', nonce);
+socketapi.sendNonce = function(nonce, bin) {
+    io.sockets.emit('nonce-send', nonce, bin);
 }
 
 module.exports = socketapi;

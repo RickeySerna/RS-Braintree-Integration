@@ -283,14 +283,16 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
       // Then we'll pass that back to the client to be run through verifyCard() again.
       gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
         if (response.success == true) {
-          // Here is our new nonce.
+          // Here is our new nonce and BIN.
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
+          const BINGeneratedFromToken = response.paymentMethodNonce.details.bin;
           console.log("Nonce generated from token: " + nonceGeneratedFromToken);
+          console.log("BIN generated from token: " + BINGeneratedFromToken);
 
           // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
           // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
           // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
-          io.sendNonce(nonceGeneratedFromToken);
+          io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
 
           // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
           // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
