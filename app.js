@@ -283,23 +283,25 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
       // Then we'll pass that back to the client to be run through verifyCard() again.
       gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
         if (response.success == true) {
+          // Here is our new nonce.
           const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
           console.log("Nonce generated from token: " + nonceGeneratedFromToken);
-          io.sendNonce(nonceGeneratedFromToken);
-          let nonce = await io.returnNonce();
-          console.log(nonce);
-          res.json(response);
-          /*
-          var second3DSnonceFromVerifyCard = io.returnNonce();
-          console.log("Received the nonce we sent to the client back from the client: " + second3DSnonceFromVerifyCard);*/
-//          socket.emit('hello', 'world');
-          //res.json(response);
 
-          // Need to figure out how to use verifyCard() from the client here
-          
-/*          gateway.transaction.sale({
+          // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
+          // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
+          // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+          io.sendNonce(nonceGeneratedFromToken);
+
+          // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
+          // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
+          // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
+          let new3DSenrichedNonceFromClient = await io.returnNonce();
+          console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
+/*
+          // Now we've got the nonce, let's create the transaction!
+          gateway.transaction.sale({
             amount: amountFromClient,
-            paymentMethodNonce: nonceGeneratedFromToken,
+            paymentMethodNonce: new3DSenrichedNonceFromClient,
             options: {
               // This option requests the funds from the transaction
               // once it has been authorized successfully

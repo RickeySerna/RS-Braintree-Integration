@@ -4,28 +4,10 @@ var socketapi = {};
 
 socketapi.io = io;
 
-var newNonceFromVerifyCard = "foo";
-
-/*
-
-io.on('connection', function(socket){
-    console.log('A user connected');
-    socket.on('nonce-send-to-server', (nonce) => {
-        newNonceFromVerifyCard = nonce;
-        console.log("Nonce returned to server: " + newNonceFromVerifyCard);
-    });
-});
-
-socketapi.returnNonce = function() {
-    console.log("Nonce value returned in returnNonce(): " + newNonceFromVerifyCard)
-    return newNonceFromVerifyCard;
-}
-*/
-
 let noncePromise = new Promise((resolve, reject) => {
     io.on('connection', function(socket){
         socket.on('nonce-send-to-server', (nonce) => {
-            console.log("Nonce returned to server: " + nonce);
+            console.log("Nonce received from client in socketapi.js: " + nonce);
             resolve(nonce);
         });
     });
