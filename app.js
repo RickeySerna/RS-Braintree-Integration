@@ -299,14 +299,12 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
           // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
           let new3DSenrichedNonceFromClient = await io.returnNonce();
           console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
-/*
+
           // Now we've got the nonce, let's create the transaction!
           gateway.transaction.sale({
             amount: amountFromClient,
             paymentMethodNonce: new3DSenrichedNonceFromClient,
             options: {
-              // This option requests the funds from the transaction
-              // once it has been authorized successfully
               submitForSettlement: true
             },
             deviceData: DeviceDataString
@@ -326,7 +324,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
                 res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
               }
             }
-          });*/
+          });
         } else {
           res.json(response);
         }
@@ -369,6 +367,7 @@ app.get('/recent-transactions', (req, res) => {
   };
 
   createTable();
+  
 });
 
 app.get('/ApplePay', (req, res) => {

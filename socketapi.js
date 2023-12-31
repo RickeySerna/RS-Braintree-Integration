@@ -23,9 +23,9 @@ socketapi.returnNonce = function() {
 let nonceResolver;
 
 io.on('connection', function(socket){
-    socket.on('nonce-send-to-server', (nonce) => {
-        console.log("Nonce received from client in socketapi.js: " + nonce);
-        nonceResolver && nonceResolver(nonce);
+    socket.on('nonce-send-to-server', (new3DSNonce) => {
+        console.log("Nonce received from client in socketapi.js: " + new3DSNonce);
+        nonceResolver && nonceResolver(new3DSNonce);
     });
 });
 

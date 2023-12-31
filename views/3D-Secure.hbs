@@ -411,9 +411,80 @@
         console.log("Nonce from paymentMethodNonce.create() in server: " + nonce);
         console.log("BIN from paymentMethodNonce.create() in server: " + bin);
 
-        socket.emit('nonce-send-to-server', nonce, function(nonce) {
-          console.log("Nonce received in client: " + nonce);
+        threeDSecure.on('lookup-complete', function (data, next) {
+          next();
         });
+
+        threeDSecure.verifyCard({
+          nonce: nonce,
+          bin: bin,
+          amount: document.forms["checkoutForm"]["amount"].value,
+          email: document.forms["checkoutForm"]["email-address"].value,
+          challengeRequested: true,
+          billingAddress: {
+            givenName: document.forms["checkoutForm"]["first-name"].value,
+            surname: document.forms["checkoutForm"]["last-name"].value,
+            phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+            streetAddress: document.forms["checkoutForm"]["street-address"].value,
+            extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+            locality: document.forms["checkoutForm"]["city-name"].value,
+            region: document.forms["checkoutForm"]["region-code"].value,
+            postalCode: document.forms["checkoutForm"]["postal-code"].value,
+            countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
+          },
+          additionalInformation: {
+            workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+            shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
+            shippingSurname: document.forms["checkoutForm"]["last-name"].value,
+            shippingAddress: {
+              streetAddress: document.forms["checkoutForm"]["street-address"].value,
+              extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+              locality: document.forms["checkoutForm"]["city-name"].value,
+              region: document.forms["checkoutForm"]["region-code"].value,
+              postalCode: document.forms["checkoutForm"]["postal-code"].value,
+              countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
+            },
+            shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
+            // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
+            shippingMethod: "03",
+            shippingMethodIndicator: "01",
+            productCode: "GEN"
+          },
+          // Collecting 3DS device data as well.
+          collectDeviceData: true
+        }, function (verifyError, payload) {
+          if (verifyError) {
+            console.error(verifyError);
+          }
+          else {
+            new3DSNonce = payload.nonce;
+            console.log("New 3DS nonce on client: " + new3DSNonce);
+            console.log("Liability shift status: " + payload.liabilityShifted);
+            console.log("Liability shift possible status: " + payload.liabilityShiftPossible);
+
+            // Doing some liability shift checking. If liability is shifted, submit the form. Else, try again with a different card.
+            // Liability has shifted
+            if (payload.liabilityShifted) {
+              console.log("Liability shift flow triggered")
+              socket.emit('nonce-send-to-server', new3DSNonce, function(new3DSNonce) {
+                console.log("Nonce received in client: " + new3DSNonce);
+              });
+            }
+            // Liability might have shifted, just gonna submit this one too anyway.
+            else if (payload.liabilityShiftPossible) {
+              console.log("Liability shift possible flow triggered")
+              socket.emit('nonce-send-to-server', new3DSNonce, function(new3DSNonce) {
+                console.log("Nonce received in client: " + new3DSNonce);
+              });
+            }
+            // No liability shift. Use another card!
+            else {
+              console.log("No liability shift & no liability shift possible flow triggered")
+              alert("Card not able to be authenticated with 3D Secure - please use a different card.");
+              return false;
+            }
+          }
+        })
       });
     });
   });
@@ -446,81 +517,4 @@
       });
     }, false);
   }); */
-
-
-
-
-  /*
-      threeDSecure.verifyCard({
-        nonce: payload.nonce,
-        bin: payload.details.bin,
-        amount: document.forms["checkoutForm"]["amount"].value,
-        email: document.forms["checkoutForm"]["email-address"].value,
-        // 'ol faithful.
-        challengeRequested: true,
-        onLookupComplete: function (data, next) {
-          next();
-        }
-        billingAddress: {
-          givenName: document.forms["checkoutForm"]["first-name"].value,
-          surname: document.forms["checkoutForm"]["last-name"].value,
-          phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
-          streetAddress: document.forms["checkoutForm"]["street-address"].value,
-          extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
-          locality: document.forms["checkoutForm"]["city-name"].value,
-          region: document.forms["checkoutForm"]["region-code"].value,
-          postalCode: document.forms["checkoutForm"]["postal-code"].value,
-          countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
-        },
-        additionalInformation: {
-          workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
-          shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
-          shippingSurname: document.forms["checkoutForm"]["last-name"].value,
-          shippingAddress: {
-            streetAddress: document.forms["checkoutForm"]["street-address"].value,
-            extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
-            locality: document.forms["checkoutForm"]["city-name"].value,
-            region: document.forms["checkoutForm"]["region-code"].value,
-            postalCode: document.forms["checkoutForm"]["postal-code"].value,
-            countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
-          },
-          shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
-          // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
-          shippingMethod: "03",
-          shippingMethodIndicator: "01",
-          productCode: "GEN"
-        },
-        // Collecting 3DS device data as well.
-        collectDeviceData: true
-      }, function (verifyError, payload) {
-        if (verifyError) {
-          console.error(verifyError);
-        }
-        else {
-          console.log("3DS nonce on client: " + payload.nonce);
-          console.log("Liability shift status: " + payload.liabilityShifted);
-          console.log("Liability shift possible status: " + payload.liabilityShiftPossible);
-
-          // Doing some liability shift checking. If liability is shifted, submit the form. Else, try again with a different card.
-          // Liability has shifted
-          if (payload.liabilityShifted) {
-            console.log("Liability shift flow triggered")
-            theNonce.value = payload.nonce;
-            // Submitting the form here on this checkout to allow the form validation to run before the amount is passed in the verifyCard call.
-            form.submit()
-          }
-          // Liability might have shifted, just gonna submit this one too anyway.
-          else if (payload.liabilityShiftPossible) {
-            console.log("Liability shift possible flow triggered")
-            theNonce.value = payload.nonce;
-            form.submit()
-          }
-          // No liability shift. Use another card!
-          else {
-            console.log("No liability shift & no liability shift possible flow triggered")
-            alert("Card not able to be authenticated with 3D Secure - please use a different card.");
-            return false;
-          }
-        }
-      })*/
 </script>
