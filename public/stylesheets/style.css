@@ -185,6 +185,12 @@ h5 {
   border-color: white;
  }
 
+ .btn-primary:disabled {
+  background-color: #e66d2c;
+  border-color: white;
+  opacity: 1;
+}
+
  .btn-outline-primary.buttonStyle:hover {
   background-color: black;
   color: #e66d2c;

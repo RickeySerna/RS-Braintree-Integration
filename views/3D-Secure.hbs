@@ -112,10 +112,16 @@
     <div>
       <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
     </div>
-    
+
     <div class = "submitButton">
-      <input class="btn btn-outline-primary buttonStyle" type="submit" value="Pay"  disabled/>
+      
+      <button id="submitButton" class="btn btn-outline-primary buttonStyle" type="submit" disabled>Pay</button>
     </div>
+
+    <button class="btn btn-primary" type="button" disabled>
+  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+  <span class="sr-only">Loading...</span>
+</button>
 
     <div class = "submitButton">
       <label class = "labelStyle" for="autofillButton">Press this button to autofill the above fields</label>
@@ -138,6 +144,7 @@
   var theNonce = document.querySelector('#payment-nethod-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
   var socket = io();
+  var button = document.getElementById("submitButton");
 
   console.log("Client token: " + clientToken);
 
@@ -291,11 +298,13 @@
     });
 
     // Once the fields are initialized enable the submit button
-    submit.removeAttribute('disabled');
+    button.removeAttribute("disabled");
 
     // Initialize the form submit event
     form.addEventListener('submit', function (event) {
       event.preventDefault();
+
+      document.getElementById('submitButton').outerHTML = '<button class="btn btn-outline-primary buttonStyle" type="button" disabled><span class="spinner-border spinner-border-sm vertical-align: text-bottom;" role="status" aria-hidden="true"></span>Loading...</button>';
 
       // Validating here so that we make sure the amount value is all good before it's passed into verifyCard().
       // It'll cause errors in the verifyCard() call otherwise.
