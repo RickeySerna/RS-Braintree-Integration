@@ -79,7 +79,7 @@
     </div>
     
     <div class = "submitButton">
-        <input class="btn btn-outline-primary buttonStyle" type="submit" value="Pay"  disabled/>
+        <button id="submitButton" class="btn btn-outline-primary buttonStyle" type="submit" disabled>Pay</button>
     </div>
 
   </form>
@@ -97,6 +97,7 @@
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
   var theNonce = document.querySelector('#payment-nethod-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
+  var button = document.getElementById("submitButton");
 
   console.log("Client token: " + clientToken);
 
@@ -221,11 +222,13 @@
     }
 
     // Once the fields are initialized enable the submit button
-    submit.removeAttribute('disabled');
+    button.removeAttribute("disabled");
 
     // Initialize the form submit event
     form.addEventListener('submit', function (event) {
       event.preventDefault();
+
+      document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
       // When the user clicks on the 'Submit payment' button this code will send the
       // encrypted payment information in a variable called a payment method nonce
       instance.tokenize(function (tokenizeErr, payload) {
