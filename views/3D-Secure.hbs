@@ -119,7 +119,7 @@
 
     <div class = "submitButton">
       <label class = "labelStyle" for="autofillButton">Press this button to autofill the above fields</label>
-      <input class="btn btn-outline-primary buttonStyle" id="autofillButton" type="submit" value="Autofill"  disabled/>
+      <input class="btn btn-outline-primary buttonStyle" id="autofillButton" type="button" value="Autofill"  disabled/>
     </div>
 
   </form>
@@ -139,6 +139,7 @@
   var deviceDataString = document.querySelector('#device-data-string');
   var socket = io();
   var button = document.getElementById("submitButton");
+  var autofillButton = document.getElementById("autofillButton");
 
   console.log("Client token: " + clientToken);
 
@@ -271,7 +272,7 @@
       },
       expirationDate: {
         container: '#expiration-date',
-        placeholder: '01/2026'
+        placeholder: '01/2027'
       }
     }
   }, function (hostedFieldsErr, instance) {
@@ -293,12 +294,44 @@
 
     // Once the fields are initialized enable the submit button
     button.removeAttribute("disabled");
+    autofillButton.removeAttribute("disabled");
+
+    // Event listener for the autofill button.
+    document.getElementById('autofillButton').addEventListener('click', function() {
+    // This will autofill the 3DS input fields to make testing a bit more efficient.
+
+      // Creating an object with the hardcoded values the fields will be filled with.
+      // We create key-value pairs with the key being the ID of the input field and the value being the hardcoded value to fill that ID with.
+      // The actual Hosted Fields inputs can't be accessed in the same manner due to security (I think) so those won't be autofilled.
+      var autofillData = {
+        "first-name": "Burt",
+        "last-name": "Wilson",
+        "email-address": "burt@uneedamedicalsupply.com",
+        "phone-number": "5558161985",
+        "street-address": "698 Moulton Ave",
+        "additional-address": "Suite 1",
+        "country-code": "US",
+        "region-code": "CA",
+        "city-name": "Los Angeles",
+        "postal-code": "90031",
+        "amount": "99.99"
+      };      
+
+      // Generating an array of the above IDs and then running the function on those keys.
+      Object.keys(autofillData).forEach(function(id) {
+        // Actually accessing the input field we're looking at.
+        var inputField = document.getElementById(id);
+        // Checking first whether or not the input is empty.
+        // We only autofill the input with the hardcoded value if it's empty. Otherwise, leave it as is!
+        if (inputField && inputField.value === "") {
+            inputField.value = autofillData[id];
+        }
+      });
+    });
 
     // Initialize the form submit event
     form.addEventListener('submit', function (event) {
       event.preventDefault();
-
-      document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
 
       // Validating here so that we make sure the amount value is all good before it's passed into verifyCard().
       // It'll cause errors in the verifyCard() call otherwise.
@@ -310,6 +343,7 @@
         return;
       }
       else {
+
         // When the user clicks on the 'Submit payment' button this code will send the
         // encrypted payment information in a variable called a payment method nonce
         instance.tokenize(function (tokenizeErr, payload) {
@@ -318,6 +352,10 @@
             return;
           }
           else {
+            // Ready to move forward with tokenization so now disabling the buttons and rendering the spinner.
+            document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
+            autofillButton.setAttribute("disabled", "");
+            
             // Checking that the nonce and BIN can successfully be accessed.
             console.log("First nonce on client: " + payload.nonce);
             console.log("BIN on client: " + payload.details.bin);
