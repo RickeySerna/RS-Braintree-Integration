@@ -158,6 +158,12 @@ h5 {
   text-align: center;
 }
 
+.APlabelStyle {
+  color: #ff8e51;
+  display: block;
+  text-align: center;
+}
+
 .form-control.inputClass {
   background-color: #e66d2c45;
   color: #ff8e51;

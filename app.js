@@ -380,6 +380,61 @@ app.get('/ApplePay', (req, res) => {
 });
 
 app.post('/apple-pay-transaction', (req, res, next) => {
+  const ApplePayNonce = req.body.ApplePayNonce;
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+
+  console.log("Apple Pay nonce in app.js: " + ApplePayNonce);
+
+  const ApplePayTransaction = gateway.transaction.sale({
+    amount: amountFromClient,
+    paymentMethodNonce: ApplePayNonce,
+/*    customer: {
+      // Google Pay just includes the full name as one variable, so these functions will extract the first and last names from that full name string.
+      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+      // Google is being rather annoying and throwing an error on the client when I require a phone number, so I'm hardcoding a number in instead.
+      phone: "248-434-5508",
+      email: GPPaymentData.email
+    },
+    billing: {
+      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+      streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
+      extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
+      locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
+      region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
+      postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
+      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
+    },
+    shipping: {
+      firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
+      lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
+      streetAddress: GPPaymentData.shippingAddress.address1,
+      extendedAddress: GPPaymentData.shippingAddress.address2,
+      locality: GPPaymentData.shippingAddress.locality,
+      region: GPPaymentData.shippingAddress.administrativeArea,
+      postalCode: GPPaymentData.shippingAddress.postalCode,
+      countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
+    },*/
+    options: {
+      submitForSettlement: true
+    }
+//    deviceData: DeviceDataString
+  }, (error, result) => {
+    console.log("Transaction ID: " + result.transaction.id);
+    if (result.success) {
+      console.log("Successful transaction status: " + result.transaction.status);
+      res.render('success', {transactionResponse: result, title: 'Success!'});
+    } else {
+      if (result.transaction.status == "processor_declined") {
+        console.log("Declined transaction status: " + result.transaction.status);
+        res.render('processordeclined', {transactionResponse: result});
+      } else {
+        console.log("Failed transaction status: " + result.transaction.status);
+        res.render('failed', {transactionResponse: result});
+      }
+    }
+  });
 
 });
 

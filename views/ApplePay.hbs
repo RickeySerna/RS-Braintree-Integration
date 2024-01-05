@@ -15,17 +15,35 @@
 
 <body class = "applePayStyle">
   <div id="applePayDiv" style="display:none;">
-    <form id="applePayForm" action="/apple-pay-transaction" method="post">
+    <form id="apple-pay-form" action="/apple-pay-transaction" method="post">
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
         <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please ensure that you are using Safari and the HTTPS connection. <a href="https://localhost:8000/ApplePay">https://localhost:8000</a></p>
       </div>
+
+      <div class="form-row justify-content-md-center">
+        <div class = "col-md-2 mb-3">
+          <label class = "APlabelStyle" for="saveCardCheck">Save your card for future use?</label>
+          <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+        </div>
+        <div class = "col-md-2 mb-3">
+          <label class = "APlabelStyle" for="Amount">Amount</label>
+          <input class="form-control GPinputClass" name="amount" id="amount" placeholder="99.99" required>
+        </div>
+        <div class = "col-md-2 mb-3">
+          <label class = "APlabelStyle" for="3DSCardCheck">Create a 3D Secure authenticated transaction?</label>
+          <input class="form-control inputClass" type="checkbox" id="3DSCardCheck" name="3DSCheck" value="false">
+        </div>
+      </div>
 					
       <div style = "text-align:center">
         <p class="lead subtitle" style="color: #E66C2C;">Press the Apple Pay button below to complete payment!</p>
-        <input class = "applePayButtonStyle" type="image" name="applePayButton" id="pay-by-apple"/>
-        <input type="hidden" name="payment_method_nonce" value="">
+        <input class = "applePayButtonStyle" type="image" name="applePayButton" id="apple-pay-button"/>
+      </div>
+
+      <div>
+        <input type="hidden" id='payment-method-nonce' name="ApplePayNonce">
       </div>
 
     </form>
@@ -35,17 +53,9 @@
 
 <script>
 var clientToken = '{{{clientToken}}}';
+var form = document.querySelector('#apple-pay-form');
+var nonce = document.querySelector('#payment-method-nonce');
 console.log("Client token in Apple Pay: " + clientToken);
-
-/*if (!window.ApplePaySession) {
-  console.error('This device does not support Apple Pay');
-}
-
-if (!ApplePaySession.canMakePayments()) {
-  console.error('This device is not capable of making Apple Pay payments');
-}*/
-
-
 
 if (window.ApplePaySession && ApplePaySession.supportsVersion(2) && ApplePaySession.canMakePayments()) {
   console.log('This device supports version 3 Apple Pay. Woohoo!');
@@ -76,14 +86,16 @@ braintree.client.create({
 });
 
 // Button event listener, you have to place the var session = new ApplePaySession() inside this listener or else you'll get an error!
-document.getElementById("pay-by-apple").addEventListener("click", function(e){
+document.getElementById("apple-pay-button").addEventListener("click", function(e){
 // Prevent form from submitting before buyer goes through Apple Pay authorization
 e.preventDefault();
 
+var amountFromForm = document.forms["apple-pay-form"]["amount"].value;
+
 var paymentRequest =  btApplePayInstance.createPaymentRequest({
   total: {
-    label: 'Test merchant',
-    amount: 15
+      label: 'Gardensound Inc.',
+      amount: amountFromForm
     },
     
     // You can setup the required fields here, so the buyer would be prompted to provide them during checkout!
@@ -142,10 +154,10 @@ var session = new ApplePaySession(1, paymentRequest);
 		alert("Payment nonce is " + payload.nonce + " . Send it to your server-side to create a transaction!" + "\n\n" + "Entire payload returned: " + JSON.stringify(payload, null, 4) + "\n\n" + "Your shipping address is: \n" + JSON.stringify(event.payment.shippingContact), null, 4);
 				
 		// Add the nonce to the form
-		document.forms["applePayForm"].elements["payment_method_nonce"].value = payload.nonce;
+    nonce.value = payload.nonce;
 
 		//Automatically submit the form
-		document.getElementById("applePayForm").submit();
+		form.submit();
                 
             });
         }
