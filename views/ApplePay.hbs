@@ -15,7 +15,7 @@
 
 <body class = "applePayStyle">
   <div id="applePayDiv" style="display:none;">
-    <form id="apple-pay-form" action="/apple-pay-transaction" method="post">
+    <form id="apple-pay-form" action="/apple-pay-transaction-with-nonce" method="post">
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
@@ -30,10 +30,6 @@
         <div class = "col-md-2 mb-3">
           <label class = "APlabelStyle" for="Amount">Amount</label>
           <input class="form-control GPinputClass" name="amount" id="amount" placeholder="99.99" required>
-        </div>
-        <div class = "col-md-2 mb-3">
-          <label class = "APlabelStyle" for="3DSCardCheck">Create a 3D Secure authenticated transaction?</label>
-          <input class="form-control inputClass" type="checkbox" id="3DSCardCheck" name="3DSCheck" value="false">
         </div>
       </div>
 					
@@ -56,6 +52,41 @@ var clientToken = '{{{clientToken}}}';
 var form = document.querySelector('#apple-pay-form');
 var nonce = document.querySelector('#payment-method-nonce');
 console.log("Client token in Apple Pay: " + clientToken);
+
+function inputValidation() {
+  let amountInputted = document.forms["apple-pay-form"]["amount"].value;
+  let saveCardCheckboxBool = document.forms["apple-pay-form"]["saveCardCheck"].checked;
+
+    // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
+  if (saveCardCheckboxBool == false) {
+    // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
+    console.log("nope, it's not checked");
+    document.forms["apple-pay-form"].action = "/apple-pay-transaction-with-nonce";
+  } else {
+    // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
+    console.log("yep, it's checked")
+    document.forms["apple-pay-form"].action = "/apple-pay-transaction-with-token";
+  }
+
+  let formDestination = document.forms["apple-pay-form"].action;
+  console.log("Form action: " + formDestination);
+
+  // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
+  if (isNaN(amountInputted) || amountInputted == "") {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a number.");
+    return false;
+  }
+  // Making sure the number is positive and not 0.
+  else if (((Number(amountInputted) * -1) > 0) || (Number(amountInputted) * Number(amountInputted) == 0)) {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a positive number.");
+    return false;
+  }
+  else {
+    return true;
+  }
+}
 
 if (window.ApplePaySession && ApplePaySession.supportsVersion(2) && ApplePaySession.canMakePayments()) {
   console.log('This device supports version 3 Apple Pay. Woohoo!');
@@ -87,83 +118,109 @@ braintree.client.create({
 
 // Button event listener, you have to place the var session = new ApplePaySession() inside this listener or else you'll get an error!
 document.getElementById("apple-pay-button").addEventListener("click", function(e){
-// Prevent form from submitting before buyer goes through Apple Pay authorization
-e.preventDefault();
+  // Prevent form from submitting before buyer goes through Apple Pay authorization
+  e.preventDefault();
 
-var amountFromForm = document.forms["apple-pay-form"]["amount"].value;
+  var inputChecker = inputValidation();
+  console.log("Input verified value: " + inputChecker);
 
-var paymentRequest =  btApplePayInstance.createPaymentRequest({
-  total: {
-      label: 'Gardensound Inc.',
-      amount: amountFromForm
-    },
+  // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+  if (inputChecker == false) {
+    return;
+  }
+  // The function returned true, moving forward with tokenization!
+  else {
+  
+  // Apple Pay seems to not like it when decimal values beyond the hundredths place are added, so cutting that off here instead of in the server.
+  var amountFromForm = Number(document.forms["apple-pay-form"]["amount"].value).toFixed(2);
+
+  var paymentRequest =  btApplePayInstance.createPaymentRequest({
+    total: {
+        label: 'Gardensound Inc.',
+        type: "final",
+        amount: amountFromForm
+      },
+    lineItems: [
+      {
+        label: "Superunknown",
+        type: "final",
+        amount: amountFromForm
+      },
+      {
+        label: "Free Shipping",
+        type: "final",
+        amount: "0.00"
+      }
+    ],
     
-    // You can setup the required fields here, so the buyer would be prompted to provide them during checkout!
+      
+      // You can setup the required fields here, so the buyer would be prompted to provide them during checkout!
     requiredBillingContactFields: ["postalAddress"]
-});
+  });
 
-console.log(paymentRequest.countryCode);
-console.log(paymentRequest.currencyCode);
-console.log(paymentRequest.merchantCapabilities);
-console.log(paymentRequest.supportedNetworks);
+  console.log(paymentRequest.countryCode);
+  console.log(paymentRequest.currencyCode);
+  console.log(paymentRequest.merchantCapabilities);
+  console.log(paymentRequest.supportedNetworks);
+          
+    // Declare a variable for ApplePaySession
+  var session = new ApplePaySession(1, paymentRequest);
+          
+          // Validate merchant URL, this is the domain you enter in GW Apple Pay settings. If you don't have your website's domain in GW, your APP Pay integration will fail!
+          session.onvalidatemerchant = function (event) {
+              btApplePayInstance.performValidation({
+                  validationURL: event.validationURL,
+                  displayName: 'Test merchant'
+              }, function (validationErr, merchantSession) {
+                  if (validationErr) {
+                      // You should show an error to the user, e.g. 'Apple Pay failed to load.'
+                      console.error('Error validating merchant:', validationErr);
+                      session.abort();
+                      return;
+                  }
+                  session.completeMerchantValidation(merchantSession);
+              });
+          };
+          
+          // onpaymentauthorized callback can be used to retrieve details such as shipping address.
+          session.onpaymentauthorized = function (event) {
+          
+          // Apple Pay token is returned here via event.payment.token
+      
+      
+              if (event.payment.shippingContact){
+                  
+                  // Shipping address returned!
+                  console.log('Your shipping address is:', event.payment.shippingContact);
+              }
         
-  // Declare a variable for ApplePaySession
-var session = new ApplePaySession(1, paymentRequest);
-        
-        // Validate merchant URL, this is the domain you enter in GW Apple Pay settings. If you don't have your website's domain in GW, your APP Pay integration will fail!
-        session.onvalidatemerchant = function (event) {
-            btApplePayInstance.performValidation({
-                validationURL: event.validationURL,
-                displayName: 'Test merchant'
-            }, function (validationErr, merchantSession) {
-                if (validationErr) {
-                    // You should show an error to the user, e.g. 'Apple Pay failed to load.'
-                    console.error('Error validating merchant:', validationErr);
-                    session.abort();
-                    return;
-                }
-                session.completeMerchantValidation(merchantSession);
-            });
-        };
-        
-        // onpaymentauthorized callback can be used to retrieve details such as shipping address.
-        session.onpaymentauthorized = function (event) {
-        
-        // Apple Pay token is returned here via event.payment.token
-		
-		
-            if (event.payment.shippingContact){
-                
-                // Shipping address returned!
-                console.log('Your shipping address is:', event.payment.shippingContact);
-            }
-			
-	    // tokenize method tokenizes the buyer Apple Pay account and creates a payment nonce.
-            btApplePayInstance.tokenize({
-                token: event.payment.token
-            }, function (tokenizeErr, payload) {
-                if (tokenizeErr) {
-                    console.error('Error tokenizing Apple Pay:', tokenizeErr);
-                    session.completePayment(ApplePaySession.STATUS_FAILURE);
-                    console.log(payload.nonce);
-                    return;
-                }
-                session.completePayment(ApplePaySession.STATUS_SUCCESS);
-				
-                // Payment nonce retrieved
-		alert("Payment nonce is " + payload.nonce + " . Send it to your server-side to create a transaction!" + "\n\n" + "Entire payload returned: " + JSON.stringify(payload, null, 4) + "\n\n" + "Your shipping address is: \n" + JSON.stringify(event.payment.shippingContact), null, 4);
-				
-		// Add the nonce to the form
-    nonce.value = payload.nonce;
+        // tokenize method tokenizes the buyer Apple Pay account and creates a payment nonce.
+              btApplePayInstance.tokenize({
+                  token: event.payment.token
+              }, function (tokenizeErr, payload) {
+                  if (tokenizeErr) {
+                      console.error('Error tokenizing Apple Pay:', tokenizeErr);
+                      session.completePayment(ApplePaySession.STATUS_FAILURE);
+                      console.log(payload.nonce);
+                      return;
+                  }
+                  session.completePayment(ApplePaySession.STATUS_SUCCESS);
+          
+                  // Payment nonce retrieved
+      alert("Payment nonce is " + payload.nonce + " . Send it to your server-side to create a transaction!" + "\n\n" + "Entire payload returned: " + JSON.stringify(payload, null, 4) + "\n\n" + "Your shipping address is: \n" + JSON.stringify(event.payment.shippingContact), null, 4);
+          
+      // Add the nonce to the form
+      nonce.value = payload.nonce;
 
-		//Automatically submit the form
-		form.submit();
-                
-            });
-        }
-        
-        // You have to use the session.begin function to start your Apple Pay session or nothing will work!
-        session.begin();
+      //Automatically submit the form
+      form.submit();
+                  
+              });
+          }
+          
+          // You have to use the session.begin function to start your Apple Pay session or nothing will work!
+          session.begin();
+  }
 
 });
 </script>

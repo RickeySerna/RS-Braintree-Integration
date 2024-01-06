@@ -379,7 +379,7 @@ app.get('/ApplePay', (req, res) => {
   });
 });
 
-app.post('/apple-pay-transaction', (req, res, next) => {
+app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
   const ApplePayNonce = req.body.ApplePayNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
 
