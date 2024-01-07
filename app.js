@@ -382,8 +382,12 @@ app.get('/ApplePay', (req, res) => {
 app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
   const ApplePayNonce = req.body.ApplePayNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
+  const APPaymentData = JSON.parse(req.body.APPaymentData);
 
   console.log("Apple Pay nonce in app.js: " + ApplePayNonce);
+  console.log("Apple Pay shipping address object in server: ", APPaymentData);
+  // Checking if I'm parsing the object correctly.
+  console.log(APPaymentData.addressLines);
 
   const ApplePayTransaction = gateway.transaction.sale({
     amount: amountFromClient,
