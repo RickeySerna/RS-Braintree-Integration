@@ -88,9 +88,9 @@ function inputValidation() {
   }
 }
 
-if (window.ApplePaySession && ApplePaySession.supportsVersion(2) && ApplePaySession.canMakePayments()) {
-  console.log('This device supports version 3 Apple Pay. Woohoo!');
-  // This device supports version 3 of Apple Pay.
+// Using the latest version of Apple Pay.
+if (window.ApplePaySession && ApplePaySession.supportsVersion(14) && ApplePaySession.canMakePayments()) {
+  console.log('This device supports version 14 Apple Pay. Woohoo!');
 } else {
   console.log("This device does NOT support Apple Pay. If you're using a browser other than Safari, switch to Safari!");
 }
@@ -128,7 +128,7 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
   if (inputChecker == false) {
     return;
   }
-  // The function returned true, moving forward with tokenization!
+  // The function returned true, moving forward with Apple Pay!
   else {
   
   // Apple Pay seems to not like it when decimal values beyond the hundredths place are added, so cutting that off here instead of in the server.
@@ -136,13 +136,13 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
 
   var paymentRequest =  btApplePayInstance.createPaymentRequest({
     total: {
-        label: 'Gardensound Inc.',
+        label: "Gardensound Inc.",
         type: "final",
         amount: amountFromForm
       },
     lineItems: [
       {
-        label: "Superunknown",
+        label: "Superunknown (1994), Soundgarden, A&M",
         type: "final",
         amount: amountFromForm
       },
@@ -152,35 +152,49 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
         amount: "0.00"
       }
     ],
-    
-      
-      // You can setup the required fields here, so the buyer would be prompted to provide them during checkout!
-    requiredBillingContactFields: ["postalAddress"]
+    // From what I can find, these seem to be all of the possible values to require for shipping/billing addresses.
+    requiredBillingContactFields: [
+      "postalAddress",
+      "name",
+      "phoneticName",
+      "phone",
+      "email"
+    ],
+    requiredShippingContactFields: [
+      "postalAddress",
+      "name",
+      "phoneticName",
+      "phone",
+      "email"
+    ]
   });
 
+  // These are all automatically loaded from the BT gateway.
   console.log(paymentRequest.countryCode);
   console.log(paymentRequest.currencyCode);
   console.log(paymentRequest.merchantCapabilities);
   console.log(paymentRequest.supportedNetworks);
           
     // Declare a variable for ApplePaySession
-  var session = new ApplePaySession(1, paymentRequest);
+  var session = new ApplePaySession(14, paymentRequest);
           
-          // Validate merchant URL, this is the domain you enter in GW Apple Pay settings. If you don't have your website's domain in GW, your APP Pay integration will fail!
-          session.onvalidatemerchant = function (event) {
-              btApplePayInstance.performValidation({
-                  validationURL: event.validationURL,
-                  displayName: 'Test merchant'
-              }, function (validationErr, merchantSession) {
-                  if (validationErr) {
-                      // You should show an error to the user, e.g. 'Apple Pay failed to load.'
-                      console.error('Error validating merchant:', validationErr);
-                      session.abort();
-                      return;
-                  }
-                  session.completeMerchantValidation(merchantSession);
-              });
-          };
+  // This is where the Apple Pay URL is validated with Apple's servers.
+  session.onvalidatemerchant = function (event) {
+    btApplePayInstance.performValidation({
+      // URL is loaded from BT.
+      validationURL: event.validationURL,
+      displayName: "Gardensound Inc."
+    }, function (validationErr, merchantSession) {
+      // If the URL has not been added to the Control Panel, this will trigger.
+      if (validationErr) {
+        console.error("Unable to load Apple Pay: ", validationErr);
+        session.abort();
+        return;
+      }
+      // This line tells the session object that the validation was successful and it can move forward with the actual transaction.
+      session.completeMerchantValidation(merchantSession);
+    });
+  };
           
           // onpaymentauthorized callback can be used to retrieve details such as shipping address.
           session.onpaymentauthorized = function (event) {
@@ -217,10 +231,7 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
                   
               });
           }
-          
-          // You have to use the session.begin function to start your Apple Pay session or nothing will work!
           session.begin();
   }
-
 });
 </script>
