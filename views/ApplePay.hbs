@@ -42,9 +42,13 @@
         <input type="hidden" id='payment-method-nonce' name="ApplePayNonce">
       </div>
 
-      <!-- Hidden input for the payment data, to send address info to the server. -->
+      <!-- Hidden inputs for the payment data, one for shipping address and one for billing address. -->
       <div>
-        <input id='ap-payment-data' name = 'APPaymentData' type='hidden' />
+        <input id='ap-payment-shipping-data' name = 'APPaymentShippingData' type='hidden' />
+      </div>
+
+      <div>
+        <input id='ap-payment-billing-data' name = 'APPaymentBillingData' type='hidden' />
       </div>
 
     </form>
@@ -56,7 +60,8 @@
 var clientToken = '{{{clientToken}}}';
 var form = document.querySelector('#apple-pay-form');
 var nonce = document.querySelector('#payment-method-nonce');
-var APPaymentData = document.querySelector('#ap-payment-data');
+var APPaymentShippingData = document.querySelector('#ap-payment-shipping-data');
+var APPaymentBillingData = document.querySelector("#ap-payment-billing-data");
 console.log("Client token in Apple Pay: " + clientToken);
 
 function inputValidation() {
@@ -207,10 +212,17 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
   session.onpaymentauthorized = function (event) {
 
     // The event also has objects with the shipping and billing address the customer entered.
+    // Grabbing the shipping address.
     if (event.payment.shippingContact) {
       console.log('Your shipping address is:', event.payment.shippingContact);
       // Passing the shipping object to the server to use that info in the Sale call.
-      APPaymentData.value = JSON.stringify(event.payment.shippingContact);
+      APPaymentShippingData.value = JSON.stringify(event.payment.shippingContact);
+    }
+
+    // Also grabbing the billing address.
+    if (event.payment.billingContact) {
+      console.log('Your billing address is:', event.payment.billingContact);
+      APPaymentBillingData.value = JSON.stringify(event.payment.billingContact);
     }
         
     // Here's where the BT tokenization happens.
@@ -219,10 +231,13 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
     }, function (tokenizeErr, payload) {
       if (tokenizeErr) {
         console.error('Error tokenizing Apple Pay:', tokenizeErr);
+        // completePayment essentially ends the session, completing the payment with a result.
+        // In this case, because there was an error tokenizing the transaction, we end it with a failed status.
         session.completePayment(ApplePaySession.STATUS_FAILURE);
         console.log(payload.nonce);
         return;
       }
+      // All successful here, ending the payment with a success result.
       session.completePayment(ApplePaySession.STATUS_SUCCESS);
 
       // Payment nonce retrieved
@@ -231,13 +246,12 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
       // Add the nonce to the form
       nonce.value = payload.nonce;
 
-      //Automatically submit the form
+      // Everything successful, nonce and data added to the form, sending everything over to the server.
       form.submit();
     });
   }
 
   session.begin();
-
   }
 });
 </script>

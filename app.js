@@ -382,34 +382,39 @@ app.get('/ApplePay', (req, res) => {
 app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
   const ApplePayNonce = req.body.ApplePayNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
-  const APPaymentData = JSON.parse(req.body.APPaymentData);
+  const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
+  const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
 
   console.log("Apple Pay nonce in app.js: " + ApplePayNonce);
-  console.log("Apple Pay shipping address object in server: ", APPaymentData);
+  console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
+  console.log("Apple Pay billing address object in server: ", APPaymentBillingData);
   // Checking if I'm parsing the object correctly.
-  console.log(APPaymentData.addressLines);
+  // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
+  console.log("Shipping address: " + APPaymentShippingData.addressLines[0] + ", Extended shipping address: " + APPaymentShippingData.addressLines[1]);
+  console.log("Billing address: " + APPaymentBillingData.addressLines[0] + ", Extended billing address: " + APPaymentBillingData.addressLines[1]);
 
   const ApplePayTransaction = gateway.transaction.sale({
     amount: amountFromClient,
-    paymentMethodNonce: ApplePayNonce,
-/*    customer: {
+    paymentMethodNonce: ApplePayNonce,/*
+    customer: {
       // Google Pay just includes the full name as one variable, so these functions will extract the first and last names from that full name string.
       firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
       lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
       // Google is being rather annoying and throwing an error on the client when I require a phone number, so I'm hardcoding a number in instead.
       phone: "248-434-5508",
       email: GPPaymentData.email
-    },
+    },*/
     billing: {
-      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
-      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+      // that worked! Just gotta get the rest in now.
+      firstName: APPaymentBillingData.givenName,
+/*      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
       streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
       extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
       locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
       region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
       postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
-      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode
-    },
+      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode*/
+    },/*
     shipping: {
       firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
       lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
