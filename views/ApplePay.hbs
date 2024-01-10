@@ -185,8 +185,10 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
   console.log(paymentRequest.currencyCode);
   console.log(paymentRequest.merchantCapabilities);
   console.log(paymentRequest.supportedNetworks);
-          
-    // Declare a variable for ApplePaySession
+
+  // Here's where we create the session. This is an object that's defined for each individual transaction.
+  // It contains all information and steps for each process of the transaction. Everything we call later will be from this session.
+  // The first parameter is the version of Apple Pay. Using the latest version here, 14.
   var session = new ApplePaySession(14, paymentRequest);
           
   // This is where the Apple Pay URL is validated with Apple's servers.
@@ -224,13 +226,15 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
       console.log('Your billing address is:', event.payment.billingContact);
       APPaymentBillingData.value = JSON.stringify(event.payment.billingContact);
     }
+
+    // Was hoping event.payment contained even more info to pass back, but the ApplePayPayment object only contains these: https://developer.apple.com/documentation/apple_pay_on_the_web/applepaypayment
         
     // Here's where the BT tokenization happens.
     btApplePayInstance.tokenize({
       token: event.payment.token
     }, function (tokenizeErr, payload) {
       if (tokenizeErr) {
-        console.error('Error tokenizing Apple Pay:', tokenizeErr);
+        console.error('Error tokenizing Apple Pay: ', tokenizeErr);
         // completePayment essentially ends the session, completing the payment with a result.
         // In this case, because there was an error tokenizing the transaction, we end it with a failed status.
         session.completePayment(ApplePaySession.STATUS_FAILURE);
@@ -251,6 +255,9 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
     });
   }
 
+  // This presents the payment sheet to the customer and executes the merchant validation process.
+  // When it appears, the customer will see a spinner on the payment sheet labelled "Processing", that's when everything in onvalidatemerchant is taking place.
+  // When completeMerchantValidation() is called, the customer is prompted to complete the transaction.
   session.begin();
   }
 });

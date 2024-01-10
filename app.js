@@ -381,6 +381,7 @@ app.get('/ApplePay', (req, res) => {
 
 app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
   const ApplePayNonce = req.body.ApplePayNonce;
+  // I wanted to remove this Number function here since we do it on the client, but some reason that breaks everything if a long decimal is added. Weird.
   const amountFromClient = Number(req.body.amount).toFixed(2);
   const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
   const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
@@ -388,43 +389,40 @@ app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
   console.log("Apple Pay nonce in app.js: " + ApplePayNonce);
   console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
   console.log("Apple Pay billing address object in server: ", APPaymentBillingData);
-  // Checking if I'm parsing the object correctly.
-  // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
+  // Checking that I'm accessing the data correctly.
   console.log("Shipping address: " + APPaymentShippingData.addressLines[0] + ", Extended shipping address: " + APPaymentShippingData.addressLines[1]);
-  console.log("Billing address: " + APPaymentBillingData.addressLines[0] + ", Extended billing address: " + APPaymentBillingData.addressLines[1]);
 
   const ApplePayTransaction = gateway.transaction.sale({
     amount: amountFromClient,
-    paymentMethodNonce: ApplePayNonce,/*
+    paymentMethodNonce: ApplePayNonce,
     customer: {
-      // Google Pay just includes the full name as one variable, so these functions will extract the first and last names from that full name string.
-      firstName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
-      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
-      // Google is being rather annoying and throwing an error on the client when I require a phone number, so I'm hardcoding a number in instead.
-      phone: "248-434-5508",
-      email: GPPaymentData.email
-    },*/
-    billing: {
-      // that worked! Just gotta get the rest in now.
       firstName: APPaymentBillingData.givenName,
-/*      lastName: (GPPaymentData.paymentMethodData.info.billingAddress.name).substring(GPPaymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
-      streetAddress: GPPaymentData.paymentMethodData.info.billingAddress.address1,
-      extendedAddress: GPPaymentData.paymentMethodData.info.billingAddress.address2,
-      locality: GPPaymentData.paymentMethodData.info.billingAddress.locality,
-      region: GPPaymentData.paymentMethodData.info.billingAddress.administrativeArea,
-      postalCode: GPPaymentData.paymentMethodData.info.billingAddress.postalCode,
-      countryCodeAlpha2: GPPaymentData.paymentMethodData.info.billingAddress.countryCode*/
-    },/*
+      lastName: APPaymentBillingData.familyName,
+      phone: APPaymentShippingData.phoneNumber,
+      email: APPaymentShippingData.emailAddress
+    },
+    billing: {
+      firstName: APPaymentBillingData.givenName,
+      lastName: APPaymentBillingData.familyName,
+      // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
+      // Indexing the array to grab the individual addresses.
+      streetAddress: APPaymentBillingData.addressLines[0],
+      extendedAddress: APPaymentBillingData.addressLines[1],
+      locality: APPaymentBillingData.locality,
+      region: APPaymentBillingData.administrativeArea,
+      postalCode: APPaymentBillingData.postalCode,
+      countryCodeAlpha2: APPaymentBillingData.countryCode
+    },
     shipping: {
-      firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
-      lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
-      streetAddress: GPPaymentData.shippingAddress.address1,
-      extendedAddress: GPPaymentData.shippingAddress.address2,
-      locality: GPPaymentData.shippingAddress.locality,
-      region: GPPaymentData.shippingAddress.administrativeArea,
-      postalCode: GPPaymentData.shippingAddress.postalCode,
-      countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
-    },*/
+      firstName: APPaymentShippingData.givenName,
+      lastName: APPaymentShippingData.familyName,
+      streetAddress: APPaymentShippingData.addressLines[0],
+      extendedAddress: APPaymentShippingData.addressLines[1],
+      locality: APPaymentShippingData.locality,
+      region: APPaymentShippingData.administrativeArea,
+      postalCode: APPaymentShippingData.postalCode,
+      countryCodeAlpha2: APPaymentShippingData.countryCode
+    },
     options: {
       submitForSettlement: true
     }
