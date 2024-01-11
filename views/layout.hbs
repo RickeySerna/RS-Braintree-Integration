@@ -38,13 +38,18 @@
       // Grabbing the name of the page we're currently on and assigning it to a var.
       var path = window.location.pathname;
       var page = path.split("/").pop();
-      console.log(page == "");
       // Adding the active class to the page we're on at the moment.
       if (page == "") {
         document.getElementById("home").classList.add("active");
       }
       else {
-        document.getElementById(page).classList.add("active");
+        // This was throwing an error when attempting to assign "active" to something like /transaction-with-nonce.
+        // Now we check if the page exists in the topnav first.
+        var pageID = document.getElementById(page);
+        if (pageID) {
+          // Only if the page exists in the topnav, assign it the active class.
+          pageID.classList.add("active");
+        }
       }
     </script>
   </head>

@@ -367,7 +367,6 @@ app.get('/recent-transactions', (req, res) => {
   };
 
   createTable();
-  
 });
 
 app.get('/ApplePay', (req, res) => {
@@ -385,6 +384,7 @@ app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
   const amountFromClient = Number(req.body.amount).toFixed(2);
   const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
   const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
+  const DeviceDataString = req.body.APDeviceData;
 
   console.log("Apple Pay nonce in app.js: " + ApplePayNonce);
   console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
@@ -425,23 +425,29 @@ app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
     },
     options: {
       submitForSettlement: true
-    }
-//    deviceData: DeviceDataString
+    },
+    deviceData: DeviceDataString
   }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: 'Success!'});
+      res.render('success', {transactionResponse: result, title: "It's alive! IT'S ALIIIIIVE!!"});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
-        res.render('processordeclined', {transactionResponse: result});
+        res.render('processordeclined', {transactionResponse: result, title: "I'm sorry, Dave. I'm afraid I can't do that."});
       } else {
         console.log("Failed transaction status: " + result.transaction.status);
-        res.render('failed', {transactionResponse: result});
+        res.render('failed', {transactionResponse: result, title: "I'm sorry, Dave. I'm afraid I can't do that."});
       }
     }
   });
+});
+
+app.post('/apple-pay-transaction-with-token', (req, res, next) => {
 
 });
 
@@ -610,17 +616,33 @@ app.get('/testing', (req, res) => {
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
-  gateway.subscription.create({
-    paymentMethodToken: "appleSubToken",
-    planId: "guitStrings"
-  }, (err, result) => {
-    if (err) {
-      console.error(err);
-    }
-    else {
-      res.json(result);
-    }
-  });
+    gateway.transaction.sale({
+      amount: "15",
+      paymentMethodToken: "aa3rdtty",
+      options: {
+        submitForSettlement: true
+      },
+      deviceData: DeviceDataString
+    }, (error, result) => {
+      if (error) {
+        console.error(error);
+      }
+      console.log("Transaction ID: " + result.transaction.id);
+      console.log("Transaction status: " + result.transaction.status);
+      if (result.success == true) {
+        console.log("Successful transaction status: " + result.transaction.status);
+        res.render('success', {transactionResponse: result});
+      } else {
+        if (result.transaction.status == "processor_declined") {
+          console.log("Declined transaction status: " + result.transaction.status);
+          res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+        }
+        else {
+          console.log("Failed transaction status: " + result.transaction.status);
+          res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+        }
+      }
+    });
 });
 
 // The checkout route

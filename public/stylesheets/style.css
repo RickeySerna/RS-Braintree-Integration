@@ -185,6 +185,17 @@ h5 {
   color: #ff8e51;
 }
 
+.form-control.APinputClass {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+  margin : 0 auto;
+}
+
+.form-control.APinputClass:focus {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+}
+
  .btn-outline-primary.buttonStyle {
   background-color: #e66d2c;
   color: black;
