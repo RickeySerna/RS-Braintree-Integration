@@ -21,7 +21,10 @@ const options = {
 };
 
 // Setting the HTTPS server with the above key + cert and the same app that's running on HTTP.
-https.createServer(options, app).listen(8000);
+var httpsServer = https.createServer(options, app);
+httpsServer.listen(8000);
+// Attaching the socket.io component to the HTTPS server as well so that the socket.io stuff will work on that connection as well.
+io.attach(httpsServer);
 
 /**
  * Get port from environment and store in Express.

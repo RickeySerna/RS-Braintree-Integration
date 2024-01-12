@@ -140,6 +140,10 @@
   var socket = io();
   var button = document.getElementById("submitButton");
   var autofillButton = document.getElementById("autofillButton");
+  
+  // Immediately emitting a page event to the server to let it know that we're on 3D-Secure.hbs.
+  // That'll be used by the server to emit the nonce back to this specific socket.
+  socket.emit('page', '3D-Secure');
 
   console.log("Client token: " + clientToken);
 

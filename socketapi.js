@@ -4,25 +4,16 @@ var socketapi = {};
 
 socketapi.io = io;
 
-/*let noncePromise;
-
-io.on('connection', function(socket){
-    socket.on('nonce-send-to-server', (nonce) => {
-        console.log("Nonce received from client in socketapi.js: " + nonce);
-        noncePromise && noncePromise.resolve(nonce);
-    });
-});
-
-socketapi.returnNonce = function() {
-    noncePromise = new Promise((resolve, reject) => {
-        noncePromise.resolve = resolve;
-    });
-    return noncePromise;
-}*/
-
+// Array that'll be filled with the socket IDs for the specific sockets.
+// That'll be used know which specific socket we're emitting to in sendNonce().
+io.mySockets = {};
 let nonceResolver;
 
 io.on('connection', function(socket){
+/*    socket.on('page', function(page){
+        io.mySockets[page] = socket.id;
+    });*/
+
     socket.on('nonce-send-to-server', (new3DSNonce) => {
         console.log("Nonce received from client in socketapi.js: " + new3DSNonce);
         nonceResolver && nonceResolver(new3DSNonce);
@@ -35,23 +26,12 @@ socketapi.returnNonce = function() {
     });
 }
 
-/*
-let noncePromise = new Promise((resolve, reject) => {
-    io.on('connection', function(socket){
-        socket.on('nonce-send-to-server', (nonce) => {
-            console.log("Nonce received from client in socketapi.js: " + nonce);
-            resolve(nonce);
-        });
-    });
-});
-
-socketapi.returnNonce = function() {
-    return noncePromise;
-}
-*/
-
 socketapi.sendNonce = function(nonce, bin) {
     io.sockets.emit('nonce-send', nonce, bin);
 }
+/*
+socketapi.sendNonce = function(nonce, bin, socketId) {
+    io.to(socketId).emit('nonce-send', nonce, bin);
+}*/
 
 module.exports = socketapi;
