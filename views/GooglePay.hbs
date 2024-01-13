@@ -30,7 +30,7 @@
         </div>
         <div class = "col-md-2 mb-3">
           <label class = "GPlabelStyle" for="3DSCardCheck">Create a 3D Secure authenticated transaction?</label>
-          <input class="form-control inputClass" type="checkbox" id="3DSCardCheck" name="3DSCheck" value="false">
+          <input class="form-control inputClass" type="checkbox" id="3DSCardCheck" name="threeDScheckbox" value="false">
         </div>
       </div>
 					
@@ -69,6 +69,7 @@ var clientToken = '{{{clientToken}}}';
 var theGPNonce = document.querySelector('#gp-payment-method-nonce');
 var GPPaymentData = document.querySelector('#gp-payment-data');
 var deviceDataString = document.querySelector('#device-data-string');
+var socket = io();
 
 console.log("Client token in Google Pay: " + clientToken);
 
@@ -76,6 +77,7 @@ console.log("Client token in Google Pay: " + clientToken);
 function inputValidation() {
   let amountInputted = document.forms["googlePayForm"]["amount"].value;
   let saveCardCheckboxBool = document.forms["googlePayForm"]["saveCardCheck"].checked;
+  let threeDSCheckbox = document.forms["googlePayForm"]["threeDScheckbox"];
 
     // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
   if (saveCardCheckboxBool == false) {
@@ -86,6 +88,13 @@ function inputValidation() {
     // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
     console.log("yep, it's checked")
     document.forms["googlePayForm"].action = "/google-pay-transaction-with-token";
+  }
+
+  if (threeDSCheckbox.checked == true) {
+    threeDSCheckbox.value = "true";
+  }
+  else {
+    threeDSCheckbox.value = "false";
   }
 
   let formDestination = document.forms["googlePayForm"].action;
@@ -353,6 +362,85 @@ else {
             console.error(err);
             });
           }
+          socket.on('nonce-send', (nonce, bin) => {
+            console.log("Nonce from paymentMethodNonce.create() in server: " + nonce);
+            console.log("BIN from paymentMethodNonce.create() in server: " + bin);
+
+            threeDSecure.on('lookup-complete', function (data, next) {
+              next();
+            });
+
+            threeDSecure.verifyCard({
+              nonce: nonce,
+              bin: bin,
+              amount: document.forms["checkoutForm"]["amount"].value,
+              email: document.forms["checkoutForm"]["email-address"].value,
+              challengeRequested: true,
+              billingAddress: {
+                givenName: document.forms["checkoutForm"]["first-name"].value,
+                surname: document.forms["checkoutForm"]["last-name"].value,
+                phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+                streetAddress: document.forms["checkoutForm"]["street-address"].value,
+                extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+                locality: document.forms["checkoutForm"]["city-name"].value,
+                region: document.forms["checkoutForm"]["region-code"].value,
+                postalCode: document.forms["checkoutForm"]["postal-code"].value,
+                countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
+              },
+              additionalInformation: {
+                workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
+                shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
+                shippingSurname: document.forms["checkoutForm"]["last-name"].value,
+                shippingAddress: {
+                  streetAddress: document.forms["checkoutForm"]["street-address"].value,
+                  extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
+                  locality: document.forms["checkoutForm"]["city-name"].value,
+                  region: document.forms["checkoutForm"]["region-code"].value,
+                  postalCode: document.forms["checkoutForm"]["postal-code"].value,
+                  countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
+                },
+                shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
+                // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
+                shippingMethod: "03",
+                shippingMethodIndicator: "01",
+                productCode: "GEN"
+              },
+              // Collecting 3DS device data as well.
+              collectDeviceData: true
+            }, function (verifyError, payload) {
+              if (verifyError) {
+                console.error(verifyError);
+              }
+              else {
+                new3DSNonce = payload.nonce;
+                console.log("New 3DS nonce on client: " + new3DSNonce);
+                console.log("Liability shift status: " + payload.liabilityShifted);
+                console.log("Liability shift possible status: " + payload.liabilityShiftPossible);
+
+                // Doing some liability shift checking. If liability is shifted, submit the form. Else, try again with a different card.
+                // Liability has shifted
+                if (payload.liabilityShifted) {
+                  console.log("Liability shift flow triggered")
+                  socket.emit('nonce-send-to-server', new3DSNonce, function(new3DSNonce) {
+                    console.log("Nonce received in client: " + new3DSNonce);
+                  });
+                }
+                // Liability might have shifted, just gonna submit this one too anyway.
+                else if (payload.liabilityShiftPossible) {
+                  console.log("Liability shift possible flow triggered")
+                  socket.emit('nonce-send-to-server', new3DSNonce, function(new3DSNonce) {
+                    console.log("Nonce received in client: " + new3DSNonce);
+                  });
+                }
+                // No liability shift. Use another card!
+                else {
+                  console.log("No liability shift & no liability shift possible flow triggered")
+                  alert("Card not able to be authenticated with 3D Secure - please use a different card.");
+                  return false;
+                }
+              }
+            })
+          });
         });
       }
     });

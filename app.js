@@ -293,8 +293,6 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
           // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
           // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
           io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
-          //io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken, io.mySockets['3D-Secure']);
-
 
           // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
           // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
@@ -532,6 +530,9 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
   // Decoding the encoded payment data from client/Google.
   const GPPaymentData = JSON.parse(req.body.GPPaymentData);
+  const threeDScheckValue = req.body.threeDScheckbox;
+
+  console.log("3DS checked: " + threeDScheckValue);
 
   console.log("Amount from GP client: " + amountFromClient);
   console.log("GP nonce in the server, token checkout: " + GPPaymentMethodNonce);
