@@ -294,15 +294,15 @@ else {
                     },
                     additionalInformation: {
                       workPhoneNumber: "248-434-5508",
-                      shippingGivenName: (paymentData.paymentMethodData.info.billingAddress.name).substring(0, paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
-                      shippingSurname: (paymentData.paymentMethodData.info.billingAddress.name).substring(paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+                      shippingGivenName: (paymentData.shippingAddress.name).substring(0, paymentData.shippingAddress.name.indexOf(' ')),
+                      shippingSurname: (paymentData.shippingAddress.name).substring(paymentData.shippingAddress.name.indexOf(' ') + 1),
                       shippingAddress: {
-                        streetAddress: paymentData.paymentMethodData.info.billingAddress.address1,
-                        extendedAddress: paymentData.paymentMethodData.info.billingAddress.address2,
-                        locality: paymentData.paymentMethodData.info.billingAddress.locality,
-                        region: paymentData.paymentMethodData.info.billingAddress.administrativeArea,
-                        postalCode: paymentData.paymentMethodData.info.billingAddress.postalCode,
-                        countryCodeAlpha2: paymentData.paymentMethodData.info.billingAddress.countryCode
+                        streetAddress: paymentData.shippingAddress.address1,
+                        extendedAddress: paymentData.shippingAddress.address2,
+                        locality: paymentData.shippingAddress.locality,
+                        region: paymentData.shippingAddress.administrativeArea,
+                        postalCode: paymentData.shippingAddress.postalCode,
+                        countryCodeAlpha2: paymentData.shippingAddress.countryCode
                       },
                       shippingPhone: "248-434-5508",
                       // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
@@ -370,7 +370,7 @@ else {
 
             // The paymentData object was stored in the form earlier, so I'm retrieving it here now to be used in this verifyCard call.
             const GPPaymentDataFromForm = JSON.parse(GPPaymentData.value);
-            // Checking that it's parsing correctly.
+            // Checking that it's parsing correctly (it is).
             console.log("Address from form: " + GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address1);
 
             threeDSecure.on('lookup-complete', function (data, next) {
@@ -396,18 +396,17 @@ else {
               },
               additionalInformation: {
                 workPhoneNumber: "248-434-5508",
-                shippingGivenName: (GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name.indexOf(' ')),
-                shippingSurname: (GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name).substring(GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+                shippingGivenName: (GPPaymentDataFromForm.shippingAddress.name).substring(0, GPPaymentDataFromForm.shippingAddress.name.indexOf(' ')),
+                shippingSurname: (GPPaymentDataFromForm.shippingAddress.name).substring(GPPaymentDataFromForm.shippingAddress.name.indexOf(' ') + 1),
                 shippingAddress: {
-                  streetAddress: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address1,
-                  extendedAddress: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address2,
-                  locality: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.locality,
-                  region: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.administrativeArea,
-                  postalCode: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.postalCode,
-                  countryCodeAlpha2: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.countryCode
+                  streetAddress: GPPaymentDataFromForm.shippingAddress.address1,
+                  extendedAddress: GPPaymentDataFromForm.shippingAddress.address2,
+                  locality: GPPaymentDataFromForm.shippingAddress.locality,
+                  region: GPPaymentDataFromForm.shippingAddress.administrativeArea,
+                  postalCode: GPPaymentDataFromForm.shippingAddress.postalCode,
+                  countryCodeAlpha2: GPPaymentDataFromForm.shippingAddress.countryCode
                 },
                 shippingPhone: "248-434-5508",
-                // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
                 shippingMethod: "03",
                 shippingMethodIndicator: "01",
                 productCode: "GEN"
