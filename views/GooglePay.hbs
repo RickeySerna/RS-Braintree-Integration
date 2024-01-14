@@ -256,14 +256,19 @@ else {
               // Also encoding it using JSON.stringify to make sure that it remains an object in the server.
               GPPaymentData.value = JSON.stringify(paymentData);
 
+              // As these things, 3DS will be run twice if the customer wants to create a 3DS txn and vault the card.
+              // Gonna use vaultChecker to make it so that 3DS is only used on the txn nonce (the one returned from the pm.create() call).
+              var vaultChecker = document.forms["googlePayForm"]["saveCardCheck"].checked;
               var threeDSChecker = document.forms["googlePayForm"]["3DSCardCheck"].checked;
+              console.log("Save card box checked: " + vaultChecker);
               console.log("3DS box checked: " + threeDSChecker);
 
               console.log("Email from paymentData: " + paymentData.email);
               console.log("Address from paymentData: " + paymentData.paymentMethodData.info.billingAddress.address1);
 
               // If the 3DS box is checked, we send the nonce into a verifyCard() call to create a 3DS transaction.
-              if (threeDSChecker == true) {
+              // Throwing in the second condition here to avoid running 3DS twice^.
+              if ((threeDSChecker == true) && (vaultChecker == false)) {
                 // Checking whether or not the Google Pay card is network tokenized. 3DS only eligible for non-NT GP cards.
                 if (result.details.isNetworkTokenized == false) {
                   threeDSecure.on('lookup-complete', function (data, next) {
@@ -346,6 +351,8 @@ else {
                 }
               }
               // 3DS box unchecked, just submitting the original Google Pay nonce to the server.
+              // Or, the customer wants to vault + use 3DS. So sending the nonce over to the server to vault right away.
+              // Then the server will send back a new nonce to be used in the verifyCard() call in socket.io event handler below.
               else {
                 // Adding the nonce to the hidden nonce field in the form, then submitting it.
                 theGPNonce.value = result.nonce;
@@ -361,6 +368,11 @@ else {
             console.log("Nonce from paymentMethodNonce.create() in server: " + nonce);
             console.log("BIN from paymentMethodNonce.create() in server: " + bin);
 
+            // The paymentData object was stored in the form earlier, so I'm retrieving it here now to be used in this verifyCard call.
+            const GPPaymentDataFromForm = JSON.parse(GPPaymentData.value);
+            // Checking that it's parsing correctly.
+            console.log("Address from form: " + GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address1);
+
             threeDSecure.on('lookup-complete', function (data, next) {
               next();
             });
@@ -369,38 +381,37 @@ else {
               nonce: nonce,
               bin: bin,
               amount: document.forms["googlePayForm"]["amount"].value,
-              // paymentData is unreachable from here. Gonna have to fix that.
-              //email: paymentData.email,
+              email: GPPaymentDataFromForm.email,
               challengeRequested: true,
-/*              billingAddress: {
-                givenName: document.forms["checkoutForm"]["first-name"].value,
-                surname: document.forms["checkoutForm"]["last-name"].value,
-                phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
-                streetAddress: document.forms["checkoutForm"]["street-address"].value,
-                extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
-                locality: document.forms["checkoutForm"]["city-name"].value,
-                region: document.forms["checkoutForm"]["region-code"].value,
-                postalCode: document.forms["checkoutForm"]["postal-code"].value,
-                countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value,
+              billingAddress: {
+                givenName: (GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+                surname: (GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name).substring(GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
+                phoneNumber: "248-434-5508",
+                streetAddress: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address1,
+                extendedAddress: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address2,
+                locality: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.locality,
+                region: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.administrativeArea,
+                postalCode: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.postalCode,
+                countryCodeAlpha2: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.countryCode
               },
               additionalInformation: {
-                workPhoneNumber: document.forms["checkoutForm"]["phone-number"].value,
-                shippingGivenName: document.forms["checkoutForm"]["first-name"].value,
-                shippingSurname: document.forms["checkoutForm"]["last-name"].value,
+                workPhoneNumber: "248-434-5508",
+                shippingGivenName: (GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name).substring(0, GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name.indexOf(' ')),
+                shippingSurname: (GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name).substring(GPPaymentDataFromForm.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
                 shippingAddress: {
-                  streetAddress: document.forms["checkoutForm"]["street-address"].value,
-                  extendedAddress: document.forms["checkoutForm"]["additional-address"].value,
-                  locality: document.forms["checkoutForm"]["city-name"].value,
-                  region: document.forms["checkoutForm"]["region-code"].value,
-                  postalCode: document.forms["checkoutForm"]["postal-code"].value,
-                  countryCodeAlpha2: document.forms["checkoutForm"]["country-code"].value
+                  streetAddress: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address1,
+                  extendedAddress: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address2,
+                  locality: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.locality,
+                  region: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.administrativeArea,
+                  postalCode: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.postalCode,
+                  countryCodeAlpha2: GPPaymentDataFromForm.paymentMethodData.info.billingAddress.countryCode
                 },
-                shippingPhone: document.forms["checkoutForm"]["phone-number"].value,
+                shippingPhone: "248-434-5508",
                 // Throwing these in for fun/to see what happens. Nothing really, they showed up in the nonce creation call and that's all!
                 shippingMethod: "03",
                 shippingMethodIndicator: "01",
                 productCode: "GEN"
-              },*/
+              },
               // Collecting 3DS device data as well.
               collectDeviceData: true
             }, function (verifyError, payload) {
