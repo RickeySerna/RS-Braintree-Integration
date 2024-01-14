@@ -533,6 +533,13 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
   const threeDScheckValue = req.body.threeDScheckbox;
 
   console.log("3DS checked: " + threeDScheckValue);
+  // Checking whether or not this condition will work.
+  if (threeDScheckValue == "true") {
+    console.log("socket.io to come!");
+  }
+  else {
+    console.log("no 3DS here womp womp");
+  }
 
   console.log("Amount from GP client: " + amountFromClient);
   console.log("GP nonce in the server, token checkout: " + GPPaymentMethodNonce);
@@ -564,43 +571,108 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
     if (result.success == true) {
       let cusResponseObject = result;
       console.log("Google Pay token: " + result.customer.androidPayCards[0].token);
-      gateway.transaction.sale({
-        amount: amountFromClient,
-        paymentMethodToken: result.customer.androidPayCards[0].token,
-        shipping: {
-          firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
-          lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
-          streetAddress: GPPaymentData.shippingAddress.address1,
-          extendedAddress: GPPaymentData.shippingAddress.address2,
-          locality: GPPaymentData.shippingAddress.locality,
-          region: GPPaymentData.shippingAddress.administrativeArea,
-          postalCode: GPPaymentData.shippingAddress.postalCode,
-          countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
-        },
-        options: {
-          submitForSettlement: true
-        },
-        deviceData: DeviceDataString
-      }, (error, result) => {
-        if (error) {
-          console.error(error);
-        }
-        console.log("Transaction ID: " + result.transaction.id);
-        console.log("Transaction status: " + result.transaction.status);
-        if (result.success == true) {
-          console.log("Successful transaction status: " + result.transaction.status);
-          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
-        } else {
-          if (result.transaction.status == "processor_declined") {
-            console.log("Declined transaction status: " + result.transaction.status);
-            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+      // Now that the customer is created, we check for whether or not a 3DS transaction was requested.
+      // If so, we go through the paymentmethodnonce.create() -> transaction.sale() flow that uses socket.io.
+      if (threeDScheckValue == "true") {
+        gateway.paymentMethodNonce.create(result.customer.androidPayCards[0].token, async function(err, response) {
+          if (response.success == true) {
+            // Here is our new nonce and BIN.
+            const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
+            const BINGeneratedFromToken = response.paymentMethodNonce.details.bin;
+            console.log("Nonce generated from token: " + nonceGeneratedFromToken);
+            console.log("BIN generated from token: " + BINGeneratedFromToken);
+  
+            // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
+            // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
+            // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+            io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
+  
+            // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
+            // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
+            // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
+            let new3DSenrichedNonceFromClient = await io.returnNonce();
+            console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
+  
+            // Now we've got the nonce, let's create the transaction!
+            gateway.transaction.sale({
+              amount: amountFromClient,
+              paymentMethodNonce: new3DSenrichedNonceFromClient,
+              shipping: {
+                firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
+                lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
+                streetAddress: GPPaymentData.shippingAddress.address1,
+                extendedAddress: GPPaymentData.shippingAddress.address2,
+                locality: GPPaymentData.shippingAddress.locality,
+                region: GPPaymentData.shippingAddress.administrativeArea,
+                postalCode: GPPaymentData.shippingAddress.postalCode,
+                countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
+              },
+              options: {
+                submitForSettlement: true
+              },
+              deviceData: DeviceDataString
+            }, (error, result) => {
+              console.log("Transaction ID: " + result.transaction.id);
+              console.log("Transaction status: " + result.transaction.status);
+              if (result.success == true) {
+                console.log("Successful transaction status: " + result.transaction.status);
+                res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              } else {
+                if (result.transaction.status == "processor_declined") {
+                  console.log("Declined transaction status: " + result.transaction.status);
+                  res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                }
+                else {
+                  console.log("Failed transaction status: " + result.transaction.status);
+                  res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                }
+              }
+            });
+          } else {
+            res.json(response);
           }
-          else {
-            console.log("Failed transaction status: " + result.transaction.status);
-            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+        });
+      }
+      // Otherwise, just go through the normal transaction flow that uses the token we just created.
+      else {
+        gateway.transaction.sale({
+          amount: amountFromClient,
+          paymentMethodToken: result.customer.androidPayCards[0].token,
+          shipping: {
+            firstName: (GPPaymentData.shippingAddress.name).substring(0, GPPaymentData.shippingAddress.name.indexOf(' ')),
+            lastName: (GPPaymentData.shippingAddress.name).substring(GPPaymentData.shippingAddress.name.indexOf(' ') + 1),
+            streetAddress: GPPaymentData.shippingAddress.address1,
+            extendedAddress: GPPaymentData.shippingAddress.address2,
+            locality: GPPaymentData.shippingAddress.locality,
+            region: GPPaymentData.shippingAddress.administrativeArea,
+            postalCode: GPPaymentData.shippingAddress.postalCode,
+            countryCodeAlpha2: GPPaymentData.shippingAddress.countryCode
+          },
+          options: {
+            submitForSettlement: true
+          },
+          deviceData: DeviceDataString
+        }, (error, result) => {
+          if (error) {
+            console.error(error);
           }
-        }
-      });
+          console.log("Transaction ID: " + result.transaction.id);
+          console.log("Transaction status: " + result.transaction.status);
+          if (result.success == true) {
+            console.log("Successful transaction status: " + result.transaction.status);
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          } else {
+            if (result.transaction.status == "processor_declined") {
+              console.log("Declined transaction status: " + result.transaction.status);
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            }
+            else {
+              console.log("Failed transaction status: " + result.transaction.status);
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            }
+          }
+        });
+      }
     } else {
       res.json(result);
     };

@@ -90,11 +90,9 @@ function inputValidation() {
     document.forms["googlePayForm"].action = "/google-pay-transaction-with-token";
   }
 
+  // If 3DS is checked, we assign it a value of "true". Will use this in the token flow to determine if we need to generate a new 3DS nonce or not.
   if (threeDSCheckbox.checked == true) {
     threeDSCheckbox.value = "true";
-  }
-  else {
-    threeDSCheckbox.value = "false";
   }
 
   let formDestination = document.forms["googlePayForm"].action;
@@ -278,9 +276,6 @@ else {
                     amount: document.forms["googlePayForm"]["amount"].value,
                     email: paymentData.email,
                     challengeRequested: true,
-/*                    onLookupComplete: function (data, next) {
-                      next();
-                    }*/
                     billingAddress: {
                       givenName: (paymentData.paymentMethodData.info.billingAddress.name).substring(0, paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ')),
                       surname: (paymentData.paymentMethodData.info.billingAddress.name).substring(paymentData.paymentMethodData.info.billingAddress.name.indexOf(' ') + 1),
@@ -373,10 +368,11 @@ else {
             threeDSecure.verifyCard({
               nonce: nonce,
               bin: bin,
-              amount: document.forms["checkoutForm"]["amount"].value,
-              email: document.forms["checkoutForm"]["email-address"].value,
+              amount: document.forms["googlePayForm"]["amount"].value,
+              // paymentData is unreachable from here. Gonna have to fix that.
+              //email: paymentData.email,
               challengeRequested: true,
-              billingAddress: {
+/*              billingAddress: {
                 givenName: document.forms["checkoutForm"]["first-name"].value,
                 surname: document.forms["checkoutForm"]["last-name"].value,
                 phoneNumber: document.forms["checkoutForm"]["phone-number"].value,
@@ -404,7 +400,7 @@ else {
                 shippingMethod: "03",
                 shippingMethodIndicator: "01",
                 productCode: "GEN"
-              },
+              },*/
               // Collecting 3DS device data as well.
               collectDeviceData: true
             }, function (verifyError, payload) {
