@@ -448,7 +448,84 @@ app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
 });
 
 app.post('/apple-pay-transaction-with-token', (req, res, next) => {
+  const ApplePayNonce = req.body.ApplePayNonce;
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
+  const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
+  const DeviceDataString = req.body.APDeviceData;
 
+  console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
+  console.log("Apple Pay billing address object in server: ", APPaymentBillingData);
+
+  gateway.customer.create({
+    firstName: APPaymentBillingData.givenName,
+    lastName: APPaymentBillingData.familyName,
+    email: APPaymentShippingData.emailAddress,
+    phone: APPaymentShippingData.phoneNumber,
+    paymentMethodNonce: ApplePayNonce,
+    creditCard: {
+      billingAddress: {
+        firstName: APPaymentBillingData.givenName,
+        lastName: APPaymentBillingData.familyName,
+        streetAddress: APPaymentBillingData.addressLines[0],
+        extendedAddress: APPaymentBillingData.addressLines[1],
+        locality: APPaymentBillingData.locality,
+        region: APPaymentBillingData.administrativeArea,
+        postalCode: APPaymentBillingData.postalCode,
+        countryCodeAlpha2: APPaymentBillingData.countryCode
+      }
+    }
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    if (result.success == true) {
+      let cusResponseObject = result;
+      // Can't use Firefox here bc it doesn't support Apple Pay lol
+      // Gonna use the terminal here to look at the object, Safari turns it into a mess.
+      console.log("Apple Pay customer response object: ", result);
+      console.log("Apple Pay token generated: " + result.customer.applePayCards[0].token);
+      gateway.transaction.sale({
+        amount: amountFromClient,
+        paymentMethodToken: result.customer.applePayCards[0].token,
+        shipping: {
+          firstName: APPaymentShippingData.givenName,
+          lastName: APPaymentShippingData.familyName,
+          streetAddress: APPaymentShippingData.addressLines[0],
+          extendedAddress: APPaymentShippingData.addressLines[1],
+          locality: APPaymentShippingData.locality,
+          region: APPaymentShippingData.administrativeArea,
+          postalCode: APPaymentShippingData.postalCode,
+          countryCodeAlpha2: APPaymentShippingData.countryCode
+        },
+        options: {
+          submitForSettlement: true
+        },
+        deviceData: DeviceDataString
+      }, (error, result) => {
+        if (error) {
+          console.error(error);
+        }
+        console.log("Transaction ID: " + result.transaction.id);
+        console.log("Transaction status: " + result.transaction.status);
+        if (result.success == true) {
+          console.log("Successful transaction status: " + result.transaction.status);
+          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+        } else {
+          if (result.transaction.status == "processor_declined") {
+            console.log("Declined transaction status: " + result.transaction.status);
+            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          }
+          else {
+            console.log("Failed transaction status: " + result.transaction.status);
+            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          }
+        }
+      });
+    } else {
+      res.json(result);
+    };
+  });
 });
 
 app.get('/GooglePay', (req, res) => {
@@ -508,6 +585,9 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
     },
     deviceData: DeviceDataString
   }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
