@@ -37,15 +37,34 @@
     <script>
       // Grabbing the name of the page we're currently on and assigning it to a var.
       var path = window.location.pathname;
-      var page = path.split("/").pop();
+      // Noticed that if a page is accessed with a different (/3d-secure instead of /3D-Secure), the active class wouldn't be added.
+      // Now comparing everything as lowercase so converting the page we grab here to lower case.
+      var page = path.split("/").pop().toLowerCase();
       // Adding the active class to the page we're on at the moment.
       if (page == "") {
         document.getElementById("home").classList.add("active");
       }
       else {
+        // Defining a map that we'll store the lowercase IDs (key) and actual IDs (value) of the topnav element in.
+        var idMap = {};
+        // querySelectorAll will return a NodeList here with all a elements inside of the topnav. Like an array, but each value is an entire a tag.
+        var navLinks = document.querySelectorAll(".topnav a"); // get all nav links
+        for (var i = 0; i < navLinks.length; i++) {
+          // Now we actually fill the map.
+          // Each key is defined (navLinks[i].id.toLowerCase()) as the lowercase version of the ID of the current a tag element that the for loop is on (by iterating through the NodeList of a elements).
+          // The value is the actual ID of the current a tag that we're looking at.
+          // So a key-value pair in the map would look like: ('3d-secure', '3D-Secure').
+          idMap[navLinks[i].id.toLowerCase()] = navLinks[i].id;
+        }
+
         // This was throwing an error when attempting to assign "active" to something like /transaction-with-nonce.
         // Now we check if the page exists in the topnav first.
-        var pageID = document.getElementById(page);
+        // Now we assign pageID the value of a key inside of the map we populated above.
+        // page was already lowercased earlier, so it'll always be a valid key in the map (all of those keys were lowercase).
+        // So for example, if the page we're accessing is /3D-Secure, this is grabbing the key '3d-secure' which returns a value of '3D-Secure'.
+        var pageID = document.getElementById(idMap[page]);
+        // Now we check if that page (the value from the map) exists.
+        // All of those values were the proper ID, regardless of the casing the user used. Voila, the topnav is now case-proof!
         if (pageID) {
           // Only if the page exists in the topnav, assign it the active class.
           pageID.classList.add("active");
