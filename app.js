@@ -11,6 +11,7 @@ var createError = require('http-errors');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var io = require("./socketapi.js");
+var chalk = require('chalk');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -29,6 +30,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+// Creating this to log in the server when a user accesses a page.
+app.use('*', function (req, res, next) {
+  // Only log files that are actually opened/seen by the user.
+  if (!req.url.startsWith('/public/')) {
+    console.log(chalk.green('User accessed ' + req.originalUrl));
+  }
+  next();
+});
 
 app.get('/', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {

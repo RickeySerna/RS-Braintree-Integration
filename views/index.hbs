@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <head>
-
-  <!--
-  <div class="topnav">
-    <a class="active" href="/">Create a Transaction</a>
-    <a href="/ApplePay">Create an Apple Pay Transaction</a>
-    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
-    <a href="/recent-transactions">Transaction Search</a>
-    <b class = "nobutton">Happy Halloween!</b>
-  </div>-->
 </head>
 
 <body>
-  <form action="/transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm" class="formStyle">
+  <form action="/transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm">
   <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
     <div class="container">
       <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
@@ -228,7 +219,6 @@
     form.addEventListener('submit', function (event) {
       event.preventDefault();
 
-      document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
       // When the user clicks on the 'Submit payment' button this code will send the
       // encrypted payment information in a variable called a payment method nonce
       instance.tokenize(function (tokenizeErr, payload) {
@@ -237,10 +227,9 @@
           return;
         }
         else {
+          document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
           theNonce.value = payload.nonce;
           console.log("Nonce on client: " + payload.nonce);
-          // Returning the form validation function instead which will submit the form if all of the input is valid.
-          //form.submit()
           return inputValidation();
         }
         });

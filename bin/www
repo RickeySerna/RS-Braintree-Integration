@@ -10,6 +10,7 @@ var http = require('http');
 var httpsApp = require('../app');
 var socketapi = require('../socketapi');
 var io = socketapi.io;
+var chalk = require('chalk');
 
 // Creating variables for the HTTPS connection.
 const https = require('https');
@@ -22,7 +23,9 @@ const options = {
 
 // Setting the HTTPS server with the above key + cert and the same app that's running on HTTP.
 var httpsServer = https.createServer(options, app);
-httpsServer.listen(8000);
+httpsServer.listen(8000, function() {
+  console.log(chalk.green('Listening on port 8000 on HTTPS'));
+});
 // Attaching the socket.io component to the HTTPS server as well so that the socket.io stuff will work on that connection as well.
 io.attach(httpsServer);
 
@@ -105,5 +108,5 @@ function onListening() {
   var bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+  console.log(chalk.green('Listening on ' + bind + ' on HTTP'));
 }

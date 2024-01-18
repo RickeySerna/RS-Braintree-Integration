@@ -1,13 +1,4 @@
 <head>
-  <!--
-  <div class="topnav">
-    <a href="/">Create a Transaction</a>
-    <a href="/ApplePay">Create an Apple Pay Transaction</a>
-    <a class="active" href="/GooglePay">Create a Google Pay Transaction</a>
-    <a href="/3D-Secure">Create a 3D Secure Transaction</a>
-    <a href="/recent-transactions">Transaction Search</a>
-    <b class = "nobutton">Happy Halloween!</b>
-  </div>-->
 </head>
 
 <body class = "googlePayStyle">
@@ -170,10 +161,10 @@ else {
     const button = paymentsClient.createButton({
       buttonColor: 'black',
       buttonType: 'checkout',
-      buttonLocale: 'it',
+      buttonLocale: 'en',
       buttonSizeMode: 'fill',
       onClick: () => {},
-      allowedPaymentMethods: [] // use the same payment methods as for the loadPaymentData() API call
+      allowedPaymentMethods: []
     });
     // Adding the Google Pay button we generated to the container above.
     GPcontainer.appendChild(button);

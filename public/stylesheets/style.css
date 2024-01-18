@@ -14,10 +14,11 @@ body {
 }
 
 .topnav {
-  background-color: rgb(0, 0, 0);
+  background-color: rgb(41, 0, 106);
   overflow: hidden;
   padding-right: 0px;
   padding-left: 0px;
+  border-radius: 15px;
 }
 
 .topnav a {
@@ -27,6 +28,7 @@ body {
   padding: 14px 16px;
   text-decoration: none;
   font-size: 17px;
+  border-radius: 15px;
 }
 
 .topnav a:hover {
@@ -51,7 +53,7 @@ body {
 
 .topnav a.side:hover {
   color: #E66C2C;
-  background-color: black
+  background-color: rgb(41, 0, 106);
 }
 
 .evenSpread {
@@ -108,7 +110,7 @@ body {
   margin: auto;
 }
 
-.formStyle {
+.bodyStyle {
   font-family: Garamond, Papyrus, 'Times New Roman', Times, serif, Arial, Helvetica, sans-serif;
   padding-left: 30px;
   padding-right: 30px;
@@ -116,7 +118,7 @@ body {
   padding-bottom: 50px;
   background-image: url("halloween.jpg");
   /*Changing this to 100% to just fill the page, independent of whatever device is being used to open the page.*/
-  background-size: 100%;
+  background-size: cover;
   color: white;
 }
 

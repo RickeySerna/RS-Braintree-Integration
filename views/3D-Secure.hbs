@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <head>
-  <!--
-  <div class="topnav">
-    <a href="/">Create a Transaction</a>
-    <a class="active" href="/3D-Secure">Create a 3D Secure Transaction</a>
-    <a href="/ApplePay">Create an Apple Pay Transaction</a>
-    <a href="/GooglePay">Create a Google Pay Transaction</a>
-    <a href="/recent-transactions">Transaction Search</a>
-    <b class = "nobutton">Happy Halloween!</b>
-  </div>-->
 </head>
 
 <body>
-  <form action="/3DS-transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm" class="formStyle">
+  <form action="/3DS-transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm">
   <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
     <div class="container">
       <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
@@ -106,7 +97,7 @@
     </div>
 
     <div>
-      <input id='payment-nethod-nonce' name= 'PaymentMethodNonce' type='hidden' />
+      <input id='payment-method-nonce' name= 'PaymentMethodNonce' type='hidden' />
     </div>
 
     <div>
@@ -118,7 +109,7 @@
     </div>
 
     <div class = "submitButton">
-      <label class = "labelStyle" for="autofillButton">Press this button to autofill the above fields</label>
+      <label class = "labelStyle" for="autofillButton" id="autofillLabel">Press this button to autofill the above fields</label>
       <input class="btn btn-outline-primary buttonStyle" id="autofillButton" type="button" value="Autofill"  disabled/>
     </div>
 
@@ -127,19 +118,16 @@
   
 </body>
 
-{{!-- <div id="checkout-message" name="checkoutMessage"></div> --}}
-
-{{!-- <span hidden id="client-token">{{clientToken}}</span> --}}
-
 <script>
   var form = document.querySelector('#hosted-fields-form');
   var submit = document.querySelector('input[type="submit"]');
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
-  var theNonce = document.querySelector('#payment-nethod-nonce');
+  var theNonce = document.querySelector('#payment-method-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
   var socket = io();
   var button = document.getElementById("submitButton");
   var autofillButton = document.getElementById("autofillButton");
+  var autofillText = document.getElementById("autofillLabel");
 
   console.log("Client token: " + clientToken);
 
@@ -349,12 +337,20 @@
         instance.tokenize(function (tokenizeErr, payload) {
           if (tokenizeErr) {
             console.error(tokenizeErr);
+            // Don't have any alerts set up for card info errors in the Hosted Fields, doing that here.
+            if (tokenizeErr.code == "HOSTED_FIELDS_FIELDS_EMPTY") {
+              alert("Please enter your card information.")
+            }
+            else if (tokenizeErr.code == "HOSTED_FIELDS_FIELDS_INVALID") {
+              alert("Please adjust your card information.")
+            }
             return;
           }
           else {
             // Ready to move forward with tokenization so now disabling the buttons and rendering the spinner.
             document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
-            autofillButton.setAttribute("disabled", "");
+            autofillButton.outerHTML = '<button class="spinner-grow m-1" style="color: #7d766e;" role="status" type="button" disabled></button>';
+            autofillText.outerHTML = '<label style = "color: #7d766e; opacity: 0.5;" for="autofillButton" id="autofillLabel">Press this button to autofill the above fields</label>';
             
             // Checking that the nonce and BIN can successfully be accessed.
             console.log("First nonce on client: " + payload.nonce);
