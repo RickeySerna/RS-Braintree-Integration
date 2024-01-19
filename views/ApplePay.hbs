@@ -187,6 +187,27 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
       "phone",
       "email"
     ]
+    // Those 4 values below are actually parameters to be set here in the payment request, but the BT API just does that automatically for us.
+    // The info is based on the Braintree gateway and more specifically, on the default merchant account in the gateway.
+    // If the defauly MAID is USD, currencyCode is being set in the background by the BT API like this:
+    // currencyCode: "USD"
+    // It can be changed to whatever currency someone might want though, just have to set it explicitly like that^.
+
+    // supportedNetworks works the same, that's a parameter that can be set here and it'll determine which card brands can be used.
+    // The BT API just automatically loads them based on the merchant account's accepted cards, but it can be changed.
+    // If someone only wants Visa cards to be accepted, they can pass this here: supportedNetworks: ["visa"]
+    // Then, all of the customers cards will display fine, but only their Visa cards can be selected.
+    // The rest are not selectable and they have a message reading: Not accepted by this website
+
+    // countryCode is the same, that one is useful for determining the customer's location for taxes and things like that.
+
+    // merchantCapabilities is used to determine the capabilities the merchant supports (self-explanatory).
+    // It doesn't do much tbh, but supports3DS is actually required and the BT API automatically supplies that.
+    // 3DS + Apple Pay is not a thing, but Apple requires it anyway to make sure the merchant is compliant with security standards/regulations.
+    // Failing to pass it will lead to the "Payment Not Completed" error.
+    // supportsCredit & supportsDebit can be passed too, using either one would make it so only credit/debit cards are allowed.
+    // ^ unless both or neither are passed.
+    // Also, supportsCredit will only allow the customer to select debit cards and vice versa with supportsDebit.
   });
 
   // These are all automatically loaded from the BT gateway.
@@ -200,7 +221,7 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
   // The first parameter is the version of Apple Pay. Using the latest version here, 14.
   var session = new ApplePaySession(14, paymentRequest);
           
-  // This is where the Apple Pay URL is validated with Apple's servers.
+  // This is where the Apple Pay URL and the merchant as a whole is validated with Apple's servers.
   session.onvalidatemerchant = function (event) {
     btApplePayInstance.performValidation({
       // URL is loaded from BT.
