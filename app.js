@@ -781,33 +781,37 @@ app.get('/testing', (req, res) => {
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
-    gateway.transaction.sale({
-      amount: "15",
+  /*
+    gateway.subscription.create({
       paymentMethodToken: "aa3rdtty",
-      options: {
-        submitForSettlement: true
-      },
-      deviceData: DeviceDataString
+      planId: "pfzw"
     }, (error, result) => {
       if (error) {
         console.error(error);
       }
-      console.log("Transaction ID: " + result.transaction.id);
-      console.log("Transaction status: " + result.transaction.status);
       if (result.success == true) {
-        console.log("Successful transaction status: " + result.transaction.status);
-        res.render('success', {transactionResponse: result});
+        res.json(result);
       } else {
-        if (result.transaction.status == "processor_declined") {
-          console.log("Declined transaction status: " + result.transaction.status);
-          res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
-        }
-        else {
-          console.log("Failed transaction status: " + result.transaction.status);
-          res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
-        }
+        res.json(result);
       }
     });
+*/
+    gateway.subscription.update("3w42hv", {
+//      paymentMethodToken: "newPaymentMethodToken",
+      price: "2019",
+    }, (err, result) => {
+      if (err) {
+        console.error(err);
+      }
+      else {
+        res.json(result);
+      }
+    });
+});
+
+app.get('/Analytics', (req, res) => {
+  gateway.transaction.search();
+  res.render("Analytics");
 });
 
 // The checkout route
