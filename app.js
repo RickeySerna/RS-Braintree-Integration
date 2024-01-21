@@ -810,8 +810,25 @@ app.post('/testing-result', (req, res, next) => {
 });
 
 app.get('/Analytics', (req, res) => {
-  gateway.transaction.search();
-  res.render("Analytics");
+  let amounts = [];
+  gateway.transaction.search((search) => {
+    search.createdAt().between('2022-01-01', '2022-12-31');
+  }, (err, response) => {
+    let promise = new Promise((resolve, reject) => {
+      response.each((err, transaction) => {
+        if (err) {
+          reject(err);
+        } else {
+          console.log(transaction.amount);
+          amounts.push(transaction.amount);
+          if (response.success) {
+            resolve();
+          }
+        }
+      });
+    });
+    promise.then(() => res.send(amounts)).catch((err) => console.log(err));
+  });
 });
 
 // The checkout route
