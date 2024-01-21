@@ -810,24 +810,23 @@ app.post('/testing-result', (req, res, next) => {
 });
 
 app.get('/Analytics', (req, res) => {
-  let amounts = [];
-  gateway.transaction.search((search) => {
+  let transactionAmounts = [];
+  let transactionIDs = [];
+  let transactionStatuses = [];
+  let stream = gateway.transaction.search((search) => {
     search.createdAt().between('2022-01-01', '2022-12-31');
-  }, (err, response) => {
-    let promise = new Promise((resolve, reject) => {
-      response.each((err, transaction) => {
-        if (err) {
-          reject(err);
-        } else {
-          console.log(transaction.amount);
-          amounts.push(transaction.amount);
-          if (response.success) {
-            resolve();
-          }
-        }
-      });
+  });
+  stream.on('data', (transaction) => {
+    transactionAmounts.push(transaction.amount);
+    transactionIDs.push(transaction.id);
+    transactionStatuses.push(transaction.status);
+  });
+  stream.on('end', () => {
+    res.send({
+      amounts: transactionAmounts,
+      ids: transactionIDs,
+      statuses: transactionStatuses
     });
-    promise.then(() => res.send(amounts)).catch((err) => console.log(err));
   });
 });
 

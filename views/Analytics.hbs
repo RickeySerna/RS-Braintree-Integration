@@ -4,13 +4,14 @@
 
 <body>
     <script>
-        $.ajax({
-  url: '/Analytics',
-  type: 'GET',
-  success: function(response) {
-    console.log(response);
-    console.log(response.length);
-  }
-});
+    $.ajax({
+        url: '/Analytics',
+        type: 'GET',
+        success: function(response) {
+            console.log(response.amounts);
+            console.log(response.ids);
+            console.log(response.statuses);
+        }
+    });
     </script>
 </body>
