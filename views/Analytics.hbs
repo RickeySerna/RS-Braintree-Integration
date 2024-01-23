@@ -1,17 +1,49 @@
 <head>
-</head>  
+</head>
 
-
-<body>
+<body class="bodyStyle">
+    <div>
+        <canvas id="transaction-chart"></canvas>
+    </div>
+ 
     <script>
-    $.ajax({
-        url: '/Analytics',
-        type: 'GET',
-        success: function(response) {
-            console.log(response.amounts);
-            console.log(response.ids);
-            console.log(response.statuses);
-        }
-    });
+        $.ajax({
+            url: '/transactionDataForAnalytics',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log("testing 123");
+                console.log("Date array: ", response.createdAt);
+                console.log("Amount array: ", response.amounts);
+                console.log("ID array: ", response.ids);
+                console.log("Status array: ", response.statuses);
+                var ctx = document.getElementById('transaction-chart');
+                var transactionChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: response.createdAt.reverse(),
+                        datasets: [{
+                            label: 'Transaction Amounts',
+                            data: response.amounts.reverse(),
+                            backgroundColor: 'white',
+                            borderColor: 'black',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            },
+            error: function(jqXHR, status, error) {
+                console.log('AJAX call failed.');
+                console.log('Status: ' + status);
+                console.log('Error: ' + error);
+            }
+        });
     </script>
 </body>

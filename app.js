@@ -810,22 +810,33 @@ app.post('/testing-result', (req, res, next) => {
 });
 
 app.get('/Analytics', (req, res) => {
+  res.render('Analytics');
+});
+
+app.get('/transactionDataForAnalytics', (req, res) => {
   let transactionAmounts = [];
   let transactionIDs = [];
   let transactionStatuses = [];
+  let transactionsCreatedAt = [];
+
   let stream = gateway.transaction.search((search) => {
-    search.createdAt().between('2022-01-01', '2022-12-31');
+    console.log("Searching...");
+    search.createdAt().between('2023-10-01', '2023-10-31');
   });
+  console.log("Adding data to arrays...");
   stream.on('data', (transaction) => {
     transactionAmounts.push(transaction.amount);
     transactionIDs.push(transaction.id);
     transactionStatuses.push(transaction.status);
+    transactionsCreatedAt.push(transaction.createdAt);
   });
   stream.on('end', () => {
+    console.log("All done! Sending the data over.");
     res.send({
       amounts: transactionAmounts,
       ids: transactionIDs,
-      statuses: transactionStatuses
+      statuses: transactionStatuses,
+      createdAt: transactionsCreatedAt
     });
   });
 });
