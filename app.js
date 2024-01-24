@@ -818,10 +818,11 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   let transactionIDs = [];
   let transactionStatuses = [];
   let transactionsCreatedAt = [];
+  let transactionTypes = [];
 
   let stream = gateway.transaction.search((search) => {
     console.log("Searching...");
-    search.createdAt().between('2023-10-01', '2023-10-31');
+    search.createdAt().between('2023-11-01', '2023-12-31');
   });
   console.log("Adding data to arrays...");
   stream.on('data', (transaction) => {
@@ -829,6 +830,7 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     transactionIDs.push(transaction.id);
     transactionStatuses.push(transaction.status);
     transactionsCreatedAt.push(transaction.createdAt);
+    transactionTypes.push(transaction.paymentInstrumentType);
   });
   stream.on('end', () => {
     console.log("All done! Sending the data over.");
@@ -836,7 +838,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       amounts: transactionAmounts,
       ids: transactionIDs,
       statuses: transactionStatuses,
-      createdAt: transactionsCreatedAt
+      createdAt: transactionsCreatedAt,
+      types: transactionTypes
     });
   });
 });
