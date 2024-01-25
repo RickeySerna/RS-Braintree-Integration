@@ -820,9 +820,15 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   let transactionsCreatedAt = [];
   let transactionTypes = [];
 
+  let startDate = req.query.startDate;
+  let endDate = req.query.endDate;
+  console.log(startDate);
+  console.log(endDate);
+
   let stream = gateway.transaction.search((search) => {
     console.log("Searching...");
-    search.createdAt().between('2023-11-01', '2023-12-31');
+    search.createdAt().between(startDate, endDate);
+    //search.createdAt().between('2023-11-01', '2023-12-31');
   });
   console.log("Adding data to arrays...");
   stream.on('data', (transaction) => {

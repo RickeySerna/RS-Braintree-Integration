@@ -2,6 +2,10 @@
 </head>
 
 <body>
+    <!-- Creating two input dates for the search parameters and a button to generate the graph. -->
+    <input type="date" id="start-date">
+    <input type="date" id="end-date">
+    <button id="graph-generator">Search</button>
     <div class="graphStyle">
         <canvas id="transaction-chart"></canvas>
     </div>
@@ -14,99 +18,136 @@
     </div>
  
     <script>
-        $.ajax({
-            url: '/transactionDataForAnalytics',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                console.log("Date array: ", response.createdAt);
-                console.log("Amount array: ", response.amounts);
-                console.log("ID array: ", response.ids);
-                console.log("Status array: ", response.statuses);
-                console.log("Type array: ", response.types);
+        // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
+        var transactionChart;
 
-                // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
-                // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
-                // The ... is the spread operator. It sort of "breaks down" an iterable that's passed into it's individual parts.
-                // So it's passed a set containing unique types/statuses and it pulls out those unique types/statuses.
-                // Then this is all wrapped in [] so it's creating an array from those types/statuses that ... pulled out of the Set.
-                var transactionTypes = [...new Set(response.types)];
-                var transactionStatuses = [...new Set(response.statuses)];
+        // Setting the AJAX call inside of a function so that we can readily call it again when the button is clicked.
+        function generateGraph(startDate, endDate) {
+            $.ajax({
+                // Passing the parameters over to the server for use there.
+                // Everything before ? is the path to the route.
+                // Everything after ? is the query string. So if the dates are both 2024-01-01 it's being passed as: /transactionDataForAnalytics?startDate=2024-01-01&endDate=2024-01-01
+                // Then we can access startDate and endDate in the server.
+                url: '/transactionDataForAnalytics?startDate=' + startDate + '&endDate=' + endDate,
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    console.log("Date array: ", response.createdAt);
+                    console.log("Amount array: ", response.amounts);
+                    console.log("ID array: ", response.ids);
+                    console.log("Status array: ", response.statuses);
+                    console.log("Type array: ", response.types);
 
-                // Checking that the arrays are accurate.
-                console.log("Transaction types array: ", transactionTypes);
-                console.log("Transaction statuses array: ", transactionStatuses);
+                    // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
+                    // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
+                    // The ... is the spread operator. It sort of "breaks down" an iterable that's passed into it's individual parts.
+                    // So it's passed a set containing unique types/statuses and it pulls out those unique types/statuses.
+                    // Then this is all wrapped in [] so it's creating an array from those types/statuses that ... pulled out of the Set.
+                    var transactionTypes = [...new Set(response.types)];
+                    var transactionStatuses = [...new Set(response.statuses)];
 
-                // Add checkboxes for each transaction type
-                transactionTypes.forEach(function(type) {
-                    $('#transaction-types').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
-                });
+                    // Checking that the arrays are accurate.
+                    console.log("Transaction types array: ", transactionTypes);
+                    console.log("Transaction statuses array: ", transactionStatuses);
 
-                // Add checkboxes for each transaction status
-                transactionStatuses.forEach(function(status) {
-                    $('#transaction-statuses').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
-                });
-
-                // Declare the chart variable outside the drawChart function
-                var transactionChart;
-
-                // Function to draw the chart
-                function drawChart() {
-                    // Destroy the existing chart if it exists
-                    if (transactionChart) {
-                        transactionChart.destroy();
-                    }
-
-                    var selectedTypes = $('#transaction-types input:checked').map(function() {
-                        return this.value;
-                    }).get();
-
-                    var selectedStatuses = $('#transaction-statuses input:checked').map(function() {
-                        return this.value;
-                    }).get();
-
-                    var filteredDates = response.createdAt.filter(function(_, i) {
-                        return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
+                    // Add checkboxes for each transaction type
+                    transactionTypes.forEach(function(type) {
+                        $('#transaction-types').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
                     });
 
-                    var filteredAmounts = response.amounts.filter(function(_, i) {
-                        return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
+                    // Add checkboxes for each transaction status
+                    transactionStatuses.forEach(function(status) {
+                        $('#transaction-statuses').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
                     });
 
-                    var ctx = document.getElementById('transaction-chart');
-                    transactionChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: filteredDates.reverse(),
-                            datasets: [{
-                                label: 'Transaction Amounts',
-                                data: filteredAmounts.reverse(),
-                                backgroundColor: 'white',
-                                borderColor: '#FF8E51',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true
+                    // Function to draw the chart
+                    function drawChart() {
+                        // Destroy the existing chart if it exists
+                        if (transactionChart) {
+                            transactionChart.destroy();
+                        }
+
+                        var selectedTypes = $('#transaction-types input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        var selectedStatuses = $('#transaction-statuses input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        var filteredDates = response.createdAt.filter(function(_, i) {
+                            return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
+                        });
+
+                        var filteredAmounts = response.amounts.filter(function(_, i) {
+                            return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
+                        });
+
+                        var ctx = document.getElementById('transaction-chart');
+                        transactionChart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: filteredDates.reverse(),
+                                datasets: [{
+                                    label: 'Transactions',
+                                    data: filteredAmounts.reverse(),
+                                    backgroundColor: 'purple',
+                                    borderColor: '#FF8E51',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                },
+                                // Trying to change the label that appears on a datapoint. Not working yet.
+                                tooltips: {
+                                    callbacks: {
+                                        label: function(tooltipItem, transactionChart) {
+                                            var index = tooltipItem.index;
+                                            var transactionId = response.ids[index];
+                                            var amount = response.amounts[index];
+                                            var status = response.statuses[index];
+                                            var type = response.types[index];
+                                            var date = response.createdAt[index];
+
+                                            return 'Transaction ID: ' + transactionId +
+                                                '\nAmount: ' + amount +
+                                                '\nStatus: ' + status +
+                                                '\nType: ' + type +
+                                                '\nDate: ' + date;
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
+
+                    // Draw the chart initially
+                    drawChart();
+
+                    // Redraw the chart whenever a checkbox is checked or unchecked
+                    $('#transaction-types input, #transaction-statuses input').change(drawChart);
+                },
+                error: function(jqXHR, status, error) {
+                    console.log('AJAX call failed.');
+                    console.log('Status: ' + status);
+                    console.log('Error: ' + error);
                 }
+            });
+        }
 
-                // Draw the chart initially
-                drawChart();
-
-                // Redraw the chart whenever a checkbox is checked or unchecked
-                $('#transaction-types input, #transaction-statuses input').change(drawChart);
-            },
-            error: function(jqXHR, status, error) {
-                console.log('AJAX call failed.');
-                console.log('Status: ' + status);
-                console.log('Error: ' + error);
-            }
+        // Event listener for the graph generator button. No graph is created until this is clicked.
+        $('#graph-generator').click(function() {
+            // Define the search parameters from the date inputs above.
+            var startDate = $('#start-date').val();
+            var endDate = $('#end-date').val();
+            console.log(startDate);
+            console.log(endDate);
+            // Run the function to create the graph with these dates as the search parameters.
+            generateGraph(startDate, endDate);
         });
     </script>
 </body>
