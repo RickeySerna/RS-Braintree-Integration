@@ -102,22 +102,29 @@
                                         beginAtZero: true
                                     }
                                 },
-                                // Trying to change the label that appears on a datapoint. Not working yet.
-                                tooltips: {
-                                    callbacks: {
-                                        label: function(tooltipItem, transactionChart) {
-                                            var index = tooltipItem.index;
-                                            var transactionId = response.ids[index];
-                                            var amount = response.amounts[index];
-                                            var status = response.statuses[index];
-                                            var type = response.types[index];
-                                            var date = response.createdAt[index];
+                                // It's working! tooltip is nested inside of plugins. Now it shows a proper label.
+                                plugins: {
+                                    tooltip: {
+                                        callbacks: {
+                                            title: function(context) {
+                                                var index = context[0].dataIndex;
+                                                var transactionId = response.ids[index];
+                                                return 'Transaction ID: ' + transactionId;
+                                            },
+                                            label: function(context) {
+                                                var index = context.dataIndex;
+                                                var amount = response.amounts[index];
+                                                var status = response.statuses[index];
+                                                var type = response.types[index];
+                                                var date = response.createdAt[index];
 
-                                            return 'Transaction ID: ' + transactionId +
-                                                '\nAmount: ' + amount +
-                                                '\nStatus: ' + status +
-                                                '\nType: ' + type +
-                                                '\nDate: ' + date;
+                                                return [
+                                                    'Amount: ' + amount,
+                                                    'Status: ' + status,
+                                                    'Type: ' + type,
+                                                    'Date: ' + date
+                                                ];
+                                            }
                                         }
                                     }
                                 }
