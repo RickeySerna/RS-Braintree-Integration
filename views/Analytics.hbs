@@ -32,19 +32,26 @@
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
-                    console.log("Date array: ", response.createdAt);
-                    console.log("Amount array: ", response.amounts);
-                    console.log("ID array: ", response.ids);
-                    console.log("Status array: ", response.statuses);
-                    console.log("Type array: ", response.types);
+                    // The arrays are in reverse order chronologically, so we're reversing them now.
+                    var createdAt = response.createdAt.reverse();
+                    var amounts = response.amounts.reverse();
+                    var ids = response.ids.reverse();
+                    var statuses = response.statuses.reverse();
+                    var types = response.types.reverse();
+
+                    console.log("Date array: ", createdAt);
+                    console.log("Amount array: ", amounts);
+                    console.log("ID array: ", ids);
+                    console.log("Status array: ", statuses);
+                    console.log("Type array: ", types);
 
                     // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
                     // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
                     // The ... is the spread operator. It sort of "breaks down" an iterable that's passed into it's individual parts.
                     // So it's passed a set containing unique types/statuses and it pulls out those unique types/statuses.
                     // Then this is all wrapped in [] so it's creating an array from those types/statuses that ... pulled out of the Set.
-                    var transactionTypes = [...new Set(response.types)];
-                    var transactionStatuses = [...new Set(response.statuses)];
+                    var transactionTypes = [...new Set(types)];
+                    var transactionStatuses = [...new Set(statuses)];
 
                     // Checking that the arrays are accurate.
                     console.log("Transaction types array: ", transactionTypes);
@@ -75,22 +82,36 @@
                             return this.value;
                         }).get();
 
+                        // Noticed a bug where the tooltip information was using the index from the original, unfiltered arrays.
+                        // That worked fine in the event that the user checked all checkboxes, but once a checkbox was unchecked, it made it so that the tooltip and onclick functions used the original arrays indices.
+                        // That led to incorrect information displayed in the tooltip and the wrong txn ID pulled for the URL in the onclick.
+                        // Now filteredIndex contains the indices of the original transactions and then we use this array later to grab the correct information.
+                        var filteredIndex = [];
                         var filteredDates = response.createdAt.filter(function(_, i) {
-                            return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i])) {
+                                // Adding the index into filteredIndex.
+                                filteredIndex.push(i);
+                                return true;
+                            }
+                            return false;
                         });
 
                         var filteredAmounts = response.amounts.filter(function(_, i) {
                             return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
                         });
 
+                        console.log("filteredDates: ", filteredDates);
+                        console.log("filteredAmounts: ", filteredAmounts);
+                        console.log("filteredIndex: ", filteredIndex);
+
                         var ctx = document.getElementById('transaction-chart');
                         transactionChart = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: filteredDates.reverse(),
+                                labels: filteredDates,
                                 datasets: [{
                                     label: 'Transactions',
-                                    data: filteredAmounts.reverse(),
+                                    data: filteredAmounts,
                                     backgroundColor: 'purple',
                                     borderColor: '#FF8E51',
                                     borderWidth: 1
@@ -106,17 +127,18 @@
                                 plugins: {
                                     tooltip: {
                                         callbacks: {
+                                            // Using the filtered index here so that the tooltip displays the correct information in the event that the user filters transactions with the checkboxes.
                                             title: function(context) {
-                                                var index = context[0].dataIndex;
-                                                var transactionId = response.ids[index];
+                                                var index = filteredIndex[context[0].dataIndex];
+                                                var transactionId = ids[index];
                                                 return 'Transaction ID: ' + transactionId;
                                             },
                                             label: function(context) {
-                                                var index = context.dataIndex;
-                                                var amount = response.amounts[index];
-                                                var status = response.statuses[index];
-                                                var type = response.types[index];
-                                                var date = response.createdAt[index];
+                                                var index = filteredIndex[context.dataIndex];
+                                                var amount = amounts[index];
+                                                var status = statuses[index];
+                                                var type = types[index];
+                                                var date = createdAt[index];
 
                                                 return [
                                                     'Amount: ' + amount,
@@ -148,10 +170,11 @@
                                 var firstPoint = activePoints[0];
                                 // That object contains an index which is it's position in the dataset that the graph was created from.
                                 // So if it was the 4 datapoint, the index here will be 3.
-                                var index = firstPoint.index;
+                                // Updating this to use the filtered index we used above. Now, it'll pull the transaction from the index that was filterd with the checkboxes.
+                                var index = filteredIndex[firstPoint.index];
                                 // Now we take that index and index the ids array we got back from the AJAX call.
                                 // The correct transaction ID will be pulled here since the graph was created from that ids array.
-                                var transactionId = response.ids[index];
+                                var transactionId = ids[index];
                                 // Constructing the URL and opening it in a new tab.
                                 var url = 'https://sandbox.braintreegateway.com/merchants/' + 'pzrgxphnvtycmdhq' + '/transactions/' + transactionId;
                                 window.open(url, '_blank');
