@@ -130,6 +130,33 @@
                                 }
                             }
                         });
+
+                        // Adding an onclick handler which triggers when a datapoint in the graph is clicked.
+                        // It leads to the URL for that transaction in the BT Control Panel.
+                        ctx.onclick = function(evt) {
+                            // Once the user clicks somewhere on the chart, activePoints is filled with an array containing all of the datapoints in the graph.
+                            var activePoints = transactionChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                            // If the user didn't click on a datapoint specifically, that activePoints array will be empty, hence less than 0 and so we don't do anything more.
+                            if (activePoints.length > 0) {
+                                console.log(activePoints);
+                                // If they clicked on a datapoint, activePoints will be filled with data and so we do all of this.
+                                // The 'nearest' parameter in getElementsAtEventForMode means that the function returns the datapoints nearest to where we clicked.
+                                // If we had mulltipe datapoints at the same location, the activePoints array would fill with all of them.
+                                // In this case, the graph only has one datapoint in any given location so activePoints always has a length of 1.
+
+                                // So now we create a var containing the object with that 1 datapoint in activePoints.
+                                var firstPoint = activePoints[0];
+                                // That object contains an index which is it's position in the dataset that the graph was created from.
+                                // So if it was the 4 datapoint, the index here will be 3.
+                                var index = firstPoint.index;
+                                // Now we take that index and index the ids array we got back from the AJAX call.
+                                // The correct transaction ID will be pulled here since the graph was created from that ids array.
+                                var transactionId = response.ids[index];
+                                // Constructing the URL and opening it in a new tab.
+                                var url = 'https://sandbox.braintreegateway.com/merchants/' + 'pzrgxphnvtycmdhq' + '/transactions/' + transactionId;
+                                window.open(url, '_blank');
+                            }
+                        };
                     }
 
                     // Draw the chart initially
