@@ -175,8 +175,11 @@
                                 // Now we take that index and index the ids array we got back from the AJAX call.
                                 // The correct transaction ID will be pulled here since the graph was created from that ids array.
                                 var transactionId = ids[index];
+                                // Merchant ID is now pulled from the .env file.
+                                var merchantId = "{{merchantId}}";
+
                                 // Constructing the URL and opening it in a new tab.
-                                var url = 'https://sandbox.braintreegateway.com/merchants/' + 'pzrgxphnvtycmdhq' + '/transactions/' + transactionId;
+                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/' + transactionId;
                                 window.open(url, '_blank');
                             }
                         };
@@ -201,8 +204,15 @@
             // Define the search parameters from the date inputs above.
             var startDate = $('#start-date').val();
             var endDate = $('#end-date').val();
+
             console.log(startDate);
             console.log(endDate);
+
+            // If multiple searches were ran without reloading the page, the checkbox options would persist after each search.
+            // Now clearing the checkbox divs when the search button is clicked.
+            $('#transaction-types').empty();
+            $('#transaction-statuses').empty();
+
             // Run the function to create the graph with these dates as the search parameters.
             generateGraph(startDate, endDate);
         });

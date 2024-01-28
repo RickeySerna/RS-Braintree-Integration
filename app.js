@@ -810,7 +810,8 @@ app.post('/testing-result', (req, res, next) => {
 });
 
 app.get('/Analytics', (req, res) => {
-  res.render('Analytics');
+  // Passing the merchant ID here from the .env file as well so that it doesn't have to be hardcoded in the onclick handler.
+  res.render('Analytics', { merchantId: process.env.MERCHANT_ID });
 });
 
 app.get('/transactionDataForAnalytics', (req, res) => {
