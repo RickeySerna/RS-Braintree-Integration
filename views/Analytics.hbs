@@ -38,12 +38,15 @@
                     var ids = response.ids.reverse();
                     var statuses = response.statuses.reverse();
                     var types = response.types.reverse();
+                    var cardTypes = response.cardTypes.reverse();
 
                     console.log("Date array: ", createdAt);
                     console.log("Amount array: ", amounts);
                     console.log("ID array: ", ids);
                     console.log("Status array: ", statuses);
                     console.log("Type array: ", types);
+                    console.log("Card type array: ", cardTypes);
+                    
 
                     // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
                     // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
@@ -141,7 +144,7 @@
                                                 var date = createdAt[index];
 
                                                 return [
-                                                    'Amount: ' + amount,
+                                                    'Amount: $' + amount,
                                                     'Status: ' + status,
                                                     'Type: ' + type,
                                                     'Date: ' + date

@@ -781,32 +781,31 @@ app.get('/testing', (req, res) => {
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
-  /*
-    gateway.subscription.create({
-      paymentMethodToken: "aa3rdtty",
-      planId: "pfzw"
-    }, (error, result) => {
-      if (error) {
-        console.error(error);
-      }
-      if (result.success == true) {
-        res.json(result);
+  gateway.transaction.sale({
+    amount: "100",
+    paymentMethodNonce: "tokensam_fake_american_express",
+    options: {
+      submitForSettlement: true
+    },
+    deviceData: DeviceDataString
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    console.log("Transaction ID: " + result.transaction.id);
+    if (result.success) {
+      console.log("Successful transaction status: " + result.transaction.status);
+      res.render('success', {transactionResponse: result, title: 'Success!'});
+    } else {
+      if (result.transaction.status == "processor_declined") {
+        console.log("Declined transaction status: " + result.transaction.status);
+        res.render('processordeclined', {transactionResponse: result});
       } else {
-        res.json(result);
+        console.log("Failed transaction status: " + result.transaction.status);
+        res.render('failed', {transactionResponse: result});
       }
-    });
-*/
-    gateway.subscription.update("3w42hv", {
-//      paymentMethodToken: "newPaymentMethodToken",
-      price: "2019",
-    }, (err, result) => {
-      if (err) {
-        console.error(err);
-      }
-      else {
-        res.json(result);
-      }
-    });
+    }
+  });
 });
 
 app.get('/Analytics', (req, res) => {
@@ -820,6 +819,7 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   let transactionStatuses = [];
   let transactionsCreatedAt = [];
   let transactionTypes = [];
+  let transactionCardTypes = [];
 
   let startDate = req.query.startDate;
   let endDate = req.query.endDate;
@@ -829,7 +829,6 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   let stream = gateway.transaction.search((search) => {
     console.log("Searching...");
     search.createdAt().between(startDate, endDate);
-    //search.createdAt().between('2023-11-01', '2023-12-31');
   });
   console.log("Adding data to arrays...");
   stream.on('data', (transaction) => {
@@ -838,6 +837,41 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     transactionStatuses.push(transaction.status);
     transactionsCreatedAt.push(transaction.createdAt);
     transactionTypes.push(transaction.paymentInstrumentType);
+    console.log(transaction.paymentInstrumentType);
+
+    // Conditions to grab the card type from each type of payment method.
+    // This way only the one correct card type attribute is pushed into the array.
+    // Keeps the array indexes consistent with the same transaction at each index of each array.
+    if (transaction.paymentInstrumentType == "credit_card") {
+      transactionCardTypes.push(transaction.creditCard.cardType);
+    }
+    else if (transaction.paymentInstrumentType == "apple_pay_card") {
+      transactionCardTypes.push(transaction.applePayCard.cardType);
+    }
+    else if (transaction.paymentInstrumentType == "android_pay_card") {
+      transactionCardTypes.push(transaction.androidPayCard.sourceCardType);
+    }
+    // Threw these in as well for the less common payment methods, however they appear to be causing errors.
+    // The card type seems to always be undefined. I think this is an issue with the API.
+    // Nothing I can do about that. ¯\_(ツ)_/¯
+    /*
+    else if (transaction.paymentInstrumentType == "samsung_pay_card") {
+      transactionCardTypes.push(transaction.samsungPayCardDetails.cardType);
+    }
+    else if (transaction.paymentInstrumentType == "network_token") {
+      transactionCardTypes.push(transaction.networkToken.cardType);
+    }
+    else if (transaction.paymentInstrumentType == "masterpass_card") {
+      transactionCardTypes.push(transaction.masterpassCardDetails.cardType);
+    }
+    else if (transaction.paymentInstrumentType == "visa_checkout_card") {
+      transactionCardTypes.push(transaction.visaCheckoutCardDetails.cardType);
+    }*/
+    // In case a payment method didn't match any of the defined payment methods (like the ones above), we just add "undefined" to the array.
+    // This is to keep the indexes accurate.
+    else {
+      transactionCardTypes.push("undefined");
+    }
   });
   stream.on('end', () => {
     console.log("All done! Sending the data over.");
@@ -846,7 +880,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       ids: transactionIDs,
       statuses: transactionStatuses,
       createdAt: transactionsCreatedAt,
-      types: transactionTypes
+      types: transactionTypes,
+      cardTypes: transactionCardTypes
     });
   });
 });
