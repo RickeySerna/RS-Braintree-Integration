@@ -12,6 +12,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var io = require("./socketapi.js");
 var chalk = require('chalk');
+var moment = require('moment-timezone');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -821,6 +822,28 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   let transactionTypes = [];
   let transactionCardTypes = [];
 
+  // Function to move the dates from UTC to CST.
+  function formatDates(dates) {
+    return dates.map(date => {
+        let m = moment.utc(date);
+        m.tz('America/Chicago');
+        return m.format('MMMM Do, YYYY - h:mm A');
+    });
+  }
+
+  function formatTypes(types) {
+    const paymentTypeMap = {
+      "credit_card": "Credit Card",
+      "apple_pay_card": "Apple Pay",
+      "android_pay_card": "Google Pay",
+      "samsung_pay_card": "Samsung Pay",
+      "network_token": "Network Token",
+      "masterpass_card": "Masterpass",
+      "visa_checkout_card": "Visa Checkout"
+    };
+    return types.map(type => paymentTypeMap[type] || type);
+  }
+
   let startDate = req.query.startDate;
   let endDate = req.query.endDate;
   console.log(startDate);
@@ -837,7 +860,6 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     transactionStatuses.push(transaction.status);
     transactionsCreatedAt.push(transaction.createdAt);
     transactionTypes.push(transaction.paymentInstrumentType);
-    console.log(transaction.paymentInstrumentType);
 
     // Conditions to grab the card type from each type of payment method.
     // This way only the one correct card type attribute is pushed into the array.
@@ -874,13 +896,19 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     }
   });
   stream.on('end', () => {
+    // Using the functions to create new arrays filled with the formatted data.
+    let correctedDates = formatDates(transactionsCreatedAt);
+    let correctedTypes = formatTypes(transactionTypes);
+
+    console.log(correctedDates);
+    console.log(correctedTypes);
     console.log("All done! Sending the data over.");
     res.send({
       amounts: transactionAmounts,
       ids: transactionIDs,
       statuses: transactionStatuses,
-      createdAt: transactionsCreatedAt,
-      types: transactionTypes,
+      createdAt: correctedDates,
+      types: correctedTypes,
       cardTypes: transactionCardTypes
     });
   });
