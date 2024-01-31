@@ -140,12 +140,14 @@
                                                 var index = filteredIndex[context.dataIndex];
                                                 var amount = amounts[index];
                                                 var status = statuses[index];
+                                                var cardType = cardTypes[index];
                                                 var type = types[index];
                                                 var date = createdAt[index];
 
                                                 return [
                                                     'Amount: $' + amount,
                                                     'Status: ' + status,
+                                                    'Card Type: ' + cardType,
                                                     'Type: ' + type,
                                                     'Date: ' + date
                                                 ];
