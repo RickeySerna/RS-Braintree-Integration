@@ -831,8 +831,12 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     });
   }
 
+  // Functions to format the rest of the data that needs formatting.
+  // We define a map that with the preferred values.
+  // Then we use the map function with that map to re-define each value in the array properly.
+  // All 3 functions pretty much do the same thing.
   function formatTypes(types) {
-    const paymentTypeMap = {
+    const TypeMap = {
       "credit_card": "Credit Card",
       "apple_pay_card": "Apple Pay",
       "android_pay_card": "Google Pay",
@@ -841,17 +845,57 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       "masterpass_card": "Masterpass",
       "visa_checkout_card": "Visa Checkout"
     };
-    return types.map(type => paymentTypeMap[type] || type);
+    return types.map(type => TypeMap[type] || type);
   }
 
+  function formatStatuses(statuses) {
+    const paymentTypeMap = {
+      "settled": "Settled",
+      "submitted_for_settlement": "Submitted For Settlement",
+      "settling": "Settling",
+      "authorized": "Authorized",
+      "processor_declined": "Processor Declined",
+      "gateway_rejected": "Gateway Rejected",
+      "authorization_expired": "Authorization Expired"
+    };
+    return statuses.map(status => paymentTypeMap[status] || status);
+  }
+
+  function formatCardTypes(cardTypes) {
+    const cardTypeMap = {
+      "Apple Pay - Visa": "Visa",
+      "Apple Pay - MasterCard": "MasterCard",
+      "Apple Pay - Discover": "Discover"
+    };
+    return cardTypes.map(cardType => cardTypeMap[cardType] || cardType);
+  }
+
+  // Noticed that the search results are pulled in UTC.
+  // This will cut off and include some results outside of the timezone of the gateway (CST in my case) at the beginning and ends of the search ranges.
   let startDate = req.query.startDate;
   let endDate = req.query.endDate;
-  console.log(startDate);
-  console.log(endDate);
+  // To fix that, we're gonna define the timezone offset here.
+  let timezoneOffset = 6;
+  // Now we define two new Date objects from the original date objects we received from the client.
+  // Also defining the exact time in these; transactions will be pulled starting from 12 AM on the startDate and end at 11:59.59 PM at the endDate.
+  let adjustedStartDate = new Date(`${startDate}T00:00:00Z`);
+  let adjustedEndDate = new Date(`${endDate}T23:59:59Z`);
+
+  // Now we add the time offset to the dates.
+  // So now, let's say the offset is 6 hours like above, transactions will be pulled starting from 6 AM UTC on XXX date which is 12 AM CST. 
+  adjustedStartDate.setHours(adjustedStartDate.getHours() + timezoneOffset);
+  adjustedEndDate.setHours(adjustedEndDate.getHours() + timezoneOffset);
+  
+  // Now using toISOString() to turn these back into the YYYY-MM-DD format that the API call likes.
+  adjustedStartDate = adjustedStartDate.toISOString();
+  adjustedEndDate = adjustedEndDate.toISOString();
+
+  console.log(adjustedStartDate);
+  console.log(adjustedEndDate);
 
   let stream = gateway.transaction.search((search) => {
     console.log("Searching...");
-    search.createdAt().between(startDate, endDate);
+    search.createdAt().between(adjustedStartDate, adjustedEndDate);
   });
   console.log("Adding data to arrays...");
   stream.on('data', (transaction) => {
@@ -899,17 +943,21 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     // Using the functions to create new arrays filled with the formatted data.
     let correctedDates = formatDates(transactionsCreatedAt);
     let correctedTypes = formatTypes(transactionTypes);
+    let correctedStatuses = formatStatuses(transactionStatuses);
+    let correctedCardTypes = formatCardTypes(transactionCardTypes);
 
     console.log(correctedDates);
     console.log(correctedTypes);
+    console.log(correctedStatuses);
+    console.log(correctedCardTypes);
     console.log("All done! Sending the data over.");
     res.send({
       amounts: transactionAmounts,
       ids: transactionIDs,
-      statuses: transactionStatuses,
+      statuses: correctedStatuses,
       createdAt: correctedDates,
       types: correctedTypes,
-      cardTypes: transactionCardTypes
+      cardTypes: correctedCardTypes
     });
   });
 });
