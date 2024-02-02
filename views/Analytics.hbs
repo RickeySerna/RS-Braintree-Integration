@@ -99,8 +99,16 @@
                             return false;
                         });
 
-                        var filteredAmounts = response.amounts.filter(function(_, i) {
+/*                        var filteredAmounts = response.amounts.filter(function(_, i) {
                             return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
+                        });*/
+
+                        var filteredAmounts = response.amounts.map(function(amount, i) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i])) {
+                                return amount;
+                            } else {
+                                return null;
+                            }
                         });
 
                         console.log("filteredDates: ", filteredDates);
@@ -111,13 +119,14 @@
                         transactionChart = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: filteredDates,
+                                labels: createdAt,
                                 datasets: [{
                                     label: 'Transactions',
                                     data: filteredAmounts,
                                     backgroundColor: 'purple',
                                     borderColor: '#FF8E51',
-                                    borderWidth: 1
+                                    borderWidth: 1,
+                                    spanGaps: true
                                 }]
                             },
                             options: {
