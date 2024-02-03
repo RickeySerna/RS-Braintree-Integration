@@ -946,10 +946,6 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     let correctedStatuses = formatStatuses(transactionStatuses);
     let correctedCardTypes = formatCardTypes(transactionCardTypes);
 
-    console.log(correctedDates);
-    console.log(correctedTypes);
-    console.log(correctedStatuses);
-    console.log(correctedCardTypes);
     console.log("All done! Sending the data over.");
     res.send({
       amounts: transactionAmounts,
