@@ -85,40 +85,35 @@
                             return this.value;
                         }).get();
 
-                        // Noticed a bug where the tooltip information was using the index from the original, unfiltered arrays.
-                        // That worked fine in the event that the user checked all checkboxes, but once a checkbox was unchecked, it made it so that the tooltip and onclick functions used the original arrays indices.
-                        // That led to incorrect information displayed in the tooltip and the wrong txn ID pulled for the URL in the onclick.
-                        // Now filteredIndex contains the indices of the original transactions and then we use this array later to grab the correct information.
-                        var filteredIndex = [];
-                        var filteredDates = response.createdAt.filter(function(_, i) {
+                        // Now that we're just setting the x axis as the original, full createdAt array, the filteredIndex array is not necessary.
+                        // Now instead, filteredDates gets added to in a similar manner as filteredAmounts.
+                        // If the transaction in createdAt passes the filter, it gets added to array in the correct index.
+                        // Otherwise, null is thrown in to keep the index accurate.
+                        // This isn't actually being used anywhere rn, but maybe in the future?
+                        var filteredDates = response.createdAt.map(function(date, i) {
                             if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i])) {
-                                // Adding the index into filteredIndex.
-                                filteredIndex.push(i);
-                                return true;
+                                return date;
                             }
                             else {
-                                // Changing this a bit. Since the x axis just remains consistent with the filters now, we push the index into the array no matter what.
-                                // This will make sure that even when transactions are filtered out, the tooltip and onclick remain accurate.
-                                filteredIndex.push(i);
-                                return false;
+                                return null;
                             }
                         });
 
-/*                        var filteredAmounts = response.amounts.filter(function(_, i) {
-                            return selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]);
-                        });*/
-
+                        // Since we're keeping the x axis consistent now, changed how the transactions are filtered.
+                        // Now, in order to keep this filteredAmounts array at the same length as the original array, we throw null values in the place of the original filtered out transaction.
+                        // If the txn passes the filters, it gets added to the array. If it does not, null gets thrown in.
+                        // This is important bc Chart.js will ignore a null value. So doing it like this means that only the transactions that pass the filter will show up in the graph.
                         var filteredAmounts = response.amounts.map(function(amount, i) {
                             if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i])) {
                                 return amount;
-                            } else {
+                            }
+                            else {
                                 return null;
                             }
                         });
 
                         console.log("filteredDates: ", filteredDates);
                         console.log("filteredAmounts: ", filteredAmounts);
-                        console.log("filteredIndex: ", filteredIndex);
 
                         var ctx = document.getElementById('transaction-chart');
                         transactionChart = new Chart(ctx, {
@@ -144,14 +139,14 @@
                                 plugins: {
                                     tooltip: {
                                         callbacks: {
-                                            // Using the filtered index here so that the tooltip displays the correct information in the event that the user filters transactions with the checkboxes.
+                                            // Filtered index is not necessary anymore, so just grabbing the original index returned here.
                                             title: function(context) {
-                                                var index = filteredIndex[context[0].dataIndex];
+                                                var index = context[0].dataIndex;
                                                 var transactionId = ids[index];
                                                 return 'Transaction ID: ' + transactionId;
                                             },
                                             label: function(context) {
-                                                var index = filteredIndex[context.dataIndex];
+                                                var index = context.dataIndex;
                                                 var amount = amounts[index];
                                                 var status = statuses[index];
                                                 var cardType = cardTypes[index];
@@ -190,7 +185,7 @@
                                 // That object contains an index which is it's position in the dataset that the graph was created from.
                                 // So if it was the 4 datapoint, the index here will be 3.
                                 // Updating this to use the filtered index we used above. Now, it'll pull the transaction from the index that was filterd with the checkboxes.
-                                var index = filteredIndex[firstPoint.index];
+                                var index = firstPoint.index;
                                 // Now we take that index and index the ids array we got back from the AJAX call.
                                 // The correct transaction ID will be pulled here since the graph was created from that ids array.
                                 var transactionId = ids[index];
