@@ -96,7 +96,12 @@
                                 filteredIndex.push(i);
                                 return true;
                             }
-                            return false;
+                            else {
+                                // Changing this a bit. Since the x axis just remains consistent with the filters now, we push the index into the array no matter what.
+                                // This will make sure that even when transactions are filtered out, the tooltip and onclick remain accurate.
+                                filteredIndex.push(i);
+                                return false;
+                            }
                         });
 
 /*                        var filteredAmounts = response.amounts.filter(function(_, i) {
