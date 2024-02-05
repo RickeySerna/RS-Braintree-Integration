@@ -16,7 +16,9 @@
     <div id="transaction-statuses">
         <!-- Checkbox options for transaction statuses will be added here dynamically. -->
     </div>
- 
+     <div id="transaction-card-types">
+        <!-- Checkbox options for transaction card types will be added here dynamically. -->
+    </div>
     <script>
         // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
         var transactionChart;
@@ -55,6 +57,7 @@
                     // Then this is all wrapped in [] so it's creating an array from those types/statuses that ... pulled out of the Set.
                     var transactionTypes = [...new Set(types)];
                     var transactionStatuses = [...new Set(statuses)];
+                    var transactionCardTypes = [...new Set(cardTypes)];
 
                     // Checking that the arrays are accurate.
                     console.log("Transaction types array: ", transactionTypes);
@@ -70,9 +73,14 @@
                         $('#transaction-statuses').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
                     });
 
+                    // Add checkboxes for each transaction status
+                    transactionCardTypes.forEach(function(status) {
+                        $('#transaction-card-types').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                    });
+
                     // Function to draw the chart
                     function drawChart() {
-                        // Destroy the existing chart if it exists
+                        // Check if the chart exists, then destroy it if it does.
                         if (transactionChart) {
                             transactionChart.destroy();
                         }
@@ -85,13 +93,17 @@
                             return this.value;
                         }).get();
 
+                        var selectedCardTypes = $('#transaction-card-types input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
                         // Now that we're just setting the x axis as the original, full createdAt array, the filteredIndex array is not necessary.
                         // Now instead, filteredDates gets added to in a similar manner as filteredAmounts.
                         // If the transaction in createdAt passes the filter, it gets added to array in the correct index.
                         // Otherwise, null is thrown in to keep the index accurate.
                         // This isn't actually being used anywhere rn, but maybe in the future?
                         var filteredDates = response.createdAt.map(function(date, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i])) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
                                 return date;
                             }
                             else {
@@ -104,7 +116,7 @@
                         // If the txn passes the filters, it gets added to the array. If it does not, null gets thrown in.
                         // This is important bc Chart.js will ignore a null value. So doing it like this means that only the transactions that pass the filter will show up in the graph.
                         var filteredAmounts = response.amounts.map(function(amount, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i])) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
                                 return amount;
                             }
                             else {
@@ -203,7 +215,7 @@
                     drawChart();
 
                     // Redraw the chart whenever a checkbox is checked or unchecked
-                    $('#transaction-types input, #transaction-statuses input').change(drawChart);
+                    $('#transaction-types input, #transaction-statuses input, #transaction-card-types input').change(drawChart);
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
@@ -215,6 +227,11 @@
 
         // Event listener for the graph generator button. No graph is created until this is clicked.
         $('#graph-generator').click(function() {
+            // Also doing this here so that the chart is destroyed immediately once the button is clicked.
+            if (transactionChart) {
+                transactionChart.destroy();
+            }
+
             // Define the search parameters from the date inputs above.
             var startDate = $('#start-date').val();
             var endDate = $('#end-date').val();
@@ -226,6 +243,7 @@
             // Now clearing the checkbox divs when the search button is clicked.
             $('#transaction-types').empty();
             $('#transaction-statuses').empty();
+            $('#transaction-card-types').empty();
 
             // Run the function to create the graph with these dates as the search parameters.
             generateGraph(startDate, endDate);
