@@ -155,7 +155,7 @@
                                             title: function(context) {
                                                 var index = context[0].dataIndex;
                                                 var transactionId = ids[index];
-                                                return 'Transaction ID: ' + transactionId;
+                                                return "#" + (index + 1) + ' - Transaction ID: ' + transactionId;
                                             },
                                             label: function(context) {
                                                 var index = context.dataIndex;
@@ -239,14 +239,24 @@
             console.log(startDate);
             console.log(endDate);
 
-            // If multiple searches were ran without reloading the page, the checkbox options would persist after each search.
-            // Now clearing the checkbox divs when the search button is clicked.
-            $('#transaction-types').empty();
-            $('#transaction-statuses').empty();
-            $('#transaction-card-types').empty();
+            // Adding a check to make sure the start date is before or on the same date as the end date.
+            // If it is, we move forward with emptying the checkboxes and running generateGraph() again.
+            // Without making sure of this, it surprisingly doesn't throw an error, but no data will be returned.
+            if (startDate <= endDate) {
+                // If multiple searches were ran without reloading the page, the checkbox options would persist after each search.
+                // Now clearing the checkbox divs when the search button is clicked.
+                $('#transaction-types').empty();
+                $('#transaction-statuses').empty();
+                $('#transaction-card-types').empty();
 
-            // Run the function to create the graph with these dates as the search parameters.
-            generateGraph(startDate, endDate);
+                // Run the function to create the graph with these dates as the search parameters.
+                generateGraph(startDate, endDate);
+            }
+            // If it's not, we give the user an error and end things then and there with return.
+            else {
+                alert("The starting search date must be on or before the ending search date.");
+                return;
+            }
         });
     </script>
 </body>
