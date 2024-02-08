@@ -28,16 +28,16 @@
 
     <!-- Topnav will now be in every page, no need to update it on each page one by one. -->
     <!-- Topnav was getting crowded so I changed it to using dropdowns. Now all of the tranaction creationg pages are in one dropdown and the other pages are in another. -->
-    <div class="topnav d-flex">
+    <div id="myTopnav" class="topnav d-flex">
       <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Create Transactions
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          <a class="dropdown-item" href="/">Create a Transaction</a>
-          <a class="dropdown-item" href="/3D-Secure">Create a 3D Secure Transaction</a>
-          <a class="dropdown-item" href="/ApplePay">Create an Apple Pay Transaction</a>
-          <a class="dropdown-item" href="/GooglePay">Create a Google Pay Transaction</a>
+          <a id="home" class="dropdown-item" href="/">Create a Transaction</a>
+          <a id="3D-Secure" class="dropdown-item" href="/3D-Secure">Create a 3D Secure Transaction</a>
+          <a id="ApplePay" class="dropdown-item" href="/ApplePay">Create an Apple Pay Transaction</a>
+          <a id="GooglePay" class="dropdown-item" href="/GooglePay">Create a Google Pay Transaction</a>
         </div>
       </div>
       <div class="dropdown">
@@ -45,8 +45,8 @@
           Other Pages
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton2">
-          <a class="dropdown-item" href="/recent-transactions">Transaction Search</a>
-          <a class="dropdown-item" href="/Analytics">Analytics</a>
+          <a id="recent-transactions" class="dropdown-item" href="/recent-transactions">Transaction Search</a>
+          <a id="Analytics" class="dropdown-item" href="/Analytics">Analytics</a>
         </div>
       </div>
       <a class="side ml-auto" href="https://www.youtube.com/watch?v=41MZC5OApFw" target="_blank">Happy Halloween!</a>

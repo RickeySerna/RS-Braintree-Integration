@@ -21,8 +21,10 @@ body {
   border-radius: 15px;
 }
 
-.topnav .dropdown-menu {
+#myTopnav .dropdown-menu {
+  padding: 0;
   background-color: rgb(41, 0, 106);
+  border-radius: 15px;
 }
 
 .topnav .dropdown.show .btn {
@@ -55,7 +57,7 @@ body {
   color: black;
 }
 
-.topnav a.active {
+#myTopnav .dropdown .dropdown-item.active {
   background-color: #E66C2C;
   color: black;
 }
