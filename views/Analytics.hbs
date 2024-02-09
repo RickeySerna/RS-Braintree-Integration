@@ -19,9 +19,18 @@
      <div id="transaction-card-types">
         <!-- Checkbox options for transaction card types will be added here dynamically. -->
     </div>
+    <!-- Space for info about the transactions pulled will be generated here. -->
+    <div id="search-results-info">
+
+    </div>
     <script>
         // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
         var transactionChart;
+
+        // Declaring the variables for the information that will be displayed in search-results-info and filled in generateGraph().
+        let searchAmountTotal = 0;
+        var numberOfTransactions;
+
 
         // Setting the AJAX call inside of a function so that we can readily call it again when the button is clicked.
         function generateGraph(startDate, endDate) {
@@ -48,7 +57,27 @@
                     console.log("Status array: ", statuses);
                     console.log("Type array: ", types);
                     console.log("Card type array: ", cardTypes);
-                    
+
+                    // Filling the variables to be displayed in the search results info box
+                    function fillSearchResultsInfo() {
+                        // Resetting the amount to 0 since it's declared globally. Otherwise, it would keep being added to with each new search.
+                        searchAmountTotal = 0;
+                        // Number of transactions pulled is just the length of any of the arrays.
+                        numberOfTransactions = createdAt.length;
+                        console.log("Total transactions found: " + numberOfTransactions);
+
+                        // This for loop fills searchAmountTotal with the amounts of transactions that were successful.
+                        // searchAmountTotal is only added to if the same index in the statuses array is a successful transaction status.
+                        for (let i = 0; i < createdAt.length; i++) {
+                            if (statuses[i] == "Settled") {
+                                // Since the amounts array is full of strings, we pull the float out of them with parseFloat().
+                                searchAmountTotal += parseFloat(amounts[i]);
+                            }
+                        }
+                        console.log("Total successfully transacted: " + searchAmountTotal)
+                    }
+
+                    fillSearchResultsInfo();
 
                     // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
                     // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
