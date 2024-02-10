@@ -30,7 +30,10 @@
         // Declaring the variables for the information that will be displayed in search-results-info and filled in generateGraph().
         let searchAmountTotal = 0;
         var numberOfTransactions;
+        var transactionTypeCounts = {};
 
+        // The plugin code for the transaction info box. This will be used to overlay the box right on top of the chart.
+        // I'm declaring it globally to make sure it's in scope when it's thrown into the graph later.
 
         // Setting the AJAX call inside of a function so that we can readily call it again when the button is clicked.
         function generateGraph(startDate, endDate) {
@@ -58,10 +61,19 @@
                     console.log("Type array: ", types);
                     console.log("Card type array: ", cardTypes);
 
-                    // Filling the variables to be displayed in the search results info box
+                    // This function fills the globally defined variables with information from the search results we pulled.
+                    // This will be used to fill in the textbox on the chart summarizing the transactions returned.
                     function fillSearchResultsInfo() {
-                        // Resetting the amount to 0 since it's declared globally. Otherwise, it would keep being added to with each new search.
+                        // Making sure the chart exists.
+                        console.log(transactionChart);
+
+                        // Resetting all of the variables so that they don't keep being added to if the user searches again.
+                        // Resetting the amount to 0.
                         searchAmountTotal = 0;
+                        // Emptying the map.
+                        transactionTypeCounts = {};
+
+
                         // Number of transactions pulled is just the length of any of the arrays.
                         numberOfTransactions = createdAt.length;
                         console.log("Total transactions found: " + numberOfTransactions);
@@ -75,9 +87,66 @@
                             }
                         }
                         console.log("Total successfully transacted: " + searchAmountTotal)
+
+                        for (let i = 0; i < types.length; i++) {
+                            if (!transactionTypeCounts[types[i]]) {
+                                transactionTypeCounts[types[i]] = 0;
+                            }
+                            transactionTypeCounts[types[i]]++;
+                        }
+                        console.log("Count of transaction types: ", transactionTypeCounts);
+
+                        // This is where we generate the actual message that will appear on top of the chart.
+                        // Looks pretty ugly rn. TODO: make pretty.
+                        var infoText = 'Search Result Summary for (date) to (date):\n';
+                        infoText += 'Total transactions found: ' + numberOfTransactions + '\n';
+                        infoText += 'Total amount successfully transacted: ' + searchAmountTotal + '\n';
+                        infoText += 'Total transactions of each type:\n';
+                        for (var type in transactionTypeCounts) {
+                            infoText += '   ' + type + ': ' + transactionTypeCounts[type] + '\n';
+                        }
+
+                        // Ensure that transactionChart.options.elements exists. If it doesn't, we create it as an empty object.
+                        if (!transactionChart.options.elements) {
+                            transactionChart.options.elements = {};
+                        }
+
+                        // transactionChart.options.elements defined.
+                        transactionChart.options.elements.center = {
+                            text: infoText,
+                            fontSize: 15,
+                            fontStyle: 'normal',
+                            fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                        };
                     }
 
-                    fillSearchResultsInfo();
+                    // afterDraw is a hook that executes after the chart is drawn. In our case, it generates the text we defined in fillSearchResultsInfo().
+                    // Has to be declared outside of the chart as a plugin like this.
+                    var afterDrawPlugin = {
+                        id: 'afterDrawPlugin',
+                        afterDraw: function(chart, args, options) {
+                            var ctx = chart.ctx;
+                            var centerConfig = chart.options.elements.center;
+                            var globalConfig = Chart.defaults.font;
+
+                            var fontStyle = centerConfig.fontStyle || globalConfig.style;
+                            var fontFamily = centerConfig.fontFamily || globalConfig.family;
+
+                            ctx.font = Chart.helpers.toFontString({
+                                size: centerConfig.fontSize,
+                                style: fontStyle,
+                                family: fontFamily,
+                            });
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+
+                            ctx.fillText(centerConfig.text, centerX, centerY);
+                        }
+                    };
+                    // Then it's registered into the Chart.js object. It can actually be used in any chart we create now, but that's not so relevant here.
+                    Chart.register(afterDrawPlugin);
 
                     // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
                     // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
@@ -242,6 +311,8 @@
 
                     // Draw the chart initially
                     drawChart();
+                    // Generate the information from the search results. Has to be done after the chart already exists so we call it after drawChart().
+                    fillSearchResultsInfo();
 
                     // Redraw the chart whenever a checkbox is checked or unchecked
                     $('#transaction-types input, #transaction-statuses input, #transaction-card-types input').change(drawChart);
