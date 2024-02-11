@@ -277,6 +277,10 @@
                             }
                         });
 
+                        // Generate the information from the search results. Has to be done after the chart already exists so we call it after drawChart().
+                        // Moving this inside of drawChart() so that it's called every time a filter is clicked. The chart breaks otherwise.
+                        fillSearchResultsInfo();
+
                         // Adding an onclick handler which triggers when a datapoint in the graph is clicked.
                         // It leads to the URL for that transaction in the BT Control Panel.
                         ctx.onclick = function(evt) {
@@ -311,8 +315,6 @@
 
                     // Draw the chart initially
                     drawChart();
-                    // Generate the information from the search results. Has to be done after the chart already exists so we call it after drawChart().
-                    fillSearchResultsInfo();
 
                     // Redraw the chart whenever a checkbox is checked or unchecked
                     $('#transaction-types input, #transaction-statuses input, #transaction-card-types input').change(drawChart);
