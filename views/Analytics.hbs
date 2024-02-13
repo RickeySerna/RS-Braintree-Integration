@@ -63,7 +63,8 @@
 
                     // This function fills the globally defined variables with information from the search results we pulled.
                     // This will be used to fill in the textbox on the chart summarizing the transactions returned.
-                    function fillSearchResultsInfo() {
+                    // Updating this to take arrays as parameters. This way the information generated is updated when the user filters data out.
+                    function fillSearchResultsInfo(filteredDates, filteredAmounts, filteredIDs, filteredStatuses, filteredTypes, filteredCardTypes) {
                         // Making sure the chart exists.
                         console.log(transactionChart);
 
@@ -75,24 +76,24 @@
 
 
                         // Number of transactions pulled is just the length of any of the arrays.
-                        numberOfTransactions = createdAt.length;
+                        numberOfTransactions = filteredDates.length;
                         console.log("Total transactions found: " + numberOfTransactions);
 
                         // This for loop fills searchAmountTotal with the amounts of transactions that were successful.
                         // searchAmountTotal is only added to if the same index in the statuses array is a successful transaction status.
-                        for (let i = 0; i < createdAt.length; i++) {
-                            if (statuses[i] == "Settled") {
+                        for (let i = 0; i < filteredDates.length; i++) {
+                            if (filteredStatuses[i] == "Settled") {
                                 // Since the amounts array is full of strings, we pull the float out of them with parseFloat().
-                                searchAmountTotal += parseFloat(amounts[i]);
+                                searchAmountTotal += parseFloat(filteredAmounts[i]);
                             }
                         }
                         console.log("Total successfully transacted: " + searchAmountTotal)
 
                         for (let i = 0; i < types.length; i++) {
-                            if (!transactionTypeCounts[types[i]]) {
-                                transactionTypeCounts[types[i]] = 0;
+                            if (!transactionTypeCounts[filteredTypes[i]]) {
+                                transactionTypeCounts[filteredTypes[i]] = 0;
                             }
-                            transactionTypeCounts[types[i]]++;
+                            transactionTypeCounts[filteredTypes[i]]++;
                         }
                         console.log("Count of transaction types: ", transactionTypeCounts);
 
@@ -145,6 +146,7 @@
                             ctx.fillText(centerConfig.text, centerX, centerY);
                         }
                     };
+
                     // Then it's registered into the Chart.js object. It can actually be used in any chart we create now, but that's not so relevant here.
                     Chart.register(afterDrawPlugin);
 
@@ -200,7 +202,9 @@
                         // If the transaction in createdAt passes the filter, it gets added to array in the correct index.
                         // Otherwise, null is thrown in to keep the index accurate.
                         // This isn't actually being used anywhere rn, but maybe in the future?
-                        var filteredDates = response.createdAt.map(function(date, i) {
+                        // Update: it became useful! Passing this into fillSearchResultsInfo along with the other arrays I'm building the same way.
+                        // Also, just realized I had these using the original response.xxx arrays instead of the reversed ones. Fixed that.
+                        var filteredDates = createdAt.map(function(date, i) {
                             if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
                                 return date;
                             }
@@ -213,7 +217,7 @@
                         // Now, in order to keep this filteredAmounts array at the same length as the original array, we throw null values in the place of the original filtered out transaction.
                         // If the txn passes the filters, it gets added to the array. If it does not, null gets thrown in.
                         // This is important bc Chart.js will ignore a null value. So doing it like this means that only the transactions that pass the filter will show up in the graph.
-                        var filteredAmounts = response.amounts.map(function(amount, i) {
+                        var filteredAmounts = amounts.map(function(amount, i) {
                             if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
                                 return amount;
                             }
@@ -222,8 +226,52 @@
                             }
                         });
 
+                        // Filtered array for the transaction IDs.
+                        var filteredIDs = ids.map(function(id, i) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
+                                return id;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the statuses.
+                        var filteredStatuses = statuses.map(function(status, i) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
+                                return status;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the types.
+                        var filteredTypes = types.map(function(type, i) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
+                                return type;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the card types.
+                        var filteredCardTypes = cardTypes.map(function(cardType, i) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
+                                return cardType;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
                         console.log("filteredDates: ", filteredDates);
                         console.log("filteredAmounts: ", filteredAmounts);
+                        console.log("filteredIDs: ", filteredIDs);
+                        console.log("filteredStatuses: ", filteredStatuses);
+                        console.log("filteredTypes: ", filteredTypes);
+                        console.log("filteredCardTypes: ", filteredCardTypes);
 
                         var ctx = document.getElementById('transaction-chart');
                         transactionChart = new Chart(ctx, {
@@ -279,7 +327,8 @@
 
                         // Generate the information from the search results. Has to be done after the chart already exists so we call it after drawChart().
                         // Moving this inside of drawChart() so that it's called every time a filter is clicked. The chart breaks otherwise.
-                        fillSearchResultsInfo();
+                        // The filtered arrays are passed into here now so that the information in the textbox updates based on the filters. If a transaction is filtered out, it's not used in any of the counts now.
+                        fillSearchResultsInfo(filteredDates, filteredAmounts, filteredIDs, filteredStatuses, filteredTypes, filteredCardTypes);
 
                         // Adding an onclick handler which triggers when a datapoint in the graph is clicked.
                         // It leads to the URL for that transaction in the BT Control Panel.
