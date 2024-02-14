@@ -123,6 +123,7 @@
 
                     // afterDraw is a hook that executes after the chart is drawn. In our case, it generates the text we defined in fillSearchResultsInfo().
                     // Has to be declared outside of the chart as a plugin like this.
+
                     var afterDrawPlugin = {
                         id: 'afterDrawPlugin',
                         afterDraw: function(chart, args, options) {
@@ -133,17 +134,51 @@
                             var fontStyle = centerConfig.fontStyle || globalConfig.style;
                             var fontFamily = centerConfig.fontFamily || globalConfig.family;
 
+                            // Calculate the font size as a percentage of the chart height
+                            var fontSize = chart.height * 0.025; // 5% of the chart height
+
                             ctx.font = Chart.helpers.toFontString({
-                                size: centerConfig.fontSize,
+                                size: fontSize,
                                 style: fontStyle,
                                 family: fontFamily,
                             });
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-                            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
 
-                            ctx.fillText(centerConfig.text, centerX, centerY);
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'top';
+                            var lines = centerConfig.text.split('\n'); // Split the text into lines
+
+                            // Define a line height based on the font size
+                            var lineHeight = fontSize + 2.5;
+
+                            var widthPadding = 10;
+                            var maxWidth = 0;
+                            lines.forEach(function(line) {
+                                var lineWidth = ctx.measureText(line).width;
+                                if (lineWidth > maxWidth) {
+                                    maxWidth = lineWidth;
+                                }
+                            });
+
+                            // Calculate the box width as a percentage of the chart width
+                            var boxWidth = maxWidth + 2 * widthPadding;
+                            // Calculate the box height based on the number of lines and line height
+                            var boxHeight = lines.length * lineHeight;
+
+                            // Ensure the boxWidth does not exceed the chart area width
+                            if (boxWidth > chart.chartArea.width) {
+                                boxWidth = chart.chartArea.width;
+                            }
+
+                            var x = chart.chartArea.right - boxWidth; // Calculate x based on the boxWidth
+                            var y = chart.chartArea.top; // Start at the top of the chart
+
+                            ctx.fillStyle = 'rgba(255, 207, 135, 0.1)'; // Set the color of the box
+                            ctx.fillRect(x - 5, y - 5, boxWidth, boxHeight); // Draw the box
+                            ctx.fillStyle = 'black'; // Set the color of the text
+
+                            lines.forEach(function(line, i) {
+                                ctx.fillText(line, x, y + (i * lineHeight)); // Draw each line separately
+                            });
                         }
                     };
 
