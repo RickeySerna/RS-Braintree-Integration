@@ -29,6 +29,8 @@
 
         // Declaring the variables for the information that will be displayed in search-results-info and filled in generateGraph().
         let searchAmountTotal = 0;
+        let processorDeclinedTotal = 0;
+        let gatewayRejectedTotal = 0;
         var numberOfTransactions = 0;
         var transactionTypeCounts = {};
 
@@ -71,6 +73,10 @@
                         // Resetting all of the variables so that they don't keep being added to if the user searches again.
                         // Resetting the amount to 0.
                         searchAmountTotal = 0;
+                        // Resetting the declined amount to 0.
+                        processorDeclinedTotal = 0;
+                        // Resetting the rejected amount to 0.
+                        gatewayRejectedTotal = 0;
                         // Resetting the transaction count to 0.
                         numberOfTransactions = 0;
                         // Emptying the map.
@@ -84,18 +90,32 @@
                         }
                         console.log("Total transactions found: " + numberOfTransactions);
 
-                        // This for loop fills searchAmountTotal with the amounts of transactions that were successful.
-                        // searchAmountTotal is only added to if the same index in the statuses array is a successful transaction status.
+                        // This for loop fills searchAmountTotal, processorDeclinedTotal, and atewayRejectedTotal with the amounts of transactions with each status.
+                        // We create a few cases that fit each status and each individual var has the amount added if the index in filteredStatuses matches that status.
                         for (let i = 0; i < filteredDates.length; i++) {
-                            if (filteredStatuses[i] == "Settled") {
-                                // Since the amounts array is full of strings, we pull the float out of them with parseFloat().
-                                searchAmountTotal += parseFloat(filteredAmounts[i]);
+                            let thisAmount = parseFloat(filteredAmounts[i]);
+                            switch (filteredStatuses[i]) {
+                                // Both of these statuses are succesful so either one can add to searchAmountTotal.
+                                case "Settled":
+                                case "Authorized":
+                                    searchAmountTotal += thisAmount;
+                                    break;
+                                case "Processor Declined":
+                                    processorDeclinedTotal += thisAmount;
+                                    break;
+                                case "Gateway Rejected":
+                                    gatewayRejectedTotal += thisAmount;
+                                    break;
                             }
                         }
                         // When there are many transactions, long floating points are generated, like this: 677.8399999999999
                         // This will round the number to the nearest hundredths place. Also wrapped in parseFloat() since toFixed() returns a string.
                         searchAmountTotal = parseFloat(searchAmountTotal.toFixed(2));
+                        processorDeclinedTotal = parseFloat(processorDeclinedTotal.toFixed(2));
+                        gatewayRejectedTotal = parseFloat(gatewayRejectedTotal.toFixed(2));
                         console.log("Total successfully transacted: " + searchAmountTotal)
+                        console.log("Total amount Processor Declined: " + processorDeclinedTotal);
+                        console.log("Total amount Gateway Rejected: " + gatewayRejectedTotal);
 
                         for (let i = 0; i < types.length; i++) {
                             // Including this check now so that there doesn't end up being a category for null if the user filters anything out.
@@ -114,11 +134,13 @@
 
                         // This is where we generate the actual message that will appear on top of the chart.
                         var infoText = 'Search Result Summary for ' + startDate + ' to ' + endDate + '\n';
-                        infoText += 'Total transactions found: ' + numberOfTransactions + '\n';
-                        infoText += 'Total amount successfully transacted: $' + searchAmountTotal + '\n';
-                        infoText += 'Total transactions of each type:\n';
+                        infoText += '   ' + 'Total transactions found: ' + numberOfTransactions + '\n';
+                        infoText += '   ' + 'Total amount successfully transacted: $' + searchAmountTotal + '\n';
+                        infoText += '   ' + 'Total amount Processor Declined: $' + processorDeclinedTotal + '\n';
+                        infoText += '   ' + 'Total amount Gateway Rejected: $' + gatewayRejectedTotal + '\n';
+                        infoText += '   ' + 'Total transactions of each type:\n';
                         for (var type in transactionTypeCounts) {
-                            infoText += '   ' + type + ': ' + transactionTypeCounts[type] + '\n';
+                            infoText += '   ' + '   ' + type + ': ' + transactionTypeCounts[type] + '\n';
                         }
 
                         // Ensure that transactionChart.options.elements exists. If it doesn't, we create it as an empty object.
@@ -164,7 +186,9 @@
                             // Define a line height based on the font size
                             var lineHeight = fontSize + 2.5;
 
+                            var topPadding = 10;
                             var widthPadding = 10;
+
                             var maxWidth = 0;
                             lines.forEach(function(line) {
                                 var lineWidth = ctx.measureText(line).width;
@@ -184,7 +208,7 @@
                             }
 
                             var x = chart.chartArea.right - boxWidth; // Calculate x based on the boxWidth
-                            var y = chart.chartArea.top; // Start at the top of the chart
+                            var y = chart.chartArea.top + topPadding; // Start at the top of the chart
 
                             ctx.fillStyle = 'rgba(255, 207, 135, 0.1)'; // Set the color of the box
                             ctx.fillRect(x - 5, y - 5, boxWidth, boxHeight); // Draw the box
