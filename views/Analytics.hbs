@@ -29,7 +29,7 @@
 
         // Declaring the variables for the information that will be displayed in search-results-info and filled in generateGraph().
         let searchAmountTotal = 0;
-        var numberOfTransactions;
+        var numberOfTransactions = 0;
         var transactionTypeCounts = {};
 
         // The plugin code for the transaction info box. This will be used to overlay the box right on top of the chart.
@@ -71,12 +71,17 @@
                         // Resetting all of the variables so that they don't keep being added to if the user searches again.
                         // Resetting the amount to 0.
                         searchAmountTotal = 0;
+                        // Resetting the transaction count to 0.
+                        numberOfTransactions = 0;
                         // Emptying the map.
                         transactionTypeCounts = {};
 
-
-                        // Number of transactions pulled is just the length of any of the arrays.
-                        numberOfTransactions = filteredDates.length;
+                        // This will only count transactions that are not filtered out now.
+                        for (let i = 0; i < filteredDates.length; i++) {
+                            if (filteredDates[i] != null) {
+                                numberOfTransactions += 1;
+                            }
+                        }
                         console.log("Total transactions found: " + numberOfTransactions);
 
                         // This for loop fills searchAmountTotal with the amounts of transactions that were successful.
@@ -87,21 +92,30 @@
                                 searchAmountTotal += parseFloat(filteredAmounts[i]);
                             }
                         }
+                        // When there are many transactions, long floating points are generated, like this: 677.8399999999999
+                        // This will round the number to the nearest hundredths place. Also wrapped in parseFloat() since toFixed() returns a string.
+                        searchAmountTotal = parseFloat(searchAmountTotal.toFixed(2));
                         console.log("Total successfully transacted: " + searchAmountTotal)
 
                         for (let i = 0; i < types.length; i++) {
-                            if (!transactionTypeCounts[filteredTypes[i]]) {
-                                transactionTypeCounts[filteredTypes[i]] = 0;
+                            // Including this check now so that there doesn't end up being a category for null if the user filters anything out.
+                            if (filteredTypes[i] !== null) {
+                                if (!transactionTypeCounts[filteredTypes[i]]) {
+                                    transactionTypeCounts[filteredTypes[i]] = 0;
+                                }
+                                transactionTypeCounts[filteredTypes[i]]++;
                             }
-                            transactionTypeCounts[filteredTypes[i]]++;
                         }
                         console.log("Count of transaction types: ", transactionTypeCounts);
 
+                        // Grabbing the dates from the date inputs to throw into the text box.
+                        var startDate = document.getElementById('start-date').value;
+                        var endDate = document.getElementById('end-date').value;
+
                         // This is where we generate the actual message that will appear on top of the chart.
-                        // Looks pretty ugly rn. TODO: make pretty.
-                        var infoText = 'Search Result Summary for (date) to (date):\n';
+                        var infoText = 'Search Result Summary for ' + startDate + ' to ' + endDate + '\n';
                         infoText += 'Total transactions found: ' + numberOfTransactions + '\n';
-                        infoText += 'Total amount successfully transacted: ' + searchAmountTotal + '\n';
+                        infoText += 'Total amount successfully transacted: $' + searchAmountTotal + '\n';
                         infoText += 'Total transactions of each type:\n';
                         for (var type in transactionTypeCounts) {
                             infoText += '   ' + type + ': ' + transactionTypeCounts[type] + '\n';
