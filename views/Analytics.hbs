@@ -3,8 +3,8 @@
 
 <body>
     <!-- Creating two input dates for the search parameters and a button to generate the graph. -->
-    <input type="date" id="start-date">
-    <input type="date" id="end-date">
+<input type="date" id="start-date">
+<input type="date" id="end-date">
     <button id="graph-generator">Search</button>
     <div class="graphStyle">
         <canvas id="transaction-chart"></canvas>
@@ -132,8 +132,12 @@
                         var startDate = document.getElementById('start-date').value;
                         var endDate = document.getElementById('end-date').value;
 
+                        // Formatting the dates so that they're more readable to humans with moment.js. Same thing we do on the server.
+                        var formattedStartDate = moment(startDate).format('MMMM Do, YYYY');
+                        var formattedEndDate = moment(endDate).format('MMMM Do, YYYY');
+
                         // This is where we generate the actual message that will appear on top of the chart.
-                        var infoText = 'Search Result Summary for ' + startDate + ' to ' + endDate + '\n';
+                        var infoText = 'Transaction Summary for ' + formattedStartDate + ' to ' + formattedEndDate + '\n';
                         infoText += '   ' + 'Total transactions found: ' + numberOfTransactions + '\n';
                         infoText += '   ' + 'Total amount successfully transacted: $' + searchAmountTotal + '\n';
                         infoText += '   ' + 'Total amount Processor Declined: $' + processorDeclinedTotal + '\n';
