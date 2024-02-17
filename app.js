@@ -867,7 +867,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
     const cardTypeMap = {
       "Apple Pay - Visa": "Visa",
       "Apple Pay - MasterCard": "MasterCard",
-      "Apple Pay - Discover": "Discover"
+      "Apple Pay - Discover": "Discover",
+      "Apple Pay - American Express": "American Express"
     };
     return cardTypes.map(cardType => cardTypeMap[cardType] || cardType);
   }
