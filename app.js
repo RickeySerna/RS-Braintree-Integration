@@ -856,7 +856,9 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       "authorized": "Authorized",
       "processor_declined": "Processor Declined",
       "gateway_rejected": "Gateway Rejected",
-      "authorization_expired": "Authorization Expired"
+      "authorization_expired": "Authorization Expired",
+      "failed": "Failed",
+      "settlement_declined": "Settlement Declined"
     };
     return statuses.map(status => paymentTypeMap[status] || status);
   }
