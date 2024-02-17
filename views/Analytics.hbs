@@ -6,28 +6,44 @@
 <input type="date" id="start-date">
 <input type="date" id="end-date">
     <button id="graph-generator">Search</button>
-    <div class="graphStyle">
-        <canvas id="transaction-chart"></canvas>
-    </div>
-    <!-- Creating divs for the checkbox options; one for transaction type, one for transaction status. -->
-    <div id="transaction-types">
-        <!-- Checkbox options for transaction types will added here dynamically. -->
-    </div>
-    <div id="transaction-statuses">
-        <!-- Checkbox options for transaction statuses will be added here dynamically. -->
-    </div>
-     <div id="transaction-card-types">
-        <!-- Checkbox options for transaction card types will be added here dynamically. -->
-    </div>
-    <!-- Space for info about the transactions pulled will be generated here. -->
-    <div id="search-results-info">
 
+    <!-- Div holding the line chart. -->
+    <div class="graphStyle">
+        <canvas id="transaction-line-chart"></canvas>
     </div>
+
+    <!-- Creating divs for the checkbox options for the line chart. -->
+    <div id="transaction-types-line-chart">
+        <!-- Checkbox options for transaction types on the line chart will added here dynamically. -->
+    </div>
+    <div id="transaction-statuses-line-chart">
+        <!-- Checkbox options for transaction statuses on the line chart will be added here dynamically. -->
+    </div>
+     <div id="transaction-card-types-line-chart">
+        <!-- Checkbox options for transaction card types on the line chart will be added here dynamically. -->
+    </div>
+
+    <!-- Div holding the line chart. -->
+    <div class="graphStyle">
+        <canvas id="transaction-bar-chart"></canvas>
+    </div>
+
+    <!-- Creating divs for the checkbox options for the bar chart. -->
+    <div id="transaction-types-bar-chart">
+        <!-- Checkbox options for transaction types on the bar chart will added here dynamically. -->
+    </div>
+    <div id="transaction-statuses-bar-chart">
+        <!-- Checkbox options for transaction statuses on the bar chart will be added here dynamically. -->
+    </div>
+     <div id="transaction-card-types-bar-chart">
+        <!-- Checkbox options for transaction card types on the bar chart will be added here dynamically. -->
+    </div>
+
     <script>
         // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
         var transactionChart;
 
-        // Declaring the variables for the information that will be displayed in search-results-info and filled in generateGraph().
+        // Declaring the variables for the information that will be displayed in the textbox and filled in generateGraph().
         let searchAmountTotal = 0;
         let processorDeclinedTotal = 0;
         let gatewayRejectedTotal = 0;
@@ -242,17 +258,20 @@
 
                     // Add checkboxes for each transaction type
                     transactionTypes.forEach(function(type) {
-                        $('#transaction-types').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
+                        $('#transaction-types-line-chart').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
+                        $('#transaction-types-bar-chart').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
                     });
 
                     // Add checkboxes for each transaction status
                     transactionStatuses.forEach(function(status) {
-                        $('#transaction-statuses').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                        $('#transaction-statuses-line-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                        $('#transaction-statuses-bar-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
                     });
 
                     // Add checkboxes for each transaction status
                     transactionCardTypes.forEach(function(status) {
-                        $('#transaction-card-types').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                        $('#transaction-card-types-line-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                        $('#transaction-card-types-bar-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
                     });
 
                     // Function to draw the chart
@@ -262,15 +281,15 @@
                             transactionChart.destroy();
                         }
 
-                        var selectedTypes = $('#transaction-types input:checked').map(function() {
+                        var selectedTypes = $('#transaction-types-line-chart input:checked').map(function() {
                             return this.value;
                         }).get();
 
-                        var selectedStatuses = $('#transaction-statuses input:checked').map(function() {
+                        var selectedStatuses = $('#transaction-statuses-line-chart input:checked').map(function() {
                             return this.value;
                         }).get();
 
-                        var selectedCardTypes = $('#transaction-card-types input:checked').map(function() {
+                        var selectedCardTypes = $('#transaction-card-types-line-chart input:checked').map(function() {
                             return this.value;
                         }).get();
 
@@ -350,7 +369,7 @@
                         console.log("filteredTypes: ", filteredTypes);
                         console.log("filteredCardTypes: ", filteredCardTypes);
 
-                        var ctx = document.getElementById('transaction-chart');
+                        var ctx = document.getElementById('transaction-line-chart');
                         transactionChart = new Chart(ctx, {
                             type: 'line',
                             data: {
@@ -443,7 +462,7 @@
                     drawChart();
 
                     // Redraw the chart whenever a checkbox is checked or unchecked
-                    $('#transaction-types input, #transaction-statuses input, #transaction-card-types input').change(drawChart);
+                    $('#transaction-types-line-chart input, #transaction-statuses-line-chart input, #transaction-card-types-line-chart input').change(drawChart);
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
@@ -472,10 +491,15 @@
             // Without making sure of this, it surprisingly doesn't throw an error, but no data will be returned.
             if (startDate <= endDate) {
                 // If multiple searches were ran without reloading the page, the checkbox options would persist after each search.
-                // Now clearing the checkbox divs when the search button is clicked.
-                $('#transaction-types').empty();
-                $('#transaction-statuses').empty();
-                $('#transaction-card-types').empty();
+                // Now clearing the checkbox divs for the line chart when the search button is clicked.
+                $('#transaction-types-line-chart').empty();
+                $('#transaction-statuses-line-chart').empty();
+                $('#transaction-card-types-line-chart').empty();
+
+                // Also clearing the checkbox divs for the bar chart
+                $('#transaction-types-bar-chart').empty();
+                $('#transaction-statuses-bar-chart').empty();
+                $('#transaction-card-types-bar-chart').empty();
 
                 // Run the function to create the graph with these dates as the search parameters.
                 generateGraph(startDate, endDate);
