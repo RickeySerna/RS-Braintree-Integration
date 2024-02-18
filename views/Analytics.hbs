@@ -42,6 +42,8 @@
     <script>
         // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
         var transactionChart;
+        // Declaring another variable for the bar chart.
+        var transactionBarChart;
 
         // Declaring the variables for the information that will be displayed in the textbox and filled in generateGraph().
         let searchAmountTotal = 0;
@@ -170,6 +172,27 @@
 
                         // transactionChart.options.elements defined.
                         transactionChart.options.elements.center = {
+                            text: infoText,
+                            fontSize: 15,
+                            fontStyle: 'normal',
+                            fontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                        };
+                    }
+
+                    // The afterDraw plugin is registered for all charts so we need to make a function which adds a center element, similar to the above function.
+                    // The plugin throws an error if we don't do this.
+                    function fillBarChartInfo(amounts) {
+                        // Just filling the textbox with each amount for now, gonna change this later.
+                        var infoText = 'Transaction Amounts:\n';
+                        amounts.forEach(function(amount, i) {
+                            infoText += '   ' + 'Transaction ' + (i + 1) + ': $' + amount + '\n';
+                        });
+
+                        if (!transactionBarChart.options.elements) {
+                            transactionBarChart.options.elements = {};
+                        }
+
+                        transactionBarChart.options.elements.center = {
                             text: infoText,
                             fontSize: 15,
                             fontStyle: 'normal',
@@ -458,8 +481,39 @@
                         };
                     }
 
-                    // Draw the chart initially
+                    function drawBarChart() {
+
+                        // The amounts array is all strings so we convert them to numbers.
+                        var fixedAmounts = amounts.map(Number);
+
+                        var ctx = document.getElementById("transaction-bar-chart");
+                        transactionBarChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: amounts,
+                                datasets: [{
+                                    label: "Transactions",
+                                    data: fixedAmounts,
+                                    backgroundColor: "purple",
+                                    borderColor: '#FF8E51',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+
+                        fillBarChartInfo(amounts);
+                    }
+
+                    // Draw the charts initially
                     drawChart();
+                    drawBarChart();
 
                     // Redraw the chart whenever a checkbox is checked or unchecked
                     $('#transaction-types-line-chart input, #transaction-statuses-line-chart input, #transaction-card-types-line-chart input').change(drawChart);
@@ -477,6 +531,10 @@
             // Also doing this here so that the chart is destroyed immediately once the button is clicked.
             if (transactionChart) {
                 transactionChart.destroy();
+            }
+
+            if (transactionBarChart) {
+                transactionBarChart.destroy();
             }
 
             // Define the search parameters from the date inputs above.
