@@ -481,8 +481,22 @@
                         };
                     }
 
-                    function drawBarChart() {
+                    // This function is generating the dates that will be the x axis on the bar chart.
+                    // Doing this in a separate function in order to avoid generating this array over and over each time drawBarChart() is called.
+                    // drawBarChart() will be called each time a filter is applied, but the x axis remains consistent anyway. So it would be a waste to do this insde of drawBarChart().
+                    function generateDatesForBarChart(thisStartDate, thisEndDate) {
+                        var dates = [];
+                        var currentDate = moment(thisStartDate);
 
+                        while (currentDate <= moment(thisEndDate)) {
+                            dates.push(currentDate.format('YYYY-MM-DD'));
+                            currentDate = currentDate.add(1, 'days');
+                        }
+
+                        return dates;
+                    }
+
+                    function drawBarChart(dates) {
                         // The amounts array is all strings so we convert them to numbers.
                         var fixedAmounts = amounts.map(Number);
 
@@ -490,7 +504,7 @@
                         transactionBarChart = new Chart(ctx, {
                             type: 'bar',
                             data: {
-                                labels: amounts,
+                                labels: dates,
                                 datasets: [{
                                     label: "Transactions",
                                     data: fixedAmounts,
@@ -511,9 +525,18 @@
                         fillBarChartInfo(amounts);
                     }
 
+                    // The parameters to be used to generate the dates array.
+                    var thisStartDate = $('#start-date').val();
+                    var thisEndDate = $('#end-date').val();
+
+                    // Creating the dates array with our above function.
+                    var dates = generateDatesForBarChart(thisStartDate, thisEndDate);
+
+                    console.log("The date array geneated: ", dates)
+
                     // Draw the charts initially
                     drawChart();
-                    drawBarChart();
+                    drawBarChart(dates);
 
                     // Redraw the chart whenever a checkbox is checked or unchecked
                     $('#transaction-types-line-chart input, #transaction-statuses-line-chart input, #transaction-card-types-line-chart input').change(drawChart);
