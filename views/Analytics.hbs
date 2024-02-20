@@ -496,9 +496,49 @@
                         return dates;
                     }
 
+                    // This function is generating the actual data that will appear in the bar chart.
+                    function generateDataForBarChart(dates, createdAt, amounts) {
+
+                        // Create a new array of the same length as the dates array (to be pulled from generateDatesForBarChart).
+                        // Immediately fill every space with 0 so that if a date doesn't have any transactions, it still displays 0.
+                        let data = new Array(dates.length).fill(0);
+
+                        // Formatting all of the dates back into the YYYY-MM-DD format to match the format in the dates array.
+                        let createdAtFormatted = createdAt.map(dateStr => {
+                            return moment(dateStr, 'MMMM Do, YYYY - h:mm A').format('YYYY-MM-DD');
+                        });
+
+                        // Initializing an index variable outside of the for loop.
+                        let currentDateIndex = 0;
+                        // Iterating over the createdAtFormatted array we just created.
+                        for (let i = 0; i < createdAtFormatted.length; i++) {
+
+                            // This while loop advances the currentDateIndex which is used to iterate move across the dates array.
+                            // The first condition checks if createdAtFormatted[i] is greater/later than dates[currentDateIndex].
+                            // If that's the case, then we can move to the next spot in the dates array so we increment currentDateIndex by 1.
+                            // The second index just makes sure currentDateIndex doesn't go past the length of dates to avoid out of bounds errors.
+                            while (createdAtFormatted[i] > dates[currentDateIndex] && currentDateIndex < dates.length - 1) {
+                                currentDateIndex++;
+                            }
+
+                            // Checkiing that the date we're currently on in createdAtFormatted and the date the currentDateIndex is on in dates are the same.
+                            // If so, add the i index of amounts into to the currentDateIndex index in the data array we're building here.
+                            // Basically, toss the amount of the transaction into the array if we're on equal dates in both arrays.
+                            if (createdAtFormatted[i] === dates[currentDateIndex]) {
+                                data[currentDateIndex] += amounts[i];
+                            }
+                        }
+
+                        // Return the array.
+                        return data;
+                    }
+
                     function drawBarChart(dates) {
                         // The amounts array is all strings so we convert them to numbers.
                         var fixedAmounts = amounts.map(Number);
+
+                        // The data returned by the generateDataForBarChart function above.
+                        let data = generateDataForBarChart(dates, createdAt, fixedAmounts);
 
                         var ctx = document.getElementById("transaction-bar-chart");
                         transactionBarChart = new Chart(ctx, {
@@ -507,7 +547,7 @@
                                 labels: dates,
                                 datasets: [{
                                     label: "Transactions",
-                                    data: fixedAmounts,
+                                    data: data,
                                     backgroundColor: "purple",
                                     borderColor: '#FF8E51',
                                     borderWidth: 1
