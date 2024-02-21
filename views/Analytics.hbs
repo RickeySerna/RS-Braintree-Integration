@@ -534,8 +534,94 @@
                     }
 
                     function drawBarChart(dates) {
+
+                        if (transactionBarChart) {
+                            transactionBarChart.destroy();
+                        }
+
+                        // Creating the selected types arrays in the same way we do for the line chart.
+                        // Have to do this separately for each one to allow the user to choose different filters for each graph.
+                        var selectedTypesBarChart = $('#transaction-types-bar-chart input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        var selectedStatusesBarChart = $('#transaction-statuses-bar-chart input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        var selectedCardTypesBarChart = $('#transaction-card-types-bar-chart input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        console.log("The bar chart types: ", selectedTypesBarChart);
+                        console.log("The bar chart statuses: ", selectedStatusesBarChart);
+                        console.log("The bar chart card types: ", selectedCardTypesBarChart);
+
+                        // Similarly, creating the filtered arrays in the same way.
+                        // Filtered array for the dates.
+                        var filteredDatesBarChart = createdAt.map(function(date, i) {
+                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
+                                return date;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the amounts.
+                        var filteredAmountsBarChart = amounts.map(function(amount, i) {
+                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
+                                return amount;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the transaction IDs.
+                        var filteredIDsBarChart = ids.map(function(id, i) {
+                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
+                                return id;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the statuses.
+                        var filteredStatusesBarChart = statuses.map(function(status, i) {
+                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
+                                return status;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the types.
+                        var filteredTypesBarChart = types.map(function(type, i) {
+                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
+                                return type;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
+                        // Filtered array for the card types.
+                        var filteredCardTypesBarChart = cardTypes.map(function(cardType, i) {
+                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
+                                return cardType;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+
                         // The amounts array is all strings so we convert them to numbers.
-                        var fixedAmounts = amounts.map(Number);
+                        var fixedAmounts = filteredAmountsBarChart.map(Number);
+
+                        console.log("Bar chart amounts after formatting: ", fixedAmounts);
 
                         // The data returned by the generateDataForBarChart function above.
                         let data = generateDataForBarChart(dates, createdAt, fixedAmounts);
@@ -578,8 +664,11 @@
                     drawChart();
                     drawBarChart(dates);
 
-                    // Redraw the chart whenever a checkbox is checked or unchecked
+                    // Redraw the chart whenever a checkbox is checked or unchecked.
                     $('#transaction-types-line-chart input, #transaction-statuses-line-chart input, #transaction-card-types-line-chart input').change(drawChart);
+                    $('#transaction-types-bar-chart input, #transaction-statuses-bar-chart input, #transaction-card-types-bar-chart input').change(function() {
+                        drawBarChart(dates);
+                    });
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
