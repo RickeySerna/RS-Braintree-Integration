@@ -497,11 +497,14 @@
                     }
 
                     // This function is generating the actual data that will appear in the bar chart.
-                    function generateDataForBarChart(dates, createdAt, amounts) {
+                    function generateDataForBarChart(dates, createdAt, amounts, statuses) {
 
-                        // Create a new array of the same length as the dates array (to be pulled from generateDatesForBarChart).
+                        // Create 3 new arrays of the same length as the dates array (to be pulled from generateDatesForBarChart).
                         // Immediately fill every space with 0 so that if a date doesn't have any transactions, it still displays 0.
-                        let data = new Array(dates.length).fill(0);
+                        // One array for successful txn amounts, one for declined amounts, one for rejected amounts.
+                        let dataSuccessful = new Array(dates.length).fill(0);
+                        let dataDeclined = new Array(dates.length).fill(0);
+                        let dataRejected = new Array(dates.length).fill(0);
 
                         // Formatting all of the dates back into the YYYY-MM-DD format to match the format in the dates array.
                         let createdAtFormatted = createdAt.map(dateStr => {
@@ -525,12 +528,18 @@
                             // If so, add the i index of amounts into to the currentDateIndex index in the data array we're building here.
                             // Basically, toss the amount of the transaction into the array if we're on equal dates in both arrays.
                             if (createdAtFormatted[i] === dates[currentDateIndex]) {
-                                data[currentDateIndex] += amounts[i];
+                                if (statuses[i] === "Settled" || statuses[i] === "Authorized" || statuses[i] === "Settling" || statuses[i] === "Submitted For Settlement") {
+                                    dataSuccessful[currentDateIndex] += amounts[i];
+                                } else if (statuses[i] === "Processor Declined") {
+                                    dataDeclined[currentDateIndex] += amounts[i];
+                                } else if (statuses[i] === "Gateway Rejected") {
+                                    dataRejected[currentDateIndex] += amounts[i];
+                                }
                             }
                         }
 
-                        // Return the array.
-                        return data;
+                        // Return all three arrays in one object .
+                        return [dataSuccessful, dataDeclined, dataRejected];
                     }
 
                     function drawBarChart(dates) {
@@ -624,7 +633,7 @@
                         console.log("Bar chart amounts after formatting: ", fixedAmounts);
 
                         // The data returned by the generateDataForBarChart function above.
-                        let data = generateDataForBarChart(dates, createdAt, fixedAmounts);
+                        var [dataSuccessful, dataDeclined, dataRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart);
 
                         var ctx = document.getElementById("transaction-bar-chart");
                         transactionBarChart = new Chart(ctx, {
@@ -632,11 +641,31 @@
                             data: {
                                 labels: dates,
                                 datasets: [{
-                                    label: "Transactions",
-                                    data: data,
-                                    backgroundColor: "purple",
+                                    label: "Successful Transactions",
+                                    data: dataSuccessful,
+                                    backgroundColor: "green",
                                     borderColor: '#FF8E51',
-                                    borderWidth: 1
+                                    borderWidth: 1,
+                                    categoryPercentage: 0.8,
+                                    barPercentage: 0.9
+                                },
+                                {
+                                    label: "Declined Transactions",
+                                    data: dataDeclined,
+                                    backgroundColor: "red",
+                                    borderColor: '#FF8E51',
+                                    borderWidth: 1,
+                                    categoryPercentage: 0.8,
+                                    barPercentage: 0.9
+                                },
+                                {
+                                    label: "Rejected Transactions",
+                                    data: dataRejected,
+                                    backgroundColor: "blue",
+                                    borderColor: '#FF8E51',
+                                    borderWidth: 1,
+                                    categoryPercentage: 0.8,
+                                    barPercentage: 0.9
                                 }]
                             },
                             options: {
