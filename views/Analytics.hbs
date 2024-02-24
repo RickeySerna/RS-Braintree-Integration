@@ -89,6 +89,22 @@
                     console.log("Type array: ", types);
                     console.log("Card type array: ", cardTypes);
 
+                    // This function generates the filtered arrays that we were previously generating manually one by one.
+                    // It returns an array built from the "array" it was passed.
+                    // The array is filled with the property values which pass the filters.
+                    // Now, we can just define this logic once, then use it for all 12 times we create these array.
+                    // Also takes selected... arrays since those are different for each graphs.
+                    function filterArrays(array, selectedTypes, selectedStatuses, selectedCardTypes) {
+                        return array.map(function(item, i) {
+                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
+                                return item;
+                            }
+                            else {
+                                return null;
+                            }
+                        });
+                    }
+
                     // This function fills the globally defined variables with information from the search results we pulled.
                     // This will be used to fill in the textbox on the chart summarizing the transactions returned.
                     // Updating this to take arrays as parameters. This way the information generated is updated when the user filters data out.
@@ -331,67 +347,26 @@
                         // This isn't actually being used anywhere rn, but maybe in the future?
                         // Update: it became useful! Passing this into fillSearchResultsInfo along with the other arrays I'm building the same way.
                         // Also, just realized I had these using the original response.xxx arrays instead of the reversed ones. Fixed that.
-                        var filteredDates = createdAt.map(function(date, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
-                                return date;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        // 2nd update: Just using the filterArrays() function to generate these arrays now.
+                        var filteredDates = filterArrays(createdAt, selectedTypes, selectedStatuses, selectedCardTypes);
 
                         // Since we're keeping the x axis consistent now, changed how the transactions are filtered.
                         // Now, in order to keep this filteredAmounts array at the same length as the original array, we throw null values in the place of the original filtered out transaction.
                         // If the txn passes the filters, it gets added to the array. If it does not, null gets thrown in.
                         // This is important bc Chart.js will ignore a null value. So doing it like this means that only the transactions that pass the filter will show up in the graph.
-                        var filteredAmounts = amounts.map(function(amount, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
-                                return amount;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredAmounts = filterArrays(amounts, selectedTypes, selectedStatuses, selectedCardTypes);
 
                         // Filtered array for the transaction IDs.
-                        var filteredIDs = ids.map(function(id, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
-                                return id;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredIDs = filterArrays(ids, selectedTypes, selectedStatuses, selectedCardTypes);
 
                         // Filtered array for the statuses.
-                        var filteredStatuses = statuses.map(function(status, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
-                                return status;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredStatuses = filterArrays(statuses, selectedTypes, selectedStatuses, selectedCardTypes);
 
                         // Filtered array for the types.
-                        var filteredTypes = types.map(function(type, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
-                                return type;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredTypes = filterArrays(types, selectedTypes, selectedStatuses, selectedCardTypes);
 
                         // Filtered array for the card types.
-                        var filteredCardTypes = cardTypes.map(function(cardType, i) {
-                            if (selectedTypes.includes(response.types[i]) && selectedStatuses.includes(response.statuses[i]) && selectedCardTypes.includes(response.cardTypes[i])) {
-                                return cardType;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredCardTypes = filterArrays(cardTypes, selectedTypes, selectedStatuses, selectedCardTypes);
 
                         console.log("filteredDates: ", filteredDates);
                         console.log("filteredAmounts: ", filteredAmounts);
@@ -577,65 +552,24 @@
                         console.log("The bar chart card types: ", selectedCardTypesBarChart);
 
                         // Similarly, creating the filtered arrays in the same way.
+                        // Update: Creating these using the filterArrays() function now.
                         // Filtered array for the dates.
-                        var filteredDatesBarChart = createdAt.map(function(date, i) {
-                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
-                                return date;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredDatesBarChart = filterArrays(createdAt, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
 
                         // Filtered array for the amounts.
-                        var filteredAmountsBarChart = amounts.map(function(amount, i) {
-                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
-                                return amount;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredAmountsBarChart = filterArrays(amounts, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
 
                         // Filtered array for the transaction IDs.
-                        var filteredIDsBarChart = ids.map(function(id, i) {
-                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
-                                return id;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredIDsBarChart = filterArrays(ids, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
 
                         // Filtered array for the statuses.
-                        var filteredStatusesBarChart = statuses.map(function(status, i) {
-                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
-                                return status;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredStatusesBarChart = filterArrays(statuses, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
 
                         // Filtered array for the types.
-                        var filteredTypesBarChart = types.map(function(type, i) {
-                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
-                                return type;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredTypesBarChart = filterArrays(types, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
 
                         // Filtered array for the card types.
-                        var filteredCardTypesBarChart = cardTypes.map(function(cardType, i) {
-                            if (selectedTypesBarChart.includes(response.types[i]) && selectedStatusesBarChart.includes(response.statuses[i]) && selectedCardTypesBarChart.includes(response.cardTypes[i])) {
-                                return cardType;
-                            }
-                            else {
-                                return null;
-                            }
-                        });
+                        var filteredCardTypesBarChart = filterArrays(cardTypes, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
 
                         // The amounts array is all strings so we convert them to numbers.
                         var fixedAmounts = filteredAmountsBarChart.map(Number);
