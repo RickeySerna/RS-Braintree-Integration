@@ -9,33 +9,41 @@
 
     <!-- Div holding the line chart. -->
     <div class="graphStyle">
+        <h1>Transactions Per Transaction</h1>
         <canvas id="transaction-line-chart"></canvas>
     </div>
 
     <!-- Creating divs for the checkbox options for the line chart. -->
     <div id="transaction-types-line-chart">
+        <p>Payment Methods:</p>
         <!-- Checkbox options for transaction types on the line chart will added here dynamically. -->
     </div>
     <div id="transaction-statuses-line-chart">
+        <p>Statuses:</p>
         <!-- Checkbox options for transaction statuses on the line chart will be added here dynamically. -->
     </div>
      <div id="transaction-card-types-line-chart">
+        <p>Card Types:</p>
         <!-- Checkbox options for transaction card types on the line chart will be added here dynamically. -->
     </div>
 
-    <!-- Div holding the line chart. -->
+    <!-- Div holding the bar chart. -->
     <div class="graphStyle">
+        <h1>Transactions Per Day</h1>
         <canvas id="transaction-bar-chart"></canvas>
     </div>
 
     <!-- Creating divs for the checkbox options for the bar chart. -->
     <div id="transaction-types-bar-chart">
+        <p>Payment Methods:</p>
         <!-- Checkbox options for transaction types on the bar chart will added here dynamically. -->
     </div>
     <div id="transaction-statuses-bar-chart">
+        <p>Statuses:</p>
         <!-- Checkbox options for transaction statuses on the bar chart will be added here dynamically. -->
     </div>
      <div id="transaction-card-types-bar-chart">
+        <p>Card Types:</p>
         <!-- Checkbox options for transaction card types on the bar chart will be added here dynamically. -->
     </div>
 
@@ -530,9 +538,11 @@
                             if (createdAtFormatted[i] === dates[currentDateIndex]) {
                                 if (statuses[i] === "Settled" || statuses[i] === "Authorized" || statuses[i] === "Settling" || statuses[i] === "Submitted For Settlement") {
                                     dataSuccessful[currentDateIndex] += amounts[i];
-                                } else if (statuses[i] === "Processor Declined") {
+                                }
+                                else if (statuses[i] === "Processor Declined") {
                                     dataDeclined[currentDateIndex] += amounts[i];
-                                } else if (statuses[i] === "Gateway Rejected") {
+                                }
+                                else if (statuses[i] === "Gateway Rejected") {
                                     dataRejected[currentDateIndex] += amounts[i];
                                 }
                             }
@@ -650,7 +660,7 @@
                                     barPercentage: 0.9
                                 },
                                 {
-                                    label: "Declined Transactions",
+                                    label: "Processor Declined Transactions",
                                     data: dataDeclined,
                                     backgroundColor: "red",
                                     borderColor: '#FF8E51',
@@ -659,7 +669,7 @@
                                     barPercentage: 0.9
                                 },
                                 {
-                                    label: "Rejected Transactions",
+                                    label: "Gateway Rejected Transactions",
                                     data: dataRejected,
                                     backgroundColor: "blue",
                                     borderColor: '#FF8E51',
