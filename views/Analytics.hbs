@@ -53,16 +53,6 @@
         // Declaring another variable for the bar chart.
         var transactionBarChart;
 
-        // Declaring the variables for the information that will be displayed in the textbox and filled in generateGraph().
-        let searchAmountTotal = 0;
-        let processorDeclinedTotal = 0;
-        let gatewayRejectedTotal = 0;
-        var numberOfTransactions = 0;
-        var transactionTypeCounts = {};
-
-        // The plugin code for the transaction info box. This will be used to overlay the box right on top of the chart.
-        // I'm declaring it globally to make sure it's in scope when it's thrown into the graph later.
-
         // Setting the AJAX call inside of a function so that we can readily call it again when the button is clicked.
         function generateGraph(startDate, endDate) {
             $.ajax({
@@ -112,7 +102,7 @@
                         // Making sure the chart exists.
                         console.log(transactionChart);
 
-                        // Resetting all of the variables so that they don't keep being added to if the user searches again.
+                        // These are not defined globally anymore, they're just defined here each time the function is called. Functions the same.
                         // Resetting the amount to 0.
                         searchAmountTotal = 0;
                         // Resetting the declined amount to 0.
@@ -205,12 +195,88 @@
 
                     // The afterDraw plugin is registered for all charts so we need to make a function which adds a center element, similar to the above function.
                     // The plugin throws an error if we don't do this.
-                    function fillBarChartInfo(amounts) {
-                        // Just filling the textbox with each amount for now, gonna change this later.
-                        var infoText = 'Transaction Amounts:\n';
-                        amounts.forEach(function(amount, i) {
-                            infoText += '   ' + 'Transaction ' + (i + 1) + ': $' + amount + '\n';
-                        });
+                    function fillBarChartInfo(filteredDates, filteredAmounts, filteredIDs, filteredStatuses, filteredTypes, filteredCardTypes) {
+
+                        // This is essentially doing the same thing as the other function for the line chart.
+
+                        // Making sure the chart exists.
+                        console.log(transactionBarChart);
+
+                        // Resetting the amount to 0.
+                        searchAmountTotalBar = 0;
+                        // Resetting the declined amount to 0.
+                        processorDeclinedTotalBar = 0;
+                        // Resetting the rejected amount to 0.
+                        gatewayRejectedTotalBar = 0;
+                        // Resetting the transaction count to 0.
+                        numberOfTransactionsBar = 0;
+                        // Emptying the map.
+                        transactionTypeCountsBar = {};
+
+                        // Counting the number of transactions.
+                        for (let i = 0; i < filteredDates.length; i++) {
+                            if (filteredDates[i] != null) {
+                                numberOfTransactionsBar += 1;
+                            }
+                        }
+                        console.log("Total transactions found: " + numberOfTransactions);
+
+                        // This for loop fills searchAmountTotal, processorDeclinedTotal, and gatewayRejectedTotal with the amounts of transactions with each status.
+                        // We create a few cases that fit each status and each individual var has the amount added if the index in filteredStatuses matches that status.
+                        for (let i = 0; i < filteredDates.length; i++) {
+                            let thisAmount = parseFloat(filteredAmounts[i]);
+                            switch (filteredStatuses[i]) {
+                                // Both of these statuses are succesful so either one can add to searchAmountTotal.
+                                case "Settled":
+                                case "Authorized":
+                                    searchAmountTotalBar += thisAmount;
+                                    break;
+                                case "Processor Declined":
+                                    processorDeclinedTotalBar += thisAmount;
+                                    break;
+                                case "Gateway Rejected":
+                                    gatewayRejectedTotalBar += thisAmount;
+                                    break;
+                            }
+                        }
+                        // When there are many transactions, long floating points are generated, like this: 677.8399999999999
+                        // This will round the number to the nearest hundredths place. Also wrapped in parseFloat() since toFixed() returns a string.
+                        searchAmountTotalBar = parseFloat(searchAmountTotalBar.toFixed(2));
+                        processorDeclinedTotalBar = parseFloat(processorDeclinedTotalBar.toFixed(2));
+                        gatewayRejectedTotalBar = parseFloat(gatewayRejectedTotalBar.toFixed(2));
+                        console.log("Total successfully transacted: " + searchAmountTotalBar)
+                        console.log("Total amount Processor Declined: " + processorDeclinedTotalBar);
+                        console.log("Total amount Gateway Rejected: " + gatewayRejectedTotalBar);
+
+                        for (let i = 0; i < types.length; i++) {
+                            // Including this check now so that there doesn't end up being a category for null if the user filters anything out.
+                            if (filteredTypes[i] !== null) {
+                                if (!transactionTypeCountsBar[filteredTypes[i]]) {
+                                    transactionTypeCountsBar[filteredTypes[i]] = 0;
+                                }
+                                transactionTypeCountsBar[filteredTypes[i]]++;
+                            }
+                        }
+                        console.log("Count of transaction types: ", transactionTypeCountsBar);
+
+                        // Grabbing the dates from the date inputs to throw into the text box.
+                        var startDate = document.getElementById('start-date').value;
+                        var endDate = document.getElementById('end-date').value;
+
+                        // Formatting the dates so that they're more readable to humans with moment.js. Same thing we do on the server.
+                        var formattedStartDate = moment(startDate).format('MMMM Do, YYYY');
+                        var formattedEndDate = moment(endDate).format('MMMM Do, YYYY');
+
+                        // This is where we generate the actual message that will appear on top of the chart.
+                        var infoText = 'Transaction Summary for ' + formattedStartDate + ' to ' + formattedEndDate + '\n';
+                        infoText += '   ' + 'Total transactions found: ' + numberOfTransactionsBar + '\n';
+                        infoText += '   ' + 'Total amount successfully transacted: $' + searchAmountTotalBar + '\n';
+                        infoText += '   ' + 'Total amount Processor Declined: $' + processorDeclinedTotalBar + '\n';
+                        infoText += '   ' + 'Total amount Gateway Rejected: $' + gatewayRejectedTotalBar + '\n';
+                        infoText += '   ' + 'Total transactions of each type:\n';
+                        for (var type in transactionTypeCountsBar) {
+                            infoText += '   ' + '   ' + type + ': ' + transactionTypeCountsBar[type] + '\n';
+                        }
 
                         if (!transactionBarChart.options.elements) {
                             transactionBarChart.options.elements = {};
@@ -287,7 +353,7 @@
                         }
                     };
 
-                    // Then it's registered into the Chart.js object. It can actually be used in any chart we create now, but that's not so relevant here.
+                    // Then it's registered into the Chart.js object. It can actually be used in any chart we create now, that why it only has to be registered once for both charts..
                     Chart.register(afterDrawPlugin);
 
                     // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
@@ -621,7 +687,7 @@
                             }
                         });
 
-                        fillBarChartInfo(amounts);
+                        fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
                     }
 
                     // The parameters to be used to generate the dates array.
