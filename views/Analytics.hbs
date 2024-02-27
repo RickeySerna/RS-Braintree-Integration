@@ -550,7 +550,7 @@
                     }
 
                     // This function is generating the actual data that will appear in the bar chart.
-                    function generateDataForBarChart(dates, createdAt, amounts, statuses) {
+                    function generateDataForBarChart(dates, createdAt, amounts, statuses, ids) {
 
                         // Create 3 new arrays of the same length as the dates array (to be pulled from generateDatesForBarChart).
                         // Immediately fill every space with 0 so that if a date doesn't have any transactions, it still displays 0.
@@ -558,6 +558,16 @@
                         let dataSuccessful = new Array(dates.length).fill(0);
                         let dataDeclined = new Array(dates.length).fill(0);
                         let dataRejected = new Array(dates.length).fill(0);
+
+                        // The tooltip label for the bar chart will display all of the transactions for each status and each day.
+                        // To do that, we're going to build the arrays here in a similar way as we do the amount arrays.
+                        // The difference is though, this is creating arrays of the same length as dates and filling the arrays with more unique arrays.
+                        // So these are arrays of unique arrays. The reason we need to do this is:
+                        // 1. These are to be filled with strings, not just amounts.
+                        // 2. More importantly, they have to be separated by date. This way, each tooltip label will only display the txn IDs that make up that exact bar.
+                        let idsSuccessful = new Array(dates.length).fill().map(() => []);
+                        let idsDeclined = new Array(dates.length).fill().map(() => []);
+                        let idsRejected = new Array(dates.length).fill().map(() => []);
 
                         // Formatting all of the dates back into the YYYY-MM-DD format to match the format in the dates array.
                         let createdAtFormatted = createdAt.map(dateStr => {
@@ -583,18 +593,21 @@
                             if (createdAtFormatted[i] === dates[currentDateIndex]) {
                                 if (statuses[i] === "Settled" || statuses[i] === "Authorized" || statuses[i] === "Settling" || statuses[i] === "Submitted For Settlement") {
                                     dataSuccessful[currentDateIndex] += amounts[i];
+                                    idsSuccessful[currentDateIndex].push(ids[i]);
                                 }
                                 else if (statuses[i] === "Processor Declined") {
                                     dataDeclined[currentDateIndex] += amounts[i];
+                                    idsDeclined[currentDateIndex].push(ids[i]);
                                 }
                                 else if (statuses[i] === "Gateway Rejected") {
                                     dataRejected[currentDateIndex] += amounts[i];
+                                    idsRejected[currentDateIndex].push(ids[i]);
                                 }
                             }
                         }
 
-                        // Return all three arrays in one object .
-                        return [dataSuccessful, dataDeclined, dataRejected];
+                        // Return all arrays in one object .
+                        return [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected];
                     }
 
                     function drawBarChart(dates) {
@@ -647,7 +660,7 @@
                         console.log("Bar chart amounts after formatting: ", fixedAmounts);
 
                         // The data returned by the generateDataForBarChart function above.
-                        var [dataSuccessful, dataDeclined, dataRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart);
+                        var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
 
                         var ctx = document.getElementById("transaction-bar-chart");
                         transactionBarChart = new Chart(ctx, {
@@ -698,7 +711,22 @@
                                                 return "Date: " + date;
                                             },
                                             label: function(context) {
-                                                /**/
+                                                var index = context.dataIndex;
+                                                var datasetIndex = context.datasetIndex;
+                                                var total = context.raw;
+                                                var ids;
+                                                if (datasetIndex === 0) {
+                                                    ids = idsSuccessful[index];
+                                                } else if (datasetIndex === 1) {
+                                                    ids = idsDeclined[index];
+                                                } else {
+                                                    ids = idsRejected[index];
+                                                }
+                                                var labels = ["Total: $" + total];
+                                                ids.forEach(function(id) {
+                                                    labels.push("Transaction ID: " + id);
+                                                });
+                                                return labels;
                                             }
                                         }
                                     }

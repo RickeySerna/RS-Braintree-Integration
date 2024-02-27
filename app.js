@@ -130,7 +130,21 @@ app.post('/transaction-with-nonce', (req, res, next) => {
   console.log("Nonce in the server, nonce checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, nonce checkout: " + DeviceDataString);
 
-  const thisTransaction = gateway.transaction.sale({
+
+gateway.paymentMethod.create({
+  customerId: "17615818299",
+  paymentMethodNonce: PaymentMethodNonce,
+  billingAddress: {
+    streetAddress: "123 Abc Way",
+    firstName: "John",
+    lastName: "Doe"
+  }
+}, (err, result) => {
+  res.json(result);
+});
+
+
+/*  const thisTransaction = gateway.transaction.sale({
     amount: amountFromClient,
     paymentMethodNonce: PaymentMethodNonce,
     customer: {
@@ -160,7 +174,7 @@ app.post('/transaction-with-nonce', (req, res, next) => {
         res.render('failed', {transactionResponse: result});
       }
     }
-  });
+  });*/
 });
 
 app.get('/3D-Secure', (req, res) => {
