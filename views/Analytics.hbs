@@ -14,16 +14,18 @@
     </div>
 
     <!-- Creating divs for the checkbox options for the line chart. -->
+    <div><p>Payment Methods:</p></div>
     <div id="transaction-types-line-chart">
-        <p>Payment Methods:</p>
         <!-- Checkbox options for transaction types on the line chart will added here dynamically. -->
     </div>
+
+    <div><p>Statuses:</p></div>
     <div id="transaction-statuses-line-chart">
-        <p>Statuses:</p>
         <!-- Checkbox options for transaction statuses on the line chart will be added here dynamically. -->
     </div>
+
+    <div><p>Card Types:</p></div>
      <div id="transaction-card-types-line-chart">
-        <p>Card Types:</p>
         <!-- Checkbox options for transaction card types on the line chart will be added here dynamically. -->
     </div>
 
@@ -34,16 +36,18 @@
     </div>
 
     <!-- Creating divs for the checkbox options for the bar chart. -->
+    <div><p>Payment Methods:</p></div>
     <div id="transaction-types-bar-chart">
-        <p>Payment Methods:</p>
         <!-- Checkbox options for transaction types on the bar chart will added here dynamically. -->
     </div>
+
+    <div><p>Statuses:</p></div>
     <div id="transaction-statuses-bar-chart">
-        <p>Statuses:</p>
         <!-- Checkbox options for transaction statuses on the bar chart will be added here dynamically. -->
     </div>
-     <div id="transaction-card-types-bar-chart">
-        <p>Card Types:</p>
+
+    <div><p>Card Types:</p></div>
+    <div id="transaction-card-types-bar-chart">
         <!-- Checkbox options for transaction card types on the bar chart will be added here dynamically. -->
     </div>
 
@@ -682,6 +686,21 @@
                                 scales: {
                                     y: {
                                         beginAtZero: true
+                                    }
+                                },
+                                plugins: {
+                                    tooltip: {
+                                        callbacks: {
+                                            // Filtered index is not necessary anymore, so just grabbing the original index returned here.
+                                            title: function(context) {
+                                                var index = context[0].dataIndex;
+                                                var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                                                return "Date: " + date;
+                                            },
+                                            label: function(context) {
+                                                /**/
+                                            }
+                                        }
                                     }
                                 }
                             }
