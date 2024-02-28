@@ -259,3 +259,8 @@ h5 {
   text-align: center;
   font-size: 25px;
 }
+
+.checkbox-cols {
+  padding-left: 50px !important;
+  padding-right: 50px !important;
+}
