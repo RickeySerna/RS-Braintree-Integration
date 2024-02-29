@@ -751,6 +751,30 @@
                         });
 
                         fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
+
+                        // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
+                        ctx.onclick = function(evt) {
+                            // Filling activeElements with the same getElementsAtEventForMode() function as in the other onclick.
+                            // Basically returns an array with all of the elements at the spot of the chart where the user clicks.
+                            var activeElements = transactionBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                            if (activeElements.length > 0) {
+                                var firstPoint = activeElements[0];
+                                var index = firstPoint.index;
+                                var date = dates[index];
+                                var status;
+                                if (firstPoint.datasetIndex === 0) {
+                                    status = "successful";
+                                } else if (firstPoint.datasetIndex === 1) {
+                                    status = "declined";
+                                } else {
+                                    status = "rejected";
+                                }
+                                var merchantId = "{{merchantId}}";
+
+                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + '&search%5Bstatus%5D%5B%5D=' + status;
+                                window.open(url, '_blank');
+                            }
+                        };
                     }
 
                     // The parameters to be used to generate the dates array.
