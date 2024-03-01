@@ -760,7 +760,44 @@
                             if (activeElements.length > 0) {
                                 var firstPoint = activeElements[0];
                                 var index = firstPoint.index;
-                                var date = dates[index];
+
+                                // Advanced txn search demands that the date be formatted in MM/DD/YYYY format. Using moment to re-format the date as such.
+                                var date = moment(dates[index]).format("MM/DD/YYYY");
+                                console.log(date);
+
+                                // These are all of the possible card type values accepted as card type parameters by the adv txn search URL.
+                                var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
+
+                                // This function returns the card type parameter search string to be added to the URL.
+                                function generateCardTypeParams() {
+                                    // We define the string to be returned as an empty string.
+                                    var params = '';
+                                    // Creating an array consisting of the unchecked card type checkboxes.
+                                    var uncheckedCardTypes = $('#transaction-card-types-bar-chart input:not(:checked)').map(function() {
+                                        return this.value;
+                                    }).get();
+
+                                    console.log("Unchecked card types array: "uncheckedCardTypes);
+
+                                    // The way the advanced txn search URL logic works is, if no parameters for any one of the categories is entered, then the search includes ALL of the parameters.
+                                    // So if we don't include any card type parameters, the search will automatically check all of them.
+                                    // With that in mind, we immediately check whether or not the user has unchecked any card types.
+                                    // If they have, uncheckedCardTypes will be populated/have a length greated than 0. If that's the case, then we need to make sure that that card type is not included in the parameters.
+                                    // If not though, meaning if they haven't unchecked any card types, then there's no need to include any card type parameters.
+                                    // That means they want all card types included so we just return the empty string; no card type &search strings to be included in the search at all.
+                                    if (uncheckedCardTypes.length == 0) {
+                                        return params;
+                                    }
+                                    else {
+                                        // TODO: Remove the card types in uncheckedCardTypes from allCardTypes, then automatically generate &search strings for all card types left in allCardTypes and them into params.
+                                        return params;
+                                    }
+                                }
+
+                                var cardTypeParams = generateCardTypeParams();
+
+                                console.log("testing: ", selectedCardTypesBarChart);
+
                                 var status;
                                 if (firstPoint.datasetIndex === 0) {
                                     status = "successful";
@@ -771,7 +808,7 @@
                                 }
                                 var merchantId = "{{merchantId}}";
 
-                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + '&search%5Bstatus%5D%5B%5D=' + status;
+                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams;
                                 window.open(url, '_blank');
                             }
                         };
