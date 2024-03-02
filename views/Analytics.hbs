@@ -769,7 +769,7 @@
                                 var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
 
                                 // This function returns the card type parameter search string to be added to the URL.
-                                function generateCardTypeParams() {
+                                function generateCardTypeParams(allCardTypes) {
                                     // We define the string to be returned as an empty string.
                                     var params = '';
                                     // Creating an array consisting of the unchecked card type checkboxes.
@@ -777,7 +777,7 @@
                                         return this.value;
                                     }).get();
 
-                                    console.log("Unchecked card types array: "uncheckedCardTypes);
+                                    console.log("Unchecked card types array: ", uncheckedCardTypes);
 
                                     // The way the advanced txn search URL logic works is, if no parameters for any one of the categories is entered, then the search includes ALL of the parameters.
                                     // So if we don't include any card type parameters, the search will automatically check all of them.
@@ -789,14 +789,30 @@
                                         return params;
                                     }
                                     else {
-                                        // TODO: Remove the card types in uncheckedCardTypes from allCardTypes, then automatically generate &search strings for all card types left in allCardTypes and them into params.
+                                        // Quick formatting to remove spaces and replace them with %20.
+                                        // Basically just doing that for Amex. The checkbox returns the value as "American Express" whereas it's "American%20Express" in the array we're generating the strings from.
+                                        // The g there is a "global" flag. Basically tells the function to replace all occurrences of the space here, not just the first it sees.
+                                        uncheckedCardTypes = uncheckedCardTypes.map(type => type.replace(/ /g, '%20'));
+
+                                        // Using filter() to create a new array that includes all of the card types in allCardTypes, EXCEPT those that are also in uncheckedCardTypes.
+                                        // It's parsing through each element in allCardTypes and checking if the condition (!uncheckedCardTypes.includes(type)) is true.
+                                        // If it returns true, meaning that the type is not included in uncheckedCardTypes, it's added to the new checkedCardTypes array.
+                                        // If it returns false, meaning that type is in uncheckedCardTypes, then it's not included in checkedCardTypes.
+                                        var checkedCardTypes = allCardTypes.filter(type => !uncheckedCardTypes.includes(type));
+
+                                        // Now we just iterate over every element in the new checkedCardTypes array, create the &search string with that type at the end of it, and add it to params.
+                                        checkedCardTypes.forEach(type => {
+                                            params += '&search%5Bcredit_card_card_type%5D%5B%5D=' + type;
+                                        });
+
+                                        console.log("The params we're returning: " + params);
+                                        // Returning our params var filled with a bunch of &search strings stitched together.
                                         return params;
                                     }
-                                }
+                                };
 
-                                var cardTypeParams = generateCardTypeParams();
-
-                                console.log("testing: ", selectedCardTypesBarChart);
+                                var cardTypeParams = generateCardTypeParams(allCardTypes);
+                                console.log("The cardTypeParams generated: " + cardTypeParams);
 
                                 var status;
                                 if (firstPoint.datasetIndex === 0) {
