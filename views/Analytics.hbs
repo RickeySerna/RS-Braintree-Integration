@@ -767,6 +767,8 @@
 
                                 // These are all of the possible card type values accepted as card type parameters by the adv txn search URL.
                                 var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
+                                // All possible payment method type strings that the URL search string accepts.
+                                var allPaymentInstrumentTypes = ["CreditCardDetail", "ApplePayDetail", "VenmoAccountDetail", "PayPalDetail", "LocalPaymentDetail", "SamsungPayAttributesSnapshot", "Unknown", "AndroidPayCardDetail", "AndroidPayNetworkTokenDetail", "PaymentReaderAttributesSnapshot"];
 
                                 // This function returns the card type parameter search string to be added to the URL.
                                 function generateCardTypeParams(allCardTypes) {
@@ -811,17 +813,34 @@
                                     }
                                 };
 
+                                function generatePaymentInstrumentParams(allPaymentInstrumentTypes) {
+                                    var params = "";
+
+                                    var uncheckedPaymentMethodTypes = $('#transaction-types-bar-chart input:not(:checked)').map(function() {
+                                        return this.value;
+                                    }).get();
+
+                                    console.log(uncheckedPaymentMethodTypes);
+
+                                    if (uncheckedPaymentMethodTypes.length == 0) {
+                                        return params;
+                                    }
+                                    else {
+                                        // Filtering this one will be a bit more tricky. The values in uncheckedPaymentMethodTypes don't match those in allPaymentInstrumentTypes.
+                                        // Gotta map them, then filter them the same way as in the other function.
+                                        return params;
+                                    }
+                                };
+
                                 var cardTypeParams = generateCardTypeParams(allCardTypes);
                                 console.log("The cardTypeParams generated: " + cardTypeParams);
+                                var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
+                                console.log("The payment method types generated: " + paymentMethodTypeParams);
 
-                                var status;
-                                if (firstPoint.datasetIndex === 0) {
-                                    status = "successful";
-                                } else if (firstPoint.datasetIndex === 1) {
-                                    status = "declined";
-                                } else {
-                                    status = "rejected";
-                                }
+
+                                var statusParams;
+
+
                                 var merchantId = "{{merchantId}}";
 
                                 var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams;
