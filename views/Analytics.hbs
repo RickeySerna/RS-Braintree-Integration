@@ -760,6 +760,9 @@
                             if (activeElements.length > 0) {
                                 var firstPoint = activeElements[0];
                                 var index = firstPoint.index;
+                                // This should let us know which of the bars the user clicked on. 0 = successful, 1 = processor declined, 2 = gw rejected.
+                                var datasetIndex = firstPoint.datasetIndex;
+                                console.log("The bar the user clicked: " + datasetIndex);
 
                                 // Advanced txn search demands that the date be formatted in MM/DD/YYYY format. Using moment to re-format the date as such.
                                 var date = moment(dates[index]).format("MM/DD/YYYY");
@@ -853,6 +856,23 @@
                                     }
                                 };
 
+                                // This function works a bit different than the other two.
+                                // The statuses to be included depends on both the filters and the bar the user clicked on.
+                                // We pass the bar the user clicked on (via datasetIndex), then do the filtering depending on that value.
+                                function generateStatusParams(datasetIndex) {
+                                    var params = "";
+
+                                    var uncheckedStatuses = $('#transaction-statuses-bar-chart input:not(:checked)').map(function() {
+                                        return this.value;
+                                    }).get();
+
+                                    // TODO: Need to figure out the filtering logic. Think I'll just return all proc. declined and GW rejected statuses if they click those, then just fo the filtering if datasetIndex = 0.
+                                    var allStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled", "voided", "processor_declined", "three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required", "failed", "settlement_declined", "authorization_expired"];
+                                    var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
+                                    var processorDeclinedStatuses = ["processor_declined"];
+                                    var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
+                                };
+
                                 var cardTypeParams = generateCardTypeParams(allCardTypes);
                                 console.log("The cardTypeParams generated: " + cardTypeParams);
                                 var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
@@ -868,7 +888,7 @@
                                 window.open(url, '_blank');
                             }
                         };
-                    }
+}
 
                     // The parameters to be used to generate the dates array.
                     var thisStartDate = $('#start-date').val();
