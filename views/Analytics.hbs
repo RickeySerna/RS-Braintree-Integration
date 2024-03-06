@@ -627,7 +627,6 @@
                     }
 
                     function drawBarChart(dates) {
-
                         if (transactionBarChart) {
                             transactionBarChart.destroy();
                         }
@@ -839,6 +838,7 @@
                                         };
 
                                         // Using the map on uncheckedPaymentMethodTypes to create a new array with the values we need.
+                                        // Because Google Pay needed to be mapped to two values, we use flatMap here so make sure the array is "flattened" into one value in each space.
                                         var uncheckedPaymentMethodTypesConverted = uncheckedPaymentMethodTypes.flatMap(paymentType => paymentInstrumentMap[paymentType]);
                                         console.log("Payment types after formatting: ", uncheckedPaymentMethodTypesConverted);
 
@@ -866,29 +866,77 @@
                                         return this.value;
                                     }).get();
 
-                                    // TODO: Need to figure out the filtering logic. Think I'll just return all proc. declined and GW rejected statuses if they click those, then just fo the filtering if datasetIndex = 0.
-                                    var allStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled", "voided", "processor_declined", "three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required", "failed", "settlement_declined", "authorization_expired"];
-                                    var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
-                                    var processorDeclinedStatuses = ["processor_declined"];
-                                    var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
+                                    // The user clicked the successful transactions bar.
+                                    if (datasetIndex == 0) {
+                                        // These are all of the statuses that the URL accepts representing successful transactions.
+                                        // We create an array with only these specifically because if the user is clicking on this bar, it will inherently only include successful values.
+                                        // By creating the array like this now, we get rid of the need to filter out unsuccessful statuses later.
+                                        var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
+
+                                        // Creating a map to format the statuses from the checkbox values into values the URL accepts
+                                        var statusMap = {
+                                            "authorized": "authorized",
+                                            "Submitted For Settlement": "submitted_for_settlement",
+                                            "Settlement Pending": "settlement_pending",
+                                            "Settlement Confirmed": "settlement_confirmed",
+                                            "Settling": "settling",
+                                            "Settled": "settled"
+                                        };
+
+                                        // Formatting the uncheckedStatuses array we created.
+                                        var uncheckedStatusesConverted = uncheckedStatuses.map(status => statusMap[status] || status);
+                                        console.log("Successful unchecked statuses after formatting: ", uncheckedStatusesConverted);
+
+                                        // Now generating the array that the search strings will be created from. This is where using the successful status array helped us.
+                                        var checkedStatuses = successfulStatuses.filter(status => !uncheckedStatusesConverted.includes(status));
+                                        console.log("The array to generate the successful status params from: ", checkedStatuses);
+
+                                        // Generating the &search strings to be used in the URL.
+                                        checkedStatuses.forEach(status => {
+                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
+                                        });
+
+                                        return params;
+                                    }
+                                    // The user clicked the processor declined bar.
+                                    else if (datasetIndex == 1) {
+                                        // There's only one single status that corresponds to processor declines: processor_declined
+                                        // With that in mind, there's no filtering or anything like that to be done, just add the string to params and return it.
+                                        params += "&search%5Bstatus%5D%5B%5D=processor_declined";
+                                        return params;
+                                    }
+                                    // The user clicked the gateway rejected bar.
+                                    else {
+                                        // Similar situation here as with processor declines, except that there are many GW rejection statuses.
+                                        // Regardless, we don't do any sort of filtering between GW rejection reasons - they're just all tossed together.
+
+                                        // As such, all we have to do is create a GW rejection status array here.
+                                        var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
+
+                                        // Then just generate the &search strings from all of those strings and add them into params.
+                                        gatewayRejectedStatuses.forEach(status => {
+                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
+                                        });
+
+                                        return params;
+                                    }
+                                    // We don't have to worry about any other datasetIndex value cases. The bar chart only has 3 datasets so there's no possibility datasetIndex will be anything but 0, 1, or 2.
                                 };
 
                                 var cardTypeParams = generateCardTypeParams(allCardTypes);
                                 console.log("The cardTypeParams generated: " + cardTypeParams);
                                 var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
                                 console.log("The payment method types generated: " + paymentMethodTypeParams);
-
-
-                                var statusParams;
-
+                                var statusParams = generateStatusParams(datasetIndex);
+                                console.log("The statuses generated: " + statusParams);
 
                                 var merchantId = "{{merchantId}}";
 
-                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams + paymentMethodTypeParams;
+                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams + paymentMethodTypeParams + statusParams;
                                 window.open(url, '_blank');
                             }
                         };
-}
+                    };
 
                     // The parameters to be used to generate the dates array.
                     var thisStartDate = $('#start-date').val();
