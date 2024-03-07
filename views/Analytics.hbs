@@ -965,16 +965,17 @@
             });
         }
 
+        // Event listener for the user hitting Enter/Return on their keyboard inside of the date pickers.
+        $('#start-date, #end-date').on('keypress', function(event) {
+            // The Enter/Return key has a keycode of 13. So this is setting a condition for that specific key being pressed.
+            if (event.which == 13) {
+                // Once pressed, the graph-generator click event listener code is triggered. Just like if the user clicks the Search button.
+                $('#graph-generator').click();
+            }
+        });
+
         // Event listener for the graph generator button. No graph is created until this is clicked.
         $('#graph-generator').click(function() {
-            // Also doing this here so that the chart is destroyed immediately once the button is clicked.
-            if (transactionChart) {
-                transactionChart.destroy();
-            }
-
-            if (transactionBarChart) {
-                transactionBarChart.destroy();
-            }
 
             // Define the search parameters from the date inputs above.
             var startDate = $('#start-date').val();
@@ -987,6 +988,17 @@
             // If it is, we move forward with emptying the checkboxes and running generateGraph() again.
             // Without making sure of this, it surprisingly doesn't throw an error, but no data will be returned.
             if (startDate <= endDate) {
+
+                // Also doing this here so that the chart is destroyed immediately once the button is clicked.
+                // Update: moving this inside this check so that charts are only destroyed if the user enters a valid search range.
+                if (transactionChart) {
+                    transactionChart.destroy();
+                }
+
+                if (transactionBarChart) {
+                    transactionBarChart.destroy();
+                }
+
                 // If multiple searches were ran without reloading the page, the checkbox options would persist after each search.
                 // Now clearing the checkbox divs for the line chart when the search button is clicked.
                 $('#transaction-types-line-chart').empty();
