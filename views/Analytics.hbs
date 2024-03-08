@@ -974,6 +974,58 @@
             }
         });
 
+        // This function ensures that the start date and end date the user enters for the search range is valid.
+        function datesValidator(startDate, endDate) {
+
+            // Generating todays date using moment.js.
+            const today = moment().startOf('day');
+
+            // These are all different conditions that would break the AJAX call. For each one, we have the function return false. This will be used later.
+
+            // The user entered neither a start or end date, or they enter both as invalid dates.
+            if ((startDate == "") && (endDate == "")) {
+                alert("Please enter a valid search range before generating the graphs.");
+                return false;
+            }
+            // Was hoping to enter these two as well so that the user gets slightly different messages for no dates vs. invalid dates.
+            // So if the user enters 2/31/YYYY, that date doesn't exist, but the date pickers will allow it.
+            // What happens though is that it gets returned as an empty string. So to the function, there's no difference between entering nothing and entering 2/30/YYYY.
+            // Not ideal. I'd like the user to get these messages below for entering nothing, then get the next two sets of messages for entering invalid dates.
+            // This works... for now. Will circle back.
+        /*    else if (startDate == "") {
+                alert("Please enter a start date before generating the graphs.");
+                return false;
+            }
+            else if (endDate == "") {
+                alert("Please enter an ending date before generating the graphs.");
+                return false;
+            }*/
+            // User entered an invalid date. isValid() is a moment.js function which checks if the input is an actual date.
+            // Both empty strings and a fake date (like 2/30) trigger these.
+            else if (!moment(startDate).isValid()) {
+                alert("Please enter a valid start date before generating the graphs.");
+                return false;
+            }
+            else if (!moment(endDate).isValid()) {
+                alert("Please enter a valid end date before generating the graphs.");
+                return false;
+            }
+            // User entered either date as a future date.
+            // This is where we use the today const we created above. isAfter() checks is the date comes after the date it's provided (always todays date thanks to our constant).
+            else if (moment(startDate).isAfter(today) || moment(endDate).isAfter(today)) {
+                alert("Please enter search dates from today or in the past.");
+                return false;
+            }
+            // User entered an end date that comes before the end date. So like startDate = 1/1/2024 and endDate = 1/1/2023. Doesn't make sense and it breaks the search.
+            else if (startDate > endDate) {
+                alert("The starting search date must be on or before the ending search date.");
+                return false;
+            }
+            
+            // The dates passed all checks! Return true.
+            return true;
+        };
+
         // Event listener for the graph generator button. No graph is created until this is clicked.
         $('#graph-generator').click(function() {
 
@@ -983,11 +1035,16 @@
 
             console.log(startDate);
             console.log(endDate);
+            
+            // Filtering the dates through the date validation function we made.
+            var datesValid = datesValidator(startDate, endDate);
 
             // Adding a check to make sure the start date is before or on the same date as the end date.
             // If it is, we move forward with emptying the checkboxes and running generateGraph() again.
             // Without making sure of this, it surprisingly doesn't throw an error, but no data will be returned.
-            if (startDate <= endDate) {
+            // Update: changed the check to a function which is much more comprehensive.
+            // The function returns false if the date inputs are invalid, true if they're valid. So we just need to check that it returns true here.
+            if (datesValid == true) {
 
                 // Also doing this here so that the chart is destroyed immediately once the button is clicked.
                 // Update: moving this inside this check so that charts are only destroyed if the user enters a valid search range.
@@ -1013,9 +1070,8 @@
                 // Run the function to create the graph with these dates as the search parameters.
                 generateGraph(startDate, endDate);
             }
-            // If it's not, we give the user an error and end things then and there with return.
+            // The function returned false meaning that the dates were invalid, just return here and end things.
             else {
-                alert("The starting search date must be on or before the ending search date.");
                 return;
             }
         });
