@@ -902,45 +902,48 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   });
   console.log("Adding data to arrays...");
   stream.on('data', (transaction) => {
-    transactionAmounts.push(transaction.amount);
-    transactionIDs.push(transaction.id);
-    transactionStatuses.push(transaction.status);
-    transactionsCreatedAt.push(transaction.createdAt);
-    transactionTypes.push(transaction.paymentInstrumentType);
+    // This check ensures that only sale transactions are pulled from the search. No refunds.
+    if (transaction.type == "sale") {
+      transactionAmounts.push(transaction.amount);
+      transactionIDs.push(transaction.id);
+      transactionStatuses.push(transaction.status);
+      transactionsCreatedAt.push(transaction.createdAt);
+      transactionTypes.push(transaction.paymentInstrumentType);
 
-    // Conditions to grab the card type from each type of payment method.
-    // This way only the one correct card type attribute is pushed into the array.
-    // Keeps the array indexes consistent with the same transaction at each index of each array.
-    if (transaction.paymentInstrumentType == "credit_card") {
-      transactionCardTypes.push(transaction.creditCard.cardType);
-    }
-    else if (transaction.paymentInstrumentType == "apple_pay_card") {
-      transactionCardTypes.push(transaction.applePayCard.cardType);
-    }
-    else if (transaction.paymentInstrumentType == "android_pay_card") {
-      transactionCardTypes.push(transaction.androidPayCard.sourceCardType);
-    }
-    // Threw these in as well for the less common payment methods, however they appear to be causing errors.
-    // The card type seems to always be undefined. I think this is an issue with the API.
-    // Nothing I can do about that. ¯\_(ツ)_/¯
-    /*
-    else if (transaction.paymentInstrumentType == "samsung_pay_card") {
-      transactionCardTypes.push(transaction.samsungPayCardDetails.cardType);
-    }
-    else if (transaction.paymentInstrumentType == "network_token") {
-      transactionCardTypes.push(transaction.networkToken.cardType);
-    }
-    else if (transaction.paymentInstrumentType == "masterpass_card") {
-      transactionCardTypes.push(transaction.masterpassCardDetails.cardType);
-    }
-    else if (transaction.paymentInstrumentType == "visa_checkout_card") {
-      transactionCardTypes.push(transaction.visaCheckoutCardDetails.cardType);
-    }*/
-    // In case a payment method didn't match any of the defined payment methods (like the ones above), we just add "undefined" to the array.
-    // This is to keep the indexes accurate.
-    else {
-      transactionCardTypes.push("undefined");
-    }
+      // Conditions to grab the card type from each type of payment method.
+      // This way only the one correct card type attribute is pushed into the array.
+      // Keeps the array indexes consistent with the same transaction at each index of each array.
+      if (transaction.paymentInstrumentType == "credit_card") {
+        transactionCardTypes.push(transaction.creditCard.cardType);
+      }
+      else if (transaction.paymentInstrumentType == "apple_pay_card") {
+        transactionCardTypes.push(transaction.applePayCard.cardType);
+      }
+      else if (transaction.paymentInstrumentType == "android_pay_card") {
+        transactionCardTypes.push(transaction.androidPayCard.sourceCardType);
+      }
+      // Threw these in as well for the less common payment methods, however they appear to be causing errors.
+      // The card type seems to always be undefined. I think this is an issue with the API.
+      // Nothing I can do about that. ¯\_(ツ)_/¯
+      /*
+      else if (transaction.paymentInstrumentType == "samsung_pay_card") {
+        transactionCardTypes.push(transaction.samsungPayCardDetails.cardType);
+      }
+      else if (transaction.paymentInstrumentType == "network_token") {
+        transactionCardTypes.push(transaction.networkToken.cardType);
+      }
+      else if (transaction.paymentInstrumentType == "masterpass_card") {
+        transactionCardTypes.push(transaction.masterpassCardDetails.cardType);
+      }
+      else if (transaction.paymentInstrumentType == "visa_checkout_card") {
+        transactionCardTypes.push(transaction.visaCheckoutCardDetails.cardType);
+      }*/
+      // In case a payment method didn't match any of the defined payment methods (like the ones above), we just add "undefined" to the array.
+      // This is to keep the indexes accurate.
+      else {
+        transactionCardTypes.push("undefined");
+      }
+    };
   });
   stream.on('end', () => {
     // Using the functions to create new arrays filled with the formatted data.
