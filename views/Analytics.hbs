@@ -2,6 +2,12 @@
 </head>
 
 <body>
+    <!-- Adding a spinner that will be shown while the AJAX call runs in the background and is hidden after the call is done. -->
+    <!-- TODO: The style is not quite right yet. Need to fix that. -->
+    <div id="spinner" class="spinner-border text-primary" role="status" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: rgba(0, 0, 0, 0.5); padding: 50px; border-radius: 50%;">
+        <span class="sr-only">Fetching data...</span>
+    </div>
+
     <!-- Creating two input dates for the search parameters and a button to generate the graph. -->
     <input type="date" id="start-date">
     <input type="date" id="end-date">
@@ -956,6 +962,9 @@
                     $('#transaction-types-bar-chart input, #transaction-statuses-bar-chart input, #transaction-card-types-bar-chart input').change(function() {
                         drawBarChart(dates);
                     });
+
+                    // Hiding the spinner again once everything is done with the AJAX call.
+                    $('#spinner').hide();
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
@@ -1045,6 +1054,8 @@
             // Update: changed the check to a function which is much more comprehensive.
             // The function returns false if the date inputs are invalid, true if they're valid. So we just need to check that it returns true here.
             if (datesValid == true) {
+                // Search range was valid, show the spinner so the user sees that the search is working.
+                $('#spinner').show();
 
                 // Also doing this here so that the chart is destroyed immediately once the button is clicked.
                 // Update: moving this inside this check so that charts are only destroyed if the user enters a valid search range.
