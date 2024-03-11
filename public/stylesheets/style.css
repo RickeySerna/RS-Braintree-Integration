@@ -264,3 +264,25 @@ h5 {
   padding-left: 50px !important;
   padding-right: 50px !important;
 }
+
+#analyticsSpinner {
+  position: absolute;
+  z-index: 9999;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+#theActualAnalyticsSpinner {
+  width: 10rem;
+  height: 10rem;
+}
+
+.spinner-text {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: 100%;
+}
