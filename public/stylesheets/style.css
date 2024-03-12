@@ -265,7 +265,7 @@ h5 {
   padding-right: 50px !important;
 }
 
-#analyticsSpinner {
+#analyticsSpinnerDiv {
   position: absolute;
   z-index: 9999;
   left: 50%;
@@ -276,6 +276,8 @@ h5 {
 #theActualAnalyticsSpinner {
   width: 10rem;
   height: 10rem;
+  color: #ff8e51 !important;
+  margin-bottom: 20px;
 }
 
 .spinner-text {
@@ -285,4 +287,5 @@ h5 {
   transform: translateX(-50%);
   text-align: center;
   width: 100%;
+  
 }

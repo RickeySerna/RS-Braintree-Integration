@@ -3,8 +3,8 @@
 
 <body>
     <!-- Adding a spinner that will be shown while the AJAX call runs in the background and is hidden after the call is done. -->
-    <div id="analyticsSpinner" style="display: none;">
-        <div id="theActualAnalyticsSpinner" class="analytics-spinner spinner-grow text-warning" role="status"></div>
+    <div id="analyticsSpinnerDiv" style="display: none;">
+        <div id="theActualAnalyticsSpinner" class="spinner-border" role="status"></div>
         <div class="spinner-text">Fetching data...</div>
     </div>
 
@@ -475,10 +475,28 @@
                                 datasets: [{
                                     label: 'Transactions',
                                     data: filteredAmounts,
-                                    backgroundColor: 'purple',
+                                    backgroundColor: function(context) {
+                                        var index = context.dataIndex;
+                                        var status = filteredStatuses[index];
+                                        switch(status) {
+                                            case 'Settled':
+                                            case 'Submitted For Settlement':
+                                            case 'Settling':
+                                            case 'Authorized':
+                                            case 'Settlement Pending':
+                                            case 'Settlement Confirmed':
+                                                return 'green';
+                                            case 'Processor Declined':
+                                                return 'red';
+                                            case 'Gateway Rejected':
+                                                return 'blue';
+                                            default:
+                                                return '#FF8E51';
+                                        }
+                                    },
                                     borderColor: '#FF8E51',
                                     borderWidth: 1,
-                                    spanGaps: true
+                                    spanGaps: true,
                                 }]
                             },
                             options: {
@@ -692,7 +710,7 @@
                                     label: "Successful Transactions",
                                     data: dataSuccessful,
                                     backgroundColor: "green",
-                                    borderColor: '#FF8E51',
+                                    borderColor: '#ff8e5128',
                                     borderWidth: 1,
                                     categoryPercentage: 0.8,
                                     barPercentage: 0.9
@@ -701,7 +719,7 @@
                                     label: "Processor Declined Transactions",
                                     data: dataDeclined,
                                     backgroundColor: "red",
-                                    borderColor: '#FF8E51',
+                                    borderColor: '#ff8e5128',
                                     borderWidth: 1,
                                     categoryPercentage: 0.8,
                                     barPercentage: 0.9
@@ -710,7 +728,7 @@
                                     label: "Gateway Rejected Transactions",
                                     data: dataRejected,
                                     backgroundColor: "blue",
-                                    borderColor: '#FF8E51',
+                                    borderColor: '#ff8e5128',
                                     borderWidth: 1,
                                     categoryPercentage: 0.8,
                                     barPercentage: 0.9
@@ -964,7 +982,7 @@
                     });
 
                     // Hiding the spinner again once everything is done with the AJAX call.
-                    $('#analyticsSpinner').hide();
+                    $('#analyticsSpinnerDiv').hide();
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
@@ -1055,7 +1073,7 @@
             // The function returns false if the date inputs are invalid, true if they're valid. So we just need to check that it returns true here.
             if (datesValid == true) {
                 // Search range was valid, show the spinner so the user sees that the search is working.
-                $('#analyticsSpinner').show();
+                $('#analyticsSpinnerDiv').show();
 
                 // Also doing this here so that the chart is destroyed immediately once the button is clicked.
                 // Update: moving this inside this check so that charts are only destroyed if the user enters a valid search range.
