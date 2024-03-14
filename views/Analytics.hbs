@@ -2,76 +2,74 @@
 </head>
 
 <body>
-    <!-- Adding a spinner that will be shown while the AJAX call runs in the background and is hidden after the call is done. -->
-    <div id="analyticsSpinnerDiv" style="display: none;">
-        <div id="theActualAnalyticsSpinner" class="spinner-border" role="status"></div>
-        <div class="spinner-text">Fetching data...</div>
-    </div>
+<!-- Adding a spinner that will be shown while the AJAX call runs in the background and is hidden after the call is done. -->
+<div id="analyticsSpinnerDiv" style="display: none;">
+    <div id="theActualAnalyticsSpinner" class="spinner-border" role="status"></div>
+    <div class="spinner-text">Fetching data...</div>
+</div>
 
-    <!-- Creating two input dates for the search parameters and a button to generate the graph. -->
-    <input type="date" id="start-date">
-    <input type="date" id="end-date">
+<div class="jumbotron">
+  <h1 id="analyticsHeader">Transaction Analytics</h1>
+</div>
+
+<!-- Creating two input dates for the search parameters and a button to generate the graph. -->
+<div id="searchDiv">
+    <div id="date-inputs">
+        <input type="date" id="start-date">
+        <input type="date" id="end-date">
+    </div>
     <button id="graph-generator">Search</button>
+</div>
 
-    <!-- Div holding the line chart. -->
-    <div class="graphStyle">
-        <h1>Transactions Per Transaction</h1>
-        <canvas id="transaction-line-chart"></canvas>
+<!-- Div holding the line chart and its checkbox options. -->
+<div class="row">
+    <div class="col-9">
+        <div class="graphStyle">
+            <h1>Transactions Per Transaction</h1>
+            <canvas id="transaction-line-chart"></canvas>
+        </div>
     </div>
-
-    <!-- Creating divs for the checkbox options for the line chart. -->
-    <div class="row justify-content-left">
-        <div class="col-2.5 checkbox-cols">
+    <div class="col-3">
+        <!-- Creating divs for the checkbox options for the line chart. -->
+        <div class="checkbox-cols">
             <p>Payment Methods:</p>
-            <div id="transaction-types-line-chart">
-                <!-- Checkbox options for transaction types on the line chart will added here dynamically. -->
-            </div>
+            <div id="transaction-types-line-chart"></div>
         </div>
-
-        <div class="col-2.5 checkbox-cols">
+        <div class="checkbox-cols">
             <p>Statuses:</p>
-            <div id="transaction-statuses-line-chart">
-                <!-- Checkbox options for transaction statuses on the line chart will be added here dynamically. -->
-            </div>
+            <div id="transaction-statuses-line-chart"></div>
         </div>
-
-        <div class="col-2.5 checkbox-cols">
+        <div class="checkbox-cols">
             <p>Card Types:</p>
-            <div id="transaction-card-types-line-chart">
-                <!-- Checkbox options for transaction card types on the line chart will be added here dynamically. -->
-            </div>
+            <div id="transaction-card-types-line-chart"></div>
         </div>
     </div>
+</div>
 
-    <!-- Div holding the bar chart. -->
-    <div class="graphStyle">
-        <h1>Transactions Per Day</h1>
-        <canvas id="transaction-bar-chart"></canvas>
+<!-- Div holding the bar chart and its checkbox options. -->
+<div class="row">
+    <div class="col-9">
+        <div class="graphStyle">
+            <h1>Transactions Per Day</h1>
+            <canvas id="transaction-bar-chart"></canvas>
+        </div>
     </div>
-
-    <!-- Creating divs for the checkbox options for the bar chart. -->
-    <div class="row justify-content-left">
-        <div class="col-2.5 checkbox-cols">
+    <div class="col-3">
+        <!-- Creating divs for the checkbox options for the bar chart. -->
+        <div class="checkbox-cols">
             <p>Payment Methods:</p>
-            <div id="transaction-types-bar-chart">
-                <!-- Checkbox options for transaction types on the bar chart will added here dynamically. -->
-            </div>
+            <div id="transaction-types-bar-chart"></div>
         </div>
-
-        <div class="col-2.5 checkbox-cols">
+        <div class="checkbox-cols">
             <p>Statuses:</p>
-            <div id="transaction-statuses-bar-chart">
-                <!-- Checkbox options for transaction statuses on the bar chart will be added here dynamically. -->
-            </div>
+            <div id="transaction-statuses-bar-chart"></div>
         </div>
-
-        <div class="col-2.5 checkbox-cols">
+        <div class="checkbox-cols">
             <p>Card Types:</p>
-            <div id="transaction-card-types-bar-chart">
-                <!-- Checkbox options for transaction card types on the bar chart will be added here dynamically. -->
-            </div>
+            <div id="transaction-card-types-bar-chart"></div>
         </div>
     </div>
+</div>
 
     <script>
         // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
