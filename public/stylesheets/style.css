@@ -333,20 +333,47 @@ h5 {
   box-shadow: 0 0 0 3px #ff6a00;
 }
 
+/* Thought that the Analytics page was looking a little bare, so I decided to make an extremely gaudy jumbotron header. I love it.*/
 .jumbotron {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 40vh; /* Adjust this value to change the height of the jumbotron */
-  background: linear-gradient(45deg, #ff6a00, #e66d2c, #29006a, #881EE4, #000000);
-  background-size: 300% 300%;
-  animation: gradient 5s linear infinite;
+  height: 40vh;
+  background: linear-gradient(-45deg, #000000, #000000, #000000, #881EE4, #881EE4, #29006a, #ff6a00, #e66d2c, #881EE4, #881EE4, #29006a, #ff6a00, #e66d2c, #000000, #000000, #000000);
+  background-size: 200% 100%;
+  animation: gradient 10s linear infinite, pulsate 2s ease-out infinite;
   border: 5px solid #ff8e51;
   border-radius: 25px;
-  box-shadow: 0 0 25px #ff8e51;
+  box-shadow: 0 0 25px #ff8e51, 0 0 50px #ff8e51, 0 0 75px #ff8e51;
   padding: 50px;
-  padding-top: 1000px;
+  margin-top: 30px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes pulsate {
+  0% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 20px #ff8e51, 0 0 30px #ff8e51, 0 0 40px #ff8e51;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
 }
 
 #analyticsHeader {
@@ -354,7 +381,7 @@ h5 {
   text-shadow: 2px 2px 4px #000000;
   font-size: 3em;
   padding: 20px 0;
-  animation: flash 1s infinite;
+  animation: flash 1s infinite, glow 1s infinite, flicker 1.5s infinite;
 }
 
 @keyframes flash {
@@ -366,11 +393,45 @@ h5 {
   }
 }
 
-@keyframes gradient {
+@keyframes glow {
   0% {
-    background-position: 0% 50%;
+    text-shadow: 0 0 5px #ff8e51, 0 0 10px #ff8e51, 0 0 15px #ff8e51, 0 0 20px #ff8e51;
   }
   100% {
-    background-position: 100% 50%;
+    text-shadow: 0 0 10px #ff8e51, 0 0 20px #ff8e51, 0 0 30px #ff8e51, 0 0 40px #ff8e51;
+  }
+}
+
+@keyframes flicker {
+  0%, 18%, 22%, 25%, 53%, 57%, 100% {
+    text-shadow:
+      -2px -2px 1px #ff8e51,
+      2px -2px 1px #ff8e51,
+      -2px 2px 1px #ff8e51,
+      2px 2px 1px #ff8e51;
+  }
+  20%, 24%, 55% { 
+    text-shadow: none;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translatey(0px);
+  }
+  50% {
+    transform: translatey(-20px);
+  }
+  100% {
+    transform: translatey(0px);
+  }
+}
+
+@keyframes move {
+  0% {
+    transform: translatex(0px);
+  }
+  100% {
+    transform: translatex(100%);
   }
 }
