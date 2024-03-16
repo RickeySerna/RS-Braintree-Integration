@@ -8,7 +8,7 @@
         <div class="spinner-text">Fetching data...</div>
     </div>
 
-    <div class="jumbotron">
+    <div id="analytics-jumbotron" class="jumbotron">
         <h1 id="analyticsHeader">Transaction Analytics</h1>
     </div>
 
@@ -393,22 +393,23 @@
                     console.log("Transaction types array: ", transactionTypes);
                     console.log("Transaction statuses array: ", transactionStatuses);
 
+                    // Update; added styles here. Since these are generated programmatically, the styles in the stylesheet don't seem to apply. Doing it here instead.
                     // Add checkboxes for each transaction type
                     transactionTypes.forEach(function(type) {
-                        $('#transaction-types-line-chart').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
-                        $('#transaction-types-bar-chart').append('<input type="checkbox" checked value="' + type + '">' + type + '<br>');
+                        $('#transaction-types-line-chart').append('<input type="checkbox" checked value="' + type + '"><span></span><span style="color: #881EE4;">' + type + '</span><br>');
+                        $('#transaction-types-bar-chart').append('<input type="checkbox" checked value="' + type + '"><span></span><span style="color: #881EE4;">' + type + '</span><br>');
                     });
 
                     // Add checkboxes for each transaction status
                     transactionStatuses.forEach(function(status) {
-                        $('#transaction-statuses-line-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
-                        $('#transaction-statuses-bar-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                        $('#transaction-statuses-line-chart').append('<input type="checkbox" checked value="' + status + '"><span></span><span style="color: #a344f7;">' + status + '</span><br>');
+                        $('#transaction-statuses-bar-chart').append('<input type="checkbox" checked value="' + status + '"><span></span><span style="color: #a344f7;">' + status + '</span><br>');
                     });
 
-                    // Add checkboxes for each transaction status
-                    transactionCardTypes.forEach(function(status) {
-                        $('#transaction-card-types-line-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
-                        $('#transaction-card-types-bar-chart').append('<input type="checkbox" checked value="' + status + '">' + status + '<br>');
+                    // Add checkboxes for each transaction card type
+                    transactionCardTypes.forEach(function(type) {
+                        $('#transaction-card-types-line-chart').append('<input type="checkbox" checked value="' + type + '"><span></span><span style="color: #a344f7;">' + type + '</span><br>');
+                        $('#transaction-card-types-bar-chart').append('<input type="checkbox" checked value="' + type + '"><span></span><span style="color: #a344f7;">' + type + '</span><br>');
                     });
 
                     // Function to draw the chart

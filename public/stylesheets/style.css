@@ -334,12 +334,12 @@ h5 {
 }
 
 /* Thought that the Analytics page was looking a little bare, so I decided to make an extremely gaudy jumbotron header. I love it.*/
-.jumbotron {
+#analytics-jumbotron {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 40vh;
-  background: linear-gradient(-45deg, #000000, #000000, #000000, #881EE4, #881EE4, #29006a, #ff6a00, #e66d2c, #881EE4, #881EE4, #29006a, #ff6a00, #e66d2c, #000000, #000000, #000000);
+  background: linear-gradient(-45deg, #000000, #000000, #000000, #881EE4, #29006a, #881EE4, #ff6a00, #e66d2c, #ff6a00, #881EE4, #29006a, #881EE4, #ff6a00, #e66d2c, #ff6a00, #000000, #000000, #000000);
   background-size: 200% 100%;
   animation: gradient 10s linear infinite, pulsate 2s ease-out infinite;
   border: 5px solid #ff8e51;
@@ -434,4 +434,14 @@ h5 {
   100% {
     transform: translatex(100%);
   }
+}
+
+.checkbox-cols p {
+  color: #ff8e51; /* Changes the color of the heading */
+  margin-bottom: 0; /* Removes space below the heading */
+  text-decoration: underline; /* Underlines the heading */
+}
+
+.checkbox-cols {
+  margin-bottom: 20px; /* Adds space between groups */
 }
