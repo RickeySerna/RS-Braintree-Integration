@@ -858,7 +858,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       "gateway_rejected": "Gateway Rejected",
       "authorization_expired": "Authorization Expired",
       "failed": "Failed",
-      "settlement_declined": "Settlement Declined"
+      "settlement_declined": "Settlement Declined",
+      "voided": "Voided"
     };
     return statuses.map(status => paymentTypeMap[status] || status);
   }
@@ -868,7 +869,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       "Apple Pay - Visa": "Visa",
       "Apple Pay - MasterCard": "MasterCard",
       "Apple Pay - Discover": "Discover",
-      "Apple Pay - American Express": "American Express"
+      "Apple Pay - American Express": "American Express",
+      "undefined": "Undefined"
     };
     return cardTypes.map(cardType => cardTypeMap[cardType] || cardType);
   }
