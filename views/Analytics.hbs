@@ -986,11 +986,24 @@
 
                     // Hiding the spinner again once everything is done with the AJAX call.
                     $('#spinner-overlay').hide();
+
+                    // Re-enabling the search inputs to allow the user to run a new search, if they please.
+                    $('#graph-generator').prop('disabled', false);
+                    $('#start-date').prop('disabled', false);
+                    $('#end-date').prop('disabled', false);
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
                     console.log('Status: ' + status);
                     console.log('Error: ' + error);
+
+                    // Hiding the spinner when the AJAX call fails as well.
+                    $('#spinner-overlay').hide();
+
+                    // Re-enabling the inputs here as well. This way, they'll re-enable even if the AJAX call failed for whatever reason.
+                    $('#graph-generator').prop('disabled', false);
+                    $('#start-date').prop('disabled', false);
+                    $('#end-date').prop('disabled', false);
                 }
             });
         }
@@ -1077,6 +1090,13 @@
             if (datesValid == true) {
                 // Search range was valid, show the spinner so the user sees that the search is working.
                 $('#spinner-overlay').show();
+
+                // The search has started and we don't want the user to be able to run multiple searches at once so we also immediately disable the inputs.
+                // We use prop() to access the disabled property on the elements and set that to true. That... disables them. Who'd have thought!
+                // We'll do the same thing at the end of the AJAX success call, except we set the property to false instead.
+                $('#graph-generator').prop('disabled', true);
+                $('#start-date').prop('disabled', true);
+                $('#end-date').prop('disabled', true);
 
                 // Also doing this here so that the chart is destroyed immediately once the button is clicked.
                 // Update: moving this inside this check so that charts are only destroyed if the user enters a valid search range.
