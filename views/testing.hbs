@@ -28,21 +28,25 @@
 
   console.log("Client token: " + clientToken);
 
-  braintree.dataCollector.create({
-    client: clientInstance
-  }, function (err, dataCollectorInstance) {
-    if (err) {
-      // Handle error in creation of data collector
-      console.error(err);
+  braintree.client.create({
+    authorization: clientToken
+  }, function (clientErr, clientInstance) {
+    if (clientErr) {
+      console.error('Error creating client:', clientErr);
       return;
     }
-    // At this point, you should access the dataCollectorInstance.deviceData value and provide it
-    // to your server, e.g. by injecting it into your form as a hidden input.
-    // testing
-    var deviceData = dataCollectorInstance.deviceData;
-    console.log(deviceData);
-    deviceDataString.value = deviceData;
-  });
 
-  form.submit();
+    braintree.dataCollector.create({
+      client: clientInstance
+    }, function (err, dataCollectorInstance) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+
+      var deviceData = dataCollectorInstance.deviceData;
+      console.log(deviceData);
+      deviceDataString.value = deviceData;
+    });
+  });
 </script>
