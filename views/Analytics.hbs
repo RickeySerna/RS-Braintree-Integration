@@ -704,6 +704,14 @@
                         // The data returned by the generateDataForBarChart function above.
                         var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
 
+                        // With the zoom functionality in place, we must set a maximum y axis. Without that in place, we can zoom out to ridiculous proportions.
+                        // To do that, we calculate the highest value in all three of the array.
+                        // TODO: It's not a perfect solution. Would be better if we could set it to the original max y axis value.
+                        var maxSuccessful = Math.max(...dataSuccessful);
+                        var maxDeclined = Math.max(...dataDeclined);
+                        var maxRejected = Math.max(...dataRejected);
+                        var maxY = Math.max(maxSuccessful, maxDeclined, maxRejected);
+
                         var ctx = document.getElementById("transaction-bar-chart");
                         transactionBarChart = new Chart(ctx, {
                             type: 'bar',
@@ -770,6 +778,29 @@
                                                 });
                                                 return labels;
                                             }
+                                        }
+                                    },
+                                    zoom: {
+                                        pan: {
+                                            enabled: true,
+                                            mode: "xy"
+
+                                        },
+                                        limits: {
+                                            y: {min: 0, max: maxY}
+                                        },
+                                        zoom: {
+                                            wheel: {
+                                                enabled: true,
+                                                mode: 'xy',
+                                                modifierKey: "shift"
+                                            },
+                                            pinch: {
+                                                enabled: true,
+                                                mode: 'xy',
+                                                modifierKey: "shift"
+                                            },
+                                            mode: 'xy'
                                         }
                                     }
                                 }
