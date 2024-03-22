@@ -704,14 +704,6 @@
                         // The data returned by the generateDataForBarChart function above.
                         var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
 
-                        // With the zoom functionality in place, we must set a maximum y axis. Without that in place, we can zoom out to ridiculous proportions.
-                        // To do that, we calculate the highest value in all three of the array.
-                        // TODO: It's not a perfect solution. Would be better if we could set it to the original max y axis value.
-                        var maxSuccessful = Math.max(...dataSuccessful);
-                        var maxDeclined = Math.max(...dataDeclined);
-                        var maxRejected = Math.max(...dataRejected);
-                        var maxY = Math.max(maxSuccessful, maxDeclined, maxRejected);
-
                         var ctx = document.getElementById("transaction-bar-chart");
                         transactionBarChart = new Chart(ctx, {
                             type: 'bar',
@@ -787,25 +779,30 @@
 
                                         },
                                         limits: {
-                                            y: {min: 0, max: maxY}
+                                            // These are essentially just placeholder values now.
+                                            // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+                                            y: {min: 0, max: 100}
                                         },
                                         zoom: {
                                             wheel: {
                                                 enabled: true,
+                                                speed: 0.05,
                                                 mode: 'xy',
                                                 modifierKey: "shift"
-                                            },
-                                            pinch: {
-                                                enabled: true,
-                                                mode: 'xy',
-                                                modifierKey: "shift"
-                                            },
-                                            mode: 'xy'
+                                            }
                                         }
                                     }
                                 }
                             }
                         });
+
+                        // This is setting the limits of the zoom plugin AFTER the chart is initially created.
+                        // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
+                        // Now, when the user zooms all the way out, the chart will look exactly the same as it originally did before all of the zooming.
+                        // Much better solution than the max array stuff we were doing!
+                        var originalMaxY = transactionBarChart.scales['y'].max;
+                        console.log("Original upper Y axis limit: " + originalMaxY);
+                        transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
 
                         fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
 
