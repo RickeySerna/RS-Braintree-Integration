@@ -775,8 +775,8 @@
                                     zoom: {
                                         pan: {
                                             enabled: true,
-                                            mode: "xy"
-
+                                            mode: "xy",
+                                            threshold: "20"
                                         },
                                         limits: {
                                             // These are essentially just placeholder values now.
@@ -803,6 +803,17 @@
                         var originalMaxY = transactionBarChart.scales['y'].max;
                         console.log("Original upper Y axis limit: " + originalMaxY);
                         transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+
+                        transactionBarChart.options.plugins.zoom.zoom.onPan = function({chart}) {
+                            console.log("onPan function triggered.");
+                            var xAxis = chart.scales['x'];
+
+                            var minDate = xAxis.getValueForPixel(xAxis.left);
+                            var maxDate = xAxis.getValueForPixel(xAxis.right);
+
+                            console.log("X axis left date: " + minDate);
+                            console.log("X axis right date: " + maxDate);
+                        };
 
                         fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
 
