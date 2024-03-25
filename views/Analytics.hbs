@@ -44,8 +44,9 @@
         <!-- Div holding the bar chart and its checkbox options. -->
         <div class="row">
             <div class="col-9">
-                <div class="graphStyle">
+                <div class="graphStyle" style="position: relative;">
                     <h1>Transactions Per Day</h1>
+                    <div id="bar-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
                     <canvas id="transaction-bar-chart"></canvas>
                 </div>
             </div>
@@ -704,107 +705,114 @@
                         // The data returned by the generateDataForBarChart function above.
                         var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
 
-                        var ctx = document.getElementById("transaction-bar-chart");
-                        transactionBarChart = new Chart(ctx, {
-                            type: 'bar',
-                            data: {
-                                labels: dates,
-                                datasets: [{
-                                    label: "Successful Transactions",
-                                    data: dataSuccessful,
-                                    backgroundColor: "green",
-                                    borderColor: "green",
-                                    borderWidth: 0.5,
-                                    categoryPercentage: 1,
-                                    barPercentage: 1
-                                },
-                                {
-                                    label: "Processor Declined Transactions",
-                                    data: dataDeclined,
-                                    backgroundColor: "red",
-                                    borderColor: "red",
-                                    borderWidth: 0.5,
-                                    categoryPercentage: 1,
-                                    barPercentage: 1
-                                },
-                                {
-                                    label: "Gateway Rejected Transactions",
-                                    data: dataRejected,
-                                    backgroundColor: "blue",
-                                    borderColor: "blue",
-                                    borderWidth: 0.5,
-                                    categoryPercentage: 1,
-                                    barPercentage: 1
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                },
-                                plugins: {
-                                    tooltip: {
-                                        callbacks: {
-                                            // Filtered index is not necessary anymore, so just grabbing the original index returned here.
-                                            title: function(context) {
-                                                var index = context[0].dataIndex;
-                                                var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-                                                return "Date: " + date;
-                                            },
-                                            label: function(context) {
-                                                var index = context.dataIndex;
-                                                var datasetIndex = context.datasetIndex;
-                                                var total = context.raw;
-                                                var ids;
-                                                if (datasetIndex === 0) {
-                                                    ids = idsSuccessful[index];
-                                                } else if (datasetIndex === 1) {
-                                                    ids = idsDeclined[index];
-                                                } else {
-                                                    ids = idsRejected[index];
-                                                }
-                                                var labels = ["Total: $" + total];
-                                                ids.forEach(function(id) {
-                                                    labels.push("Transaction ID: " + id);
-                                                });
-                                                return labels;
-                                            }
-                                        }
-                                    },
-                                    zoom: {
-                                        pan: {
-                                            enabled: true,
-                                            mode: "xy",
-                                            threshold: "20",
-                                            onPan: function({chart}) {
-                                                console.log("onPan function triggered.");
-                                                var xAxis = chart.scales['x'];
-
-                                                var minDate = xAxis.getValueForPixel(xAxis.left);
-                                                var maxDate = xAxis.getValueForPixel(xAxis.right);
-
-                                                console.log("X axis left date: " + dates[minDate]);
-                                                console.log("X axis right date: " + dates[maxDate - 1]);
-                                            }
-                                        },
-                                        limits: {
-                                            // These are essentially just placeholder values now.
-                                            // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
-                                            y: {min: 0, max: 100}
-                                        },
-                                        zoom: {
-                                            wheel: {
-                                                enabled: true,
-                                                speed: 0.05,
-                                                mode: 'xy',
-                                                modifierKey: "shift"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+var ctx = document.getElementById("transaction-bar-chart");
+transactionBarChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: dates,
+        datasets: [{
+            label: "Successful Transactions",
+            data: dataSuccessful,
+            backgroundColor: "green",
+            borderColor: "green",
+            borderWidth: 0.5,
+            categoryPercentage: 1,
+            barPercentage: 1
+        },
+        {
+            label: "Processor Declined Transactions",
+            data: dataDeclined,
+            backgroundColor: "red",
+            borderColor: "red",
+            borderWidth: 0.5,
+            categoryPercentage: 1,
+            barPercentage: 1
+        },
+        {
+            label: "Gateway Rejected Transactions",
+            data: dataRejected,
+            backgroundColor: "blue",
+            borderColor: "blue",
+            borderWidth: 0.5,
+            categoryPercentage: 1,
+            barPercentage: 1
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    // Filtered index is not necessary anymore, so just grabbing the original index returned here.
+                    title: function(context) {
+                        var index = context[0].dataIndex;
+                        var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                        return "Date: " + date;
+                    },
+                    label: function(context) {
+                        var index = context.dataIndex;
+                        var datasetIndex = context.datasetIndex;
+                        var total = context.raw;
+                        var ids;
+                        if (datasetIndex === 0) {
+                            ids = idsSuccessful[index];
+                        } else if (datasetIndex === 1) {
+                            ids = idsDeclined[index];
+                        } else {
+                            ids = idsRejected[index];
+                        }
+                        var labels = ["Total: $" + total];
+                        ids.forEach(function(id) {
+                            labels.push("Transaction ID: " + id);
                         });
+                        return labels;
+                    }
+                }
+            },
+            zoom: {
+                pan: {
+                    enabled: true,
+                    mode: "xy",
+                    threshold: "20",
+                    onPan: function({chart}) {
+                        console.log("onPan function triggered.");
+                        var xAxis = chart.scales['x'];
+
+                        var minDate = xAxis.getValueForPixel(xAxis.left);
+                        var maxDate = xAxis.getValueForPixel(xAxis.right);
+
+                        console.log("X axis left date: " + dates[minDate]);
+                        console.log("X axis right date: " + dates[maxDate - 1]);
+
+                        var divMessage = document.getElementById('bar-chart-panning-message');
+                        divMessage.innerHTML = "Displaying data from " + dates[minDate] + " to " + dates[maxDate - 1];
+                    },
+                    onPanComplete: function() {
+                        var messageDiv = document.getElementById('bar-chart-panning-message');
+                        messageDiv.innerHTML = "";
+                    }
+                },
+                limits: {
+                    // These are essentially just placeholder values now.
+                    // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+                    y: {min: 0, max: 100}
+                },
+                zoom: {
+                    wheel: {
+                        enabled: true,
+                        speed: 0.05,
+                        mode: 'xy',
+                        modifierKey: "shift"
+                    }
+                }
+            }
+        }
+    }
+});
 
                         // This is setting the limits of the zoom plugin AFTER the chart is initially created.
                         // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
