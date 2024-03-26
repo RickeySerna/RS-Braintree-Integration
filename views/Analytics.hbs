@@ -705,114 +705,154 @@
                         // The data returned by the generateDataForBarChart function above.
                         var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
 
-var ctx = document.getElementById("transaction-bar-chart");
-transactionBarChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: dates,
-        datasets: [{
-            label: "Successful Transactions",
-            data: dataSuccessful,
-            backgroundColor: "green",
-            borderColor: "green",
-            borderWidth: 0.5,
-            categoryPercentage: 1,
-            barPercentage: 1
-        },
-        {
-            label: "Processor Declined Transactions",
-            data: dataDeclined,
-            backgroundColor: "red",
-            borderColor: "red",
-            borderWidth: 0.5,
-            categoryPercentage: 1,
-            barPercentage: 1
-        },
-        {
-            label: "Gateway Rejected Transactions",
-            data: dataRejected,
-            backgroundColor: "blue",
-            borderColor: "blue",
-            borderWidth: 0.5,
-            categoryPercentage: 1,
-            barPercentage: 1
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        },
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    // Filtered index is not necessary anymore, so just grabbing the original index returned here.
-                    title: function(context) {
-                        var index = context[0].dataIndex;
-                        var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-                        return "Date: " + date;
-                    },
-                    label: function(context) {
-                        var index = context.dataIndex;
-                        var datasetIndex = context.datasetIndex;
-                        var total = context.raw;
-                        var ids;
-                        if (datasetIndex === 0) {
-                            ids = idsSuccessful[index];
-                        } else if (datasetIndex === 1) {
-                            ids = idsDeclined[index];
-                        } else {
-                            ids = idsRejected[index];
-                        }
-                        var labels = ["Total: $" + total];
-                        ids.forEach(function(id) {
-                            labels.push("Transaction ID: " + id);
+                        var ctx = document.getElementById("transaction-bar-chart");
+                        transactionBarChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: dates,
+                                datasets: [{
+                                    label: "Successful Transactions",
+                                    data: dataSuccessful,
+                                    backgroundColor: "green",
+                                    borderColor: "green",
+                                    borderWidth: 0.5,
+                                    categoryPercentage: 1,
+                                    barPercentage: 1
+                                },
+                                {
+                                    label: "Processor Declined Transactions",
+                                    data: dataDeclined,
+                                    backgroundColor: "red",
+                                    borderColor: "red",
+                                    borderWidth: 0.5,
+                                    categoryPercentage: 1,
+                                    barPercentage: 1
+                                },
+                                {
+                                    label: "Gateway Rejected Transactions",
+                                    data: dataRejected,
+                                    backgroundColor: "blue",
+                                    borderColor: "blue",
+                                    borderWidth: 0.5,
+                                    categoryPercentage: 1,
+                                    barPercentage: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                },
+                                plugins: {
+                                    tooltip: {
+                                        callbacks: {
+                                            // Filtered index is not necessary anymore, so just grabbing the original index returned here.
+                                            title: function(context) {
+                                                var index = context[0].dataIndex;
+                                                var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                                                return "Date: " + date;
+                                            },
+                                            label: function(context) {
+                                                var index = context.dataIndex;
+                                                var datasetIndex = context.datasetIndex;
+                                                var total = context.raw;
+                                                var ids;
+                                                if (datasetIndex === 0) {
+                                                    ids = idsSuccessful[index];
+                                                } else if (datasetIndex === 1) {
+                                                    ids = idsDeclined[index];
+                                                } else {
+                                                    ids = idsRejected[index];
+                                                }
+                                                var labels = ["Total: $" + total];
+                                                ids.forEach(function(id) {
+                                                    labels.push("Transaction ID: " + id);
+                                                });
+                                                return labels;
+                                            }
+                                        }
+                                    },
+                                    zoom: {
+                                        pan: {
+                                            enabled: true,
+                                            mode: "xy",
+                                            threshold: "20",
+                                            onPan: function({chart}) {
+                                                // Assigning the x axis of the graph to a variable.
+                                                var xAxis = chart.scales['x'];
+
+                                                // This function is pulling the indices that the dates are at.
+                                                var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
+                                                var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
+
+                                                // To pull the actual date, we grab the index of the dates array with these above indices.
+                                                // Also using moment to format the dates.
+                                                var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                                                var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+
+                                                // Here's where we generate the message and add it to the div we created in the HBS code.
+                                                var divMessage = document.getElementById('bar-chart-panning-message');
+                                                divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
+                                            },
+                                            onPanComplete: function() {
+                                                // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
+                                                var messageDiv = document.getElementById('bar-chart-panning-message');
+                                                // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
+                                                setTimeout(function() {
+                                                    messageDiv.innerHTML = "";
+                                                }, 2500);
+                                            }
+                                        },
+                                        limits: {
+                                            // These are essentially just placeholder values now.
+                                            // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+                                            y: {min: 0, max: 100}
+                                        },
+                                        zoom: {
+                                            wheel: {
+                                                enabled: true,
+                                                speed: 0.05,
+                                                mode: 'xy',
+                                                modifierKey: "shift"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         });
-                        return labels;
-                    }
-                }
-            },
-            zoom: {
-                pan: {
-                    enabled: true,
-                    mode: "xy",
-                    threshold: "20",
-                    onPan: function({chart}) {
-                        console.log("onPan function triggered.");
-                        var xAxis = chart.scales['x'];
 
-                        var minDate = xAxis.getValueForPixel(xAxis.left);
-                        var maxDate = xAxis.getValueForPixel(xAxis.right);
+                        // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
+                        // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
+                        // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
 
-                        console.log("X axis left date: " + dates[minDate]);
-                        console.log("X axis right date: " + dates[maxDate - 1]);
+                        // This var will be filled with the starting point of the pan operation.
+                        var panStartingPoint = null;
 
-                        var divMessage = document.getElementById('bar-chart-panning-message');
-                        divMessage.innerHTML = "Displaying data from " + dates[minDate] + " to " + dates[maxDate - 1];
-                    },
-                    onPanComplete: function() {
-                        var messageDiv = document.getElementById('bar-chart-panning-message');
-                        messageDiv.innerHTML = "";
-                    }
-                },
-                limits: {
-                    // These are essentially just placeholder values now.
-                    // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
-                    y: {min: 0, max: 100}
-                },
-                zoom: {
-                    wheel: {
-                        enabled: true,
-                        speed: 0.05,
-                        mode: 'xy',
-                        modifierKey: "shift"
-                    }
-                }
-            }
-        }
-    }
-});
+                        // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
+                        transactionBarChart.canvas.addEventListener('mousedown', function(event) {
+                            // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
+                            panStartingPoint = { x: event.clientX, y: event.clientY };
+                        });
+
+                        // Event listener for the mousemove event - when the user moves their mouse/input.
+                        transactionBarChart.canvas.addEventListener('mousemove', function(e) {
+                            // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
+                            if (panStartingPoint && transactionBarChart.config.options.plugins.zoom.pan.enabled) {
+                                // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
+                                var diffX = Math.abs(e.clientX - panStartingPoint.x);
+                                var diffY = Math.abs(e.clientY - panStartingPoint.y);
+
+                                // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
+                                transactionBarChart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
+                            }
+                        });
+
+                        // Event listener for the mouseup event - user let the mouse/input go.
+                        transactionBarChart.canvas.addEventListener('mouseup', function() {
+                            // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
+                            panStartingPoint = null;
+                        });
 
                         // This is setting the limits of the zoom plugin AFTER the chart is initially created.
                         // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
