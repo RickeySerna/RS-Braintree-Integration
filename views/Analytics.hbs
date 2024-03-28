@@ -46,7 +46,7 @@
             <div class="col-9">
                 <div class="graphStyle" style="position: relative;">
                     <h1>Transactions Per Day</h1>
-                    <button id="bar-chart-pop-out">Pop Out</button>
+                    <button id="bar-chart-pop-out" style="display: none;">Pop Out</button>
                     <div id="bar-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
                     <canvas id="transaction-bar-chart"></canvas>
                 </div>
@@ -660,213 +660,10 @@
                             transactionBarChart.destroy();
                         }
 
-                        // Creating the selected types arrays in the same way we do for the line chart.
-                        // Have to do this separately for each one to allow the user to choose different filters for each graph.
-                        var selectedTypesBarChart = $('#transaction-types-bar-chart input:checked').map(function() {
-                            return this.value;
-                        }).get();
-
-                        var selectedStatusesBarChart = $('#transaction-statuses-bar-chart input:checked').map(function() {
-                            return this.value;
-                        }).get();
-
-                        var selectedCardTypesBarChart = $('#transaction-card-types-bar-chart input:checked').map(function() {
-                            return this.value;
-                        }).get();
-
-                        console.log("The bar chart types: ", selectedTypesBarChart);
-                        console.log("The bar chart statuses: ", selectedStatusesBarChart);
-                        console.log("The bar chart card types: ", selectedCardTypesBarChart);
-
-                        // Similarly, creating the filtered arrays in the same way.
-                        // Update: Creating these using the filterArrays() function now.
-                        // Filtered array for the dates.
-                        var filteredDatesBarChart = filterArrays(createdAt, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
-
-                        // Filtered array for the amounts.
-                        var filteredAmountsBarChart = filterArrays(amounts, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
-
-                        // Filtered array for the transaction IDs.
-                        var filteredIDsBarChart = filterArrays(ids, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
-
-                        // Filtered array for the statuses.
-                        var filteredStatusesBarChart = filterArrays(statuses, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
-
-                        // Filtered array for the types.
-                        var filteredTypesBarChart = filterArrays(types, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
-
-                        // Filtered array for the card types.
-                        var filteredCardTypesBarChart = filterArrays(cardTypes, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
-
-                        // The amounts array is all strings so we convert them to numbers.
-                        var fixedAmounts = filteredAmountsBarChart.map(Number);
-
-                        console.log("Bar chart amounts after formatting: ", fixedAmounts);
-
-                        // The data returned by the generateDataForBarChart function above.
-                        var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
-
-                        var ctx = document.getElementById("transaction-bar-chart");
-                        transactionBarChart = new Chart(ctx, {
-                            type: 'bar',
-                            data: {
-                                labels: dates,
-                                datasets: [{
-                                    label: "Successful Transactions",
-                                    data: dataSuccessful,
-                                    backgroundColor: "green",
-                                    borderColor: "green",
-                                    borderWidth: 0.5,
-                                    categoryPercentage: 1,
-                                    barPercentage: 1
-                                },
-                                {
-                                    label: "Processor Declined Transactions",
-                                    data: dataDeclined,
-                                    backgroundColor: "red",
-                                    borderColor: "red",
-                                    borderWidth: 0.5,
-                                    categoryPercentage: 1,
-                                    barPercentage: 1
-                                },
-                                {
-                                    label: "Gateway Rejected Transactions",
-                                    data: dataRejected,
-                                    backgroundColor: "blue",
-                                    borderColor: "blue",
-                                    borderWidth: 0.5,
-                                    categoryPercentage: 1,
-                                    barPercentage: 1
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                },
-                                plugins: {
-                                    tooltip: {
-                                        callbacks: {
-                                            // Filtered index is not necessary anymore, so just grabbing the original index returned here.
-                                            title: function(context) {
-                                                var index = context[0].dataIndex;
-                                                var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-                                                return "Date: " + date;
-                                            },
-                                            label: function(context) {
-                                                var index = context.dataIndex;
-                                                var datasetIndex = context.datasetIndex;
-                                                var total = context.raw;
-                                                var ids;
-                                                if (datasetIndex === 0) {
-                                                    ids = idsSuccessful[index];
-                                                } else if (datasetIndex === 1) {
-                                                    ids = idsDeclined[index];
-                                                } else {
-                                                    ids = idsRejected[index];
-                                                }
-                                                var labels = ["Total: $" + total];
-                                                ids.forEach(function(id) {
-                                                    labels.push("Transaction ID: " + id);
-                                                });
-                                                return labels;
-                                            }
-                                        }
-                                    },
-                                    zoom: {
-                                        pan: {
-                                            enabled: true,
-                                            mode: "xy",
-                                            threshold: "20",
-                                            onPan: function({chart}) {
-                                                // Assigning the x axis of the graph to a variable.
-                                                var xAxis = chart.scales['x'];
-
-                                                // This function is pulling the indices that the dates are at.
-                                                var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
-                                                var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
-
-                                                // To pull the actual date, we grab the index of the dates array with these above indices.
-                                                // Also using moment to format the dates.
-                                                var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-                                                var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-
-                                                // Here's where we generate the message and add it to the div we created in the HBS code.
-                                                var divMessage = document.getElementById('bar-chart-panning-message');
-                                                divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
-                                            },
-                                            onPanComplete: function() {
-                                                // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
-                                                var messageDiv = document.getElementById('bar-chart-panning-message');
-                                                // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
-                                                setTimeout(function() {
-                                                    messageDiv.innerHTML = "";
-                                                }, 2500);
-                                            }
-                                        },
-                                        limits: {
-                                            // These are essentially just placeholder values now.
-                                            // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
-                                            y: {min: 0, max: 100}
-                                        },
-                                        zoom: {
-                                            wheel: {
-                                                enabled: true,
-                                                speed: 0.05,
-                                                mode: 'xy',
-                                                modifierKey: "shift"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        });
-
-                        // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
-                        // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
-                        // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
-
-                        // This var will be filled with the starting point of the pan operation.
-                        var panStartingPoint = null;
-
-                        // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
-                        transactionBarChart.canvas.addEventListener('mousedown', function(event) {
-                            // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
-                            panStartingPoint = { x: event.clientX, y: event.clientY };
-                        });
-
-                        // Event listener for the mousemove event - when the user moves their mouse/input.
-                        transactionBarChart.canvas.addEventListener('mousemove', function(e) {
-                            // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
-                            if (panStartingPoint && transactionBarChart.config.options.plugins.zoom.pan.enabled) {
-                                // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
-                                var diffX = Math.abs(e.clientX - panStartingPoint.x);
-                                var diffY = Math.abs(e.clientY - panStartingPoint.y);
-
-                                // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
-                                transactionBarChart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
-                            }
-                        });
-
-                        // Event listener for the mouseup event - user let the mouse/input go.
-                        transactionBarChart.canvas.addEventListener('mouseup', function() {
-                            // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
-                            panStartingPoint = null;
-                        });
-
-                        // This is setting the limits of the zoom plugin AFTER the chart is initially created.
-                        // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
-                        // Now, when the user zooms all the way out, the chart will look exactly the same as it originally did before all of the zooming.
-                        // Much better solution than the max array stuff we were doing!
-                        var originalMaxY = transactionBarChart.scales['y'].max;
-                        console.log("Original upper Y axis limit: " + originalMaxY);
-                        transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
-
-                        fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
-
                         // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
-                        ctx.onclick = function(evt) {
+                        // Update: Moving this entire function as it's own variable, then declaring it in the chart config.
+                        // Doing this so that I can enter the function on the cloned chart as well - this way I don't have to repeat the function logic in both places.
+                        var barChartOnClickFunction = function(evt) {
                             // Filling activeElements with the same getElementsAtEventForMode() function as in the other onclick.
                             // Basically returns an array with all of the elements at the spot of the chart where the user clicks.
                             var activeElements = transactionBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
@@ -1051,6 +848,398 @@
                             }
                         };
 
+                        // Creating the selected types arrays in the same way we do for the line chart.
+                        // Have to do this separately for each one to allow the user to choose different filters for each graph.
+                        var selectedTypesBarChart = $('#transaction-types-bar-chart input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        var selectedStatusesBarChart = $('#transaction-statuses-bar-chart input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        var selectedCardTypesBarChart = $('#transaction-card-types-bar-chart input:checked').map(function() {
+                            return this.value;
+                        }).get();
+
+                        console.log("The bar chart types: ", selectedTypesBarChart);
+                        console.log("The bar chart statuses: ", selectedStatusesBarChart);
+                        console.log("The bar chart card types: ", selectedCardTypesBarChart);
+
+                        // Similarly, creating the filtered arrays in the same way.
+                        // Update: Creating these using the filterArrays() function now.
+                        // Filtered array for the dates.
+                        var filteredDatesBarChart = filterArrays(createdAt, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
+
+                        // Filtered array for the amounts.
+                        var filteredAmountsBarChart = filterArrays(amounts, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
+
+                        // Filtered array for the transaction IDs.
+                        var filteredIDsBarChart = filterArrays(ids, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
+
+                        // Filtered array for the statuses.
+                        var filteredStatusesBarChart = filterArrays(statuses, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
+
+                        // Filtered array for the types.
+                        var filteredTypesBarChart = filterArrays(types, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
+
+                        // Filtered array for the card types.
+                        var filteredCardTypesBarChart = filterArrays(cardTypes, selectedTypesBarChart, selectedStatusesBarChart, selectedCardTypesBarChart);
+
+                        // The amounts array is all strings so we convert them to numbers.
+                        var fixedAmounts = filteredAmountsBarChart.map(Number);
+
+                        console.log("Bar chart amounts after formatting: ", fixedAmounts);
+
+                        // The data returned by the generateDataForBarChart function above.
+                        var [dataSuccessful, dataDeclined, dataRejected, idsSuccessful, idsDeclined, idsRejected] = generateDataForBarChart(dates, createdAt, fixedAmounts, filteredStatusesBarChart, filteredIDsBarChart);
+
+                        var ctx = document.getElementById("transaction-bar-chart");
+                        transactionBarChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: dates,
+                                datasets: [{
+                                    label: "Successful Transactions",
+                                    data: dataSuccessful,
+                                    backgroundColor: "green",
+                                    borderColor: "green",
+                                    borderWidth: 0.5,
+                                    categoryPercentage: 1,
+                                    barPercentage: 1
+                                },
+                                {
+                                    label: "Processor Declined Transactions",
+                                    data: dataDeclined,
+                                    backgroundColor: "red",
+                                    borderColor: "red",
+                                    borderWidth: 0.5,
+                                    categoryPercentage: 1,
+                                    barPercentage: 1
+                                },
+                                {
+                                    label: "Gateway Rejected Transactions",
+                                    data: dataRejected,
+                                    backgroundColor: "blue",
+                                    borderColor: "blue",
+                                    borderWidth: 0.5,
+                                    categoryPercentage: 1,
+                                    barPercentage: 1
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true
+                                    }
+                                },
+                                onClick: barChartOnClickFunction,
+                                plugins: {
+                                    tooltip: {
+                                        callbacks: {
+                                            // Filtered index is not necessary anymore, so just grabbing the original index returned here.
+                                            title: function(context) {
+                                                var index = context[0].dataIndex;
+                                                var date = moment(dates[index], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                                                return "Date: " + date;
+                                            },
+                                            label: function(context) {
+                                                var index = context.dataIndex;
+                                                var datasetIndex = context.datasetIndex;
+                                                var total = context.raw;
+                                                var ids;
+                                                if (datasetIndex === 0) {
+                                                    ids = idsSuccessful[index];
+                                                } else if (datasetIndex === 1) {
+                                                    ids = idsDeclined[index];
+                                                } else {
+                                                    ids = idsRejected[index];
+                                                }
+                                                var labels = ["Total: $" + total];
+                                                ids.forEach(function(id) {
+                                                    labels.push("Transaction ID: " + id);
+                                                });
+                                                return labels;
+                                            }
+                                        }
+                                    },
+                                    zoom: {
+                                        pan: {
+                                            enabled: true,
+                                            mode: "xy",
+                                            threshold: "20",
+                                            onPan: function({chart}) {
+                                                // Assigning the x axis of the graph to a variable.
+                                                var xAxis = chart.scales['x'];
+
+                                                // This function is pulling the indices that the dates are at.
+                                                var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
+                                                var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
+
+                                                // To pull the actual date, we grab the index of the dates array with these above indices.
+                                                // Also using moment to format the dates.
+                                                var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                                                var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+
+                                                // Here's where we generate the message and add it to the div we created in the HBS code.
+                                                var divMessage = document.getElementById('bar-chart-panning-message');
+                                                divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
+                                            },
+                                            onPanComplete: function() {
+                                                // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
+                                                var messageDiv = document.getElementById('bar-chart-panning-message');
+                                                // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
+                                                setTimeout(function() {
+                                                    messageDiv.innerHTML = "";
+                                                }, 2500);
+                                            }
+                                        },
+                                        limits: {
+                                            // These are essentially just placeholder values now.
+                                            // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+                                            y: {min: 0, max: 100}
+                                        },
+                                        zoom: {
+                                            wheel: {
+                                                enabled: true,
+                                                speed: 0.05,
+                                                mode: 'xy',
+                                                modifierKey: "shift"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
+                        // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
+                        // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
+
+                        // This var will be filled with the starting point of the pan operation.
+                        var panStartingPoint = null;
+
+                        // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
+                        transactionBarChart.canvas.addEventListener('mousedown', function(event) {
+                            // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
+                            panStartingPoint = { x: event.clientX, y: event.clientY };
+                        });
+
+                        // Event listener for the mousemove event - when the user moves their mouse/input.
+                        transactionBarChart.canvas.addEventListener('mousemove', function(e) {
+                            // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
+                            if (panStartingPoint && transactionBarChart.config.options.plugins.zoom.pan.enabled) {
+                                // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
+                                var diffX = Math.abs(e.clientX - panStartingPoint.x);
+                                var diffY = Math.abs(e.clientY - panStartingPoint.y);
+
+                                // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
+                                transactionBarChart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
+                            }
+                        });
+
+                        // Event listener for the mouseup event - user let the mouse/input go.
+                        transactionBarChart.canvas.addEventListener('mouseup', function() {
+                            // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
+                            panStartingPoint = null;
+                        });
+
+                        // This is setting the limits of the zoom plugin AFTER the chart is initially created.
+                        // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
+                        // Now, when the user zooms all the way out, the chart will look exactly the same as it originally did before all of the zooming.
+                        // Much better solution than the max array stuff we were doing!
+                        var originalMaxY = transactionBarChart.scales['y'].max;
+                        console.log("Original upper Y axis limit: " + originalMaxY);
+                        transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+
+                        fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
+
+                        // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
+                        /*ctx.onclick = function(evt) {
+                            // Filling activeElements with the same getElementsAtEventForMode() function as in the other onclick.
+                            // Basically returns an array with all of the elements at the spot of the chart where the user clicks.
+                            var activeElements = transactionBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                            if (activeElements.length > 0) {
+                                var firstPoint = activeElements[0];
+                                var index = firstPoint.index;
+                                // This should let us know which of the bars the user clicked on. 0 = successful, 1 = processor declined, 2 = gw rejected.
+                                var datasetIndex = firstPoint.datasetIndex;
+                                console.log("The bar the user clicked: " + datasetIndex);
+
+                                // Advanced txn search demands that the date be formatted in MM/DD/YYYY format. Using moment to re-format the date as such.
+                                var date = moment(dates[index]).format("MM/DD/YYYY");
+                                console.log(date);
+
+                                // These are all of the possible card type values accepted as card type parameters by the adv txn search URL.
+                                var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
+                                // All possible payment method type strings that the URL search string accepts.
+                                var allPaymentInstrumentTypes = ["CreditCardDetail", "ApplePayDetail", "VenmoAccountDetail", "PayPalDetail", "LocalPaymentDetail", "SamsungPayAttributesSnapshot", "Unknown", "AndroidPayCardDetail", "AndroidPayNetworkTokenDetail", "PaymentReaderAttributesSnapshot"];
+
+                                // This function returns the card type parameter search string to be added to the URL.
+                                function generateCardTypeParams(allCardTypes) {
+                                    // We define the string to be returned as an empty string.
+                                    var params = '';
+                                    // Creating an array consisting of the unchecked card type checkboxes.
+                                    var uncheckedCardTypes = $('#transaction-card-types-bar-chart input:not(:checked)').map(function() {
+                                        return this.value;
+                                    }).get();
+
+                                    console.log("Unchecked card types array: ", uncheckedCardTypes);
+
+                                    // The way the advanced txn search URL logic works is, if no parameters for any one of the categories is entered, then the search includes ALL of the parameters.
+                                    // So if we don't include any card type parameters, the search will automatically check all of them.
+                                    // With that in mind, we immediately check whether or not the user has unchecked any card types.
+                                    // If they have, uncheckedCardTypes will be populated/have a length greated than 0. If that's the case, then we need to make sure that that card type is not included in the parameters.
+                                    // If not though, meaning if they haven't unchecked any card types, then there's no need to include any card type parameters.
+                                    // That means they want all card types included so we just return the empty string; no card type &search strings to be included in the search at all.
+                                    if (uncheckedCardTypes.length == 0) {
+                                        return params;
+                                    }
+                                    else {
+                                        // Quick formatting to remove spaces and replace them with %20.
+                                        // Basically just doing that for Amex. The checkbox returns the value as "American Express" whereas it's "American%20Express" in the array we're generating the strings from.
+                                        // The g there is a "global" flag. Basically tells the function to replace all occurrences of the space here, not just the first it sees.
+                                        uncheckedCardTypes = uncheckedCardTypes.map(type => type.replace(/ /g, '%20'));
+
+                                        // Using filter() to create a new array that includes all of the card types in allCardTypes, EXCEPT those that are also in uncheckedCardTypes.
+                                        // It's parsing through each element in allCardTypes and checking if the condition (!uncheckedCardTypes.includes(type)) is true.
+                                        // If it returns true, meaning that the type is not included in uncheckedCardTypes, it's added to the new checkedCardTypes array.
+                                        // If it returns false, meaning that type is in uncheckedCardTypes, then it's not included in checkedCardTypes.
+                                        var checkedCardTypes = allCardTypes.filter(type => !uncheckedCardTypes.includes(type));
+
+                                        // Now we just iterate over every element in the new checkedCardTypes array, create the &search string with that type at the end of it, and add it to params.
+                                        checkedCardTypes.forEach(type => {
+                                            params += '&search%5Bcredit_card_card_type%5D%5B%5D=' + type;
+                                        });
+
+                                        console.log("The params we're returning: " + params);
+                                        // Returning our params var filled with a bunch of &search strings stitched together.
+                                        return params;
+                                    }
+                                };
+
+                                function generatePaymentInstrumentParams(allPaymentInstrumentTypes) {
+                                    var params = "";
+
+                                    var uncheckedPaymentMethodTypes = $('#transaction-types-bar-chart input:not(:checked)').map(function() {
+                                        return this.value;
+                                    }).get();
+
+                                    console.log(uncheckedPaymentMethodTypes);
+
+                                    if (uncheckedPaymentMethodTypes.length == 0) {
+                                        return params;
+                                    }
+                                    else {
+                                        // Creating a map to convert the values in uncheckedPaymentMethodTypes to corresponding values in allPaymentInstrumentTypes.
+                                        var paymentInstrumentMap = {
+                                            'Credit Card': ['CreditCardDetail'],
+                                            // Google Pay has two search terms, mapping this one into both.
+                                            'Google Pay': ['AndroidPayCardDetail', 'AndroidPayNetworkTokenDetail'],
+                                            'Apple Pay': ['ApplePayDetail'],
+                                            'Samsung Pay': ['SamsungPayAttributesSnapshot']
+                                        };
+
+                                        // Using the map on uncheckedPaymentMethodTypes to create a new array with the values we need.
+                                        // Because Google Pay needed to be mapped to two values, we use flatMap here so make sure the array is "flattened" into one value in each space.
+                                        var uncheckedPaymentMethodTypesConverted = uncheckedPaymentMethodTypes.flatMap(paymentType => paymentInstrumentMap[paymentType]);
+                                        console.log("Payment types after formatting: ", uncheckedPaymentMethodTypesConverted);
+
+                                        // Now that the array strings are in the proper values, we can filter allPaymentInstrumentTypes in the same way as in the other function.
+                                        var checkedPaymentInstruments = allPaymentInstrumentTypes.filter(paymentInstrument => !uncheckedPaymentMethodTypesConverted.includes(paymentInstrument));
+                                        console.log("The strings are to be generated from this: ", checkedPaymentInstruments);
+
+                                        // Now we generate the strings from the new array that was created from everything in allPaymentInstrumentTypes except for what was filtered out with uncheckedPaymentMethodTypesConverted.
+                                        checkedPaymentInstruments.forEach(paymentInstrument => {
+                                            params += "&search%5Bpayment_instrument_type%5D%5B%5D=" + paymentInstrument;
+                                        });
+
+                                        // Return the strings we just generated.
+                                        return params;
+                                    }
+                                };
+
+                                // This function works a bit different than the other two.
+                                // The statuses to be included depends on both the filters and the bar the user clicked on.
+                                // We pass the bar the user clicked on (via datasetIndex), then do the filtering depending on that value.
+                                function generateStatusParams(datasetIndex) {
+                                    var params = "";
+
+                                    var uncheckedStatuses = $('#transaction-statuses-bar-chart input:not(:checked)').map(function() {
+                                        return this.value;
+                                    }).get();
+
+                                    // The user clicked the successful transactions bar.
+                                    if (datasetIndex == 0) {
+                                        // These are all of the statuses that the URL accepts representing successful transactions.
+                                        // We create an array with only these specifically because if the user is clicking on this bar, it will inherently only include successful values.
+                                        // By creating the array like this now, we get rid of the need to filter out unsuccessful statuses later.
+                                        var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
+
+                                        // Creating a map to format the statuses from the checkbox values into values the URL accepts
+                                        var statusMap = {
+                                            "authorized": "authorized",
+                                            "Submitted For Settlement": "submitted_for_settlement",
+                                            "Settlement Pending": "settlement_pending",
+                                            "Settlement Confirmed": "settlement_confirmed",
+                                            "Settling": "settling",
+                                            "Settled": "settled"
+                                        };
+
+                                        // Formatting the uncheckedStatuses array we created.
+                                        var uncheckedStatusesConverted = uncheckedStatuses.map(status => statusMap[status] || status);
+                                        console.log("Successful unchecked statuses after formatting: ", uncheckedStatusesConverted);
+
+                                        // Now generating the array that the search strings will be created from. This is where using the successful status array helped us.
+                                        var checkedStatuses = successfulStatuses.filter(status => !uncheckedStatusesConverted.includes(status));
+                                        console.log("The array to generate the successful status params from: ", checkedStatuses);
+
+                                        // Generating the &search strings to be used in the URL.
+                                        checkedStatuses.forEach(status => {
+                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
+                                        });
+
+                                        return params;
+                                    }
+                                    // The user clicked the processor declined bar.
+                                    else if (datasetIndex == 1) {
+                                        // There's only one single status that corresponds to processor declines: processor_declined
+                                        // With that in mind, there's no filtering or anything like that to be done, just add the string to params and return it.
+                                        params += "&search%5Bstatus%5D%5B%5D=processor_declined";
+                                        return params;
+                                    }
+                                    // The user clicked the gateway rejected bar.
+                                    else {
+                                        // Similar situation here as with processor declines, except that there are many GW rejection statuses.
+                                        // Regardless, we don't do any sort of filtering between GW rejection reasons - they're just all tossed together.
+
+                                        // As such, all we have to do is create a GW rejection status array here.
+                                        var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
+
+                                        // Then just generate the &search strings from all of those strings and add them into params.
+                                        gatewayRejectedStatuses.forEach(status => {
+                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
+                                        });
+
+                                        return params;
+                                    }
+                                    // We don't have to worry about any other datasetIndex value cases. The bar chart only has 3 datasets so there's no possibility datasetIndex will be anything but 0, 1, or 2.
+                                };
+
+                                var cardTypeParams = generateCardTypeParams(allCardTypes);
+                                console.log("The cardTypeParams generated: " + cardTypeParams);
+                                var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
+                                console.log("The payment method types generated: " + paymentMethodTypeParams);
+                                var statusParams = generateStatusParams(datasetIndex);
+                                console.log("The statuses generated: " + statusParams);
+
+                                var merchantId = "{{merchantId}}";
+
+                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams + paymentMethodTypeParams + statusParams + "&search%5Btype%5D%5B%5D=sale";
+                                window.open(url, '_blank');
+                            }
+                        };*/
+
                         // Adding a "pop out" functionality. User can click a button and the chart fills the entire browser.
                         popOutButton = document.getElementById("bar-chart-pop-out");
                         popOutButton.onclick = function() {
@@ -1071,6 +1260,7 @@
                             closeButton.style.position = 'absolute';
                             closeButton.style.top = '10px';
                             closeButton.style.right = '10px';
+                            closeButton.style.zIndex = 1001;
                             closeButton.onclick = function(event) {
                                 // Prevent the event from bubbling up to the overlay.
                                 event.stopPropagation();
@@ -1099,12 +1289,19 @@
                             transactionBarChart.canvas.style.display = 'none';
                             clonedCanvas.style.display = 'block';
 
-                            // Create a new chart in the overlay
-                            var ctx = clonedCanvas.getContext('2d');
-                            new Chart(ctx, {
+                            // Assuming you have already cloned the canvas and have a reference to the cloned context
+                            var clonedCtx = clonedCanvas.getContext("2d");
+
+                            // Create the cloned chart with the same onClick function
+                            new Chart(clonedCtx, {
                                 type: transactionBarChart.config.type,
                                 data: transactionBarChart.config.data,
-                                options: transactionBarChart.config.options
+                                options: {
+                                    ...transactionBarChart.config.options,
+                                    onClick: function(evt) {
+                                        console.log("onClick activated!");
+                                    }
+                                }
                             });
                         };
                     };
@@ -1135,6 +1332,9 @@
                     $('#graph-generator').prop('disabled', false);
                     $('#start-date').prop('disabled', false);
                     $('#end-date').prop('disabled', false);
+
+                    // Displaying the pop out button now that everything is rendered.
+                    document.getElementById("bar-chart-pop-out").style.display = "block";
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
