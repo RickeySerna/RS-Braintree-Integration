@@ -660,194 +660,6 @@
                             transactionBarChart.destroy();
                         }
 
-                        // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
-                        // Update: Moving this entire function as it's own variable, then declaring it in the chart config.
-                        // Doing this so that I can enter the function on the cloned chart as well - this way I don't have to repeat the function logic in both places.
-                        var barChartOnClickFunction = function(evt) {
-                            // Filling activeElements with the same getElementsAtEventForMode() function as in the other onclick.
-                            // Basically returns an array with all of the elements at the spot of the chart where the user clicks.
-                            var activeElements = transactionBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                            if (activeElements.length > 0) {
-                                var firstPoint = activeElements[0];
-                                var index = firstPoint.index;
-                                // This should let us know which of the bars the user clicked on. 0 = successful, 1 = processor declined, 2 = gw rejected.
-                                var datasetIndex = firstPoint.datasetIndex;
-                                console.log("The bar the user clicked: " + datasetIndex);
-
-                                // Advanced txn search demands that the date be formatted in MM/DD/YYYY format. Using moment to re-format the date as such.
-                                var date = moment(dates[index]).format("MM/DD/YYYY");
-                                console.log(date);
-
-                                // These are all of the possible card type values accepted as card type parameters by the adv txn search URL.
-                                var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
-                                // All possible payment method type strings that the URL search string accepts.
-                                var allPaymentInstrumentTypes = ["CreditCardDetail", "ApplePayDetail", "VenmoAccountDetail", "PayPalDetail", "LocalPaymentDetail", "SamsungPayAttributesSnapshot", "Unknown", "AndroidPayCardDetail", "AndroidPayNetworkTokenDetail", "PaymentReaderAttributesSnapshot"];
-
-                                // This function returns the card type parameter search string to be added to the URL.
-                                function generateCardTypeParams(allCardTypes) {
-                                    // We define the string to be returned as an empty string.
-                                    var params = '';
-                                    // Creating an array consisting of the unchecked card type checkboxes.
-                                    var uncheckedCardTypes = $('#transaction-card-types-bar-chart input:not(:checked)').map(function() {
-                                        return this.value;
-                                    }).get();
-
-                                    console.log("Unchecked card types array: ", uncheckedCardTypes);
-
-                                    // The way the advanced txn search URL logic works is, if no parameters for any one of the categories is entered, then the search includes ALL of the parameters.
-                                    // So if we don't include any card type parameters, the search will automatically check all of them.
-                                    // With that in mind, we immediately check whether or not the user has unchecked any card types.
-                                    // If they have, uncheckedCardTypes will be populated/have a length greated than 0. If that's the case, then we need to make sure that that card type is not included in the parameters.
-                                    // If not though, meaning if they haven't unchecked any card types, then there's no need to include any card type parameters.
-                                    // That means they want all card types included so we just return the empty string; no card type &search strings to be included in the search at all.
-                                    if (uncheckedCardTypes.length == 0) {
-                                        return params;
-                                    }
-                                    else {
-                                        // Quick formatting to remove spaces and replace them with %20.
-                                        // Basically just doing that for Amex. The checkbox returns the value as "American Express" whereas it's "American%20Express" in the array we're generating the strings from.
-                                        // The g there is a "global" flag. Basically tells the function to replace all occurrences of the space here, not just the first it sees.
-                                        uncheckedCardTypes = uncheckedCardTypes.map(type => type.replace(/ /g, '%20'));
-
-                                        // Using filter() to create a new array that includes all of the card types in allCardTypes, EXCEPT those that are also in uncheckedCardTypes.
-                                        // It's parsing through each element in allCardTypes and checking if the condition (!uncheckedCardTypes.includes(type)) is true.
-                                        // If it returns true, meaning that the type is not included in uncheckedCardTypes, it's added to the new checkedCardTypes array.
-                                        // If it returns false, meaning that type is in uncheckedCardTypes, then it's not included in checkedCardTypes.
-                                        var checkedCardTypes = allCardTypes.filter(type => !uncheckedCardTypes.includes(type));
-
-                                        // Now we just iterate over every element in the new checkedCardTypes array, create the &search string with that type at the end of it, and add it to params.
-                                        checkedCardTypes.forEach(type => {
-                                            params += '&search%5Bcredit_card_card_type%5D%5B%5D=' + type;
-                                        });
-
-                                        console.log("The params we're returning: " + params);
-                                        // Returning our params var filled with a bunch of &search strings stitched together.
-                                        return params;
-                                    }
-                                };
-
-                                function generatePaymentInstrumentParams(allPaymentInstrumentTypes) {
-                                    var params = "";
-
-                                    var uncheckedPaymentMethodTypes = $('#transaction-types-bar-chart input:not(:checked)').map(function() {
-                                        return this.value;
-                                    }).get();
-
-                                    console.log(uncheckedPaymentMethodTypes);
-
-                                    if (uncheckedPaymentMethodTypes.length == 0) {
-                                        return params;
-                                    }
-                                    else {
-                                        // Creating a map to convert the values in uncheckedPaymentMethodTypes to corresponding values in allPaymentInstrumentTypes.
-                                        var paymentInstrumentMap = {
-                                            'Credit Card': ['CreditCardDetail'],
-                                            // Google Pay has two search terms, mapping this one into both.
-                                            'Google Pay': ['AndroidPayCardDetail', 'AndroidPayNetworkTokenDetail'],
-                                            'Apple Pay': ['ApplePayDetail'],
-                                            'Samsung Pay': ['SamsungPayAttributesSnapshot']
-                                        };
-
-                                        // Using the map on uncheckedPaymentMethodTypes to create a new array with the values we need.
-                                        // Because Google Pay needed to be mapped to two values, we use flatMap here so make sure the array is "flattened" into one value in each space.
-                                        var uncheckedPaymentMethodTypesConverted = uncheckedPaymentMethodTypes.flatMap(paymentType => paymentInstrumentMap[paymentType]);
-                                        console.log("Payment types after formatting: ", uncheckedPaymentMethodTypesConverted);
-
-                                        // Now that the array strings are in the proper values, we can filter allPaymentInstrumentTypes in the same way as in the other function.
-                                        var checkedPaymentInstruments = allPaymentInstrumentTypes.filter(paymentInstrument => !uncheckedPaymentMethodTypesConverted.includes(paymentInstrument));
-                                        console.log("The strings are to be generated from this: ", checkedPaymentInstruments);
-
-                                        // Now we generate the strings from the new array that was created from everything in allPaymentInstrumentTypes except for what was filtered out with uncheckedPaymentMethodTypesConverted.
-                                        checkedPaymentInstruments.forEach(paymentInstrument => {
-                                            params += "&search%5Bpayment_instrument_type%5D%5B%5D=" + paymentInstrument;
-                                        });
-
-                                        // Return the strings we just generated.
-                                        return params;
-                                    }
-                                };
-
-                                // This function works a bit different than the other two.
-                                // The statuses to be included depends on both the filters and the bar the user clicked on.
-                                // We pass the bar the user clicked on (via datasetIndex), then do the filtering depending on that value.
-                                function generateStatusParams(datasetIndex) {
-                                    var params = "";
-
-                                    var uncheckedStatuses = $('#transaction-statuses-bar-chart input:not(:checked)').map(function() {
-                                        return this.value;
-                                    }).get();
-
-                                    // The user clicked the successful transactions bar.
-                                    if (datasetIndex == 0) {
-                                        // These are all of the statuses that the URL accepts representing successful transactions.
-                                        // We create an array with only these specifically because if the user is clicking on this bar, it will inherently only include successful values.
-                                        // By creating the array like this now, we get rid of the need to filter out unsuccessful statuses later.
-                                        var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
-
-                                        // Creating a map to format the statuses from the checkbox values into values the URL accepts
-                                        var statusMap = {
-                                            "authorized": "authorized",
-                                            "Submitted For Settlement": "submitted_for_settlement",
-                                            "Settlement Pending": "settlement_pending",
-                                            "Settlement Confirmed": "settlement_confirmed",
-                                            "Settling": "settling",
-                                            "Settled": "settled"
-                                        };
-
-                                        // Formatting the uncheckedStatuses array we created.
-                                        var uncheckedStatusesConverted = uncheckedStatuses.map(status => statusMap[status] || status);
-                                        console.log("Successful unchecked statuses after formatting: ", uncheckedStatusesConverted);
-
-                                        // Now generating the array that the search strings will be created from. This is where using the successful status array helped us.
-                                        var checkedStatuses = successfulStatuses.filter(status => !uncheckedStatusesConverted.includes(status));
-                                        console.log("The array to generate the successful status params from: ", checkedStatuses);
-
-                                        // Generating the &search strings to be used in the URL.
-                                        checkedStatuses.forEach(status => {
-                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
-                                        });
-
-                                        return params;
-                                    }
-                                    // The user clicked the processor declined bar.
-                                    else if (datasetIndex == 1) {
-                                        // There's only one single status that corresponds to processor declines: processor_declined
-                                        // With that in mind, there's no filtering or anything like that to be done, just add the string to params and return it.
-                                        params += "&search%5Bstatus%5D%5B%5D=processor_declined";
-                                        return params;
-                                    }
-                                    // The user clicked the gateway rejected bar.
-                                    else {
-                                        // Similar situation here as with processor declines, except that there are many GW rejection statuses.
-                                        // Regardless, we don't do any sort of filtering between GW rejection reasons - they're just all tossed together.
-
-                                        // As such, all we have to do is create a GW rejection status array here.
-                                        var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
-
-                                        // Then just generate the &search strings from all of those strings and add them into params.
-                                        gatewayRejectedStatuses.forEach(status => {
-                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
-                                        });
-
-                                        return params;
-                                    }
-                                    // We don't have to worry about any other datasetIndex value cases. The bar chart only has 3 datasets so there's no possibility datasetIndex will be anything but 0, 1, or 2.
-                                };
-
-                                var cardTypeParams = generateCardTypeParams(allCardTypes);
-                                console.log("The cardTypeParams generated: " + cardTypeParams);
-                                var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
-                                console.log("The payment method types generated: " + paymentMethodTypeParams);
-                                var statusParams = generateStatusParams(datasetIndex);
-                                console.log("The statuses generated: " + statusParams);
-
-                                var merchantId = "{{merchantId}}";
-
-                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams + paymentMethodTypeParams + statusParams + "&search%5Btype%5D%5B%5D=sale";
-                                window.open(url, '_blank');
-                            }
-                        };
-
                         // Creating the selected types arrays in the same way we do for the line chart.
                         // Have to do this separately for each one to allow the user to choose different filters for each graph.
                         var selectedTypesBarChart = $('#transaction-types-bar-chart input:checked').map(function() {
@@ -933,7 +745,194 @@
                                         beginAtZero: true
                                     }
                                 },
-                                onClick: barChartOnClickFunction,
+                                // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
+                                // Update: Finally figured this out! The original onClick referenced this transactionBarChart object. So when it went to the clone, that caused conflicts.
+                                // Updated this to reference the chart itself using this, then we call that chart in the function. So now the function references whatever chart it's inside of.
+                                onClick: function(evt) {
+                                    var chart = this;
+                                    // Filling activeElements with the same getElementsAtEventForMode() function as in the other onclick.
+                                    // Basically returns an array with all of the elements at the spot of the chart where the user clicks.
+                                    var activeElements = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                                    if (activeElements.length > 0) {
+                                        var firstPoint = activeElements[0];
+                                        var index = firstPoint.index;
+                                        // This should let us know which of the bars the user clicked on. 0 = successful, 1 = processor declined, 2 = gw rejected.
+                                        var datasetIndex = firstPoint.datasetIndex;
+                                        console.log("The bar the user clicked: " + datasetIndex);
+
+                                        // Advanced txn search demands that the date be formatted in MM/DD/YYYY format. Using moment to re-format the date as such.
+                                        var date = moment(dates[index]).format("MM/DD/YYYY");
+                                        console.log(date);
+
+                                        // These are all of the possible card type values accepted as card type parameters by the adv txn search URL.
+                                        var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
+                                        // All possible payment method type strings that the URL search string accepts.
+                                        var allPaymentInstrumentTypes = ["CreditCardDetail", "ApplePayDetail", "VenmoAccountDetail", "PayPalDetail", "LocalPaymentDetail", "SamsungPayAttributesSnapshot", "Unknown", "AndroidPayCardDetail", "AndroidPayNetworkTokenDetail", "PaymentReaderAttributesSnapshot"];
+
+                                        // This function returns the card type parameter search string to be added to the URL.
+                                        function generateCardTypeParams(allCardTypes) {
+                                            // We define the string to be returned as an empty string.
+                                            var params = '';
+                                            // Creating an array consisting of the unchecked card type checkboxes.
+                                            var uncheckedCardTypes = $('#transaction-card-types-bar-chart input:not(:checked)').map(function() {
+                                                return this.value;
+                                            }).get();
+
+                                            console.log("Unchecked card types array: ", uncheckedCardTypes);
+
+                                            // The way the advanced txn search URL logic works is, if no parameters for any one of the categories is entered, then the search includes ALL of the parameters.
+                                            // So if we don't include any card type parameters, the search will automatically check all of them.
+                                            // With that in mind, we immediately check whether or not the user has unchecked any card types.
+                                            // If they have, uncheckedCardTypes will be populated/have a length greated than 0. If that's the case, then we need to make sure that that card type is not included in the parameters.
+                                            // If not though, meaning if they haven't unchecked any card types, then there's no need to include any card type parameters.
+                                            // That means they want all card types included so we just return the empty string; no card type &search strings to be included in the search at all.
+                                            if (uncheckedCardTypes.length == 0) {
+                                                return params;
+                                            }
+                                            else {
+                                                // Quick formatting to remove spaces and replace them with %20.
+                                                // Basically just doing that for Amex. The checkbox returns the value as "American Express" whereas it's "American%20Express" in the array we're generating the strings from.
+                                                // The g there is a "global" flag. Basically tells the function to replace all occurrences of the space here, not just the first it sees.
+                                                uncheckedCardTypes = uncheckedCardTypes.map(type => type.replace(/ /g, '%20'));
+
+                                                // Using filter() to create a new array that includes all of the card types in allCardTypes, EXCEPT those that are also in uncheckedCardTypes.
+                                                // It's parsing through each element in allCardTypes and checking if the condition (!uncheckedCardTypes.includes(type)) is true.
+                                                // If it returns true, meaning that the type is not included in uncheckedCardTypes, it's added to the new checkedCardTypes array.
+                                                // If it returns false, meaning that type is in uncheckedCardTypes, then it's not included in checkedCardTypes.
+                                                var checkedCardTypes = allCardTypes.filter(type => !uncheckedCardTypes.includes(type));
+
+                                                // Now we just iterate over every element in the new checkedCardTypes array, create the &search string with that type at the end of it, and add it to params.
+                                                checkedCardTypes.forEach(type => {
+                                                    params += '&search%5Bcredit_card_card_type%5D%5B%5D=' + type;
+                                                });
+
+                                                console.log("The params we're returning: " + params);
+                                                // Returning our params var filled with a bunch of &search strings stitched together.
+                                                return params;
+                                            }
+                                        };
+
+                                        function generatePaymentInstrumentParams(allPaymentInstrumentTypes) {
+                                            var params = "";
+
+                                            var uncheckedPaymentMethodTypes = $('#transaction-types-bar-chart input:not(:checked)').map(function() {
+                                                return this.value;
+                                            }).get();
+
+                                            console.log(uncheckedPaymentMethodTypes);
+
+                                            if (uncheckedPaymentMethodTypes.length == 0) {
+                                                return params;
+                                            }
+                                            else {
+                                                // Creating a map to convert the values in uncheckedPaymentMethodTypes to corresponding values in allPaymentInstrumentTypes.
+                                                var paymentInstrumentMap = {
+                                                    'Credit Card': ['CreditCardDetail'],
+                                                    // Google Pay has two search terms, mapping this one into both.
+                                                    'Google Pay': ['AndroidPayCardDetail', 'AndroidPayNetworkTokenDetail'],
+                                                    'Apple Pay': ['ApplePayDetail'],
+                                                    'Samsung Pay': ['SamsungPayAttributesSnapshot']
+                                                };
+
+                                                // Using the map on uncheckedPaymentMethodTypes to create a new array with the values we need.
+                                                // Because Google Pay needed to be mapped to two values, we use flatMap here so make sure the array is "flattened" into one value in each space.
+                                                var uncheckedPaymentMethodTypesConverted = uncheckedPaymentMethodTypes.flatMap(paymentType => paymentInstrumentMap[paymentType]);
+                                                console.log("Payment types after formatting: ", uncheckedPaymentMethodTypesConverted);
+
+                                                // Now that the array strings are in the proper values, we can filter allPaymentInstrumentTypes in the same way as in the other function.
+                                                var checkedPaymentInstruments = allPaymentInstrumentTypes.filter(paymentInstrument => !uncheckedPaymentMethodTypesConverted.includes(paymentInstrument));
+                                                console.log("The strings are to be generated from this: ", checkedPaymentInstruments);
+
+                                                // Now we generate the strings from the new array that was created from everything in allPaymentInstrumentTypes except for what was filtered out with uncheckedPaymentMethodTypesConverted.
+                                                checkedPaymentInstruments.forEach(paymentInstrument => {
+                                                    params += "&search%5Bpayment_instrument_type%5D%5B%5D=" + paymentInstrument;
+                                                });
+
+                                                // Return the strings we just generated.
+                                                return params;
+                                            }
+                                        };
+
+                                        // This function works a bit different than the other two.
+                                        // The statuses to be included depends on both the filters and the bar the user clicked on.
+                                        // We pass the bar the user clicked on (via datasetIndex), then do the filtering depending on that value.
+                                        function generateStatusParams(datasetIndex) {
+                                            var params = "";
+
+                                            var uncheckedStatuses = $('#transaction-statuses-bar-chart input:not(:checked)').map(function() {
+                                                return this.value;
+                                            }).get();
+
+                                            // The user clicked the successful transactions bar.
+                                            if (datasetIndex == 0) {
+                                                // These are all of the statuses that the URL accepts representing successful transactions.
+                                                // We create an array with only these specifically because if the user is clicking on this bar, it will inherently only include successful values.
+                                                // By creating the array like this now, we get rid of the need to filter out unsuccessful statuses later.
+                                                var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
+
+                                                // Creating a map to format the statuses from the checkbox values into values the URL accepts
+                                                var statusMap = {
+                                                    "authorized": "authorized",
+                                                    "Submitted For Settlement": "submitted_for_settlement",
+                                                    "Settlement Pending": "settlement_pending",
+                                                    "Settlement Confirmed": "settlement_confirmed",
+                                                    "Settling": "settling",
+                                                    "Settled": "settled"
+                                                };
+
+                                                // Formatting the uncheckedStatuses array we created.
+                                                var uncheckedStatusesConverted = uncheckedStatuses.map(status => statusMap[status] || status);
+                                                console.log("Successful unchecked statuses after formatting: ", uncheckedStatusesConverted);
+
+                                                // Now generating the array that the search strings will be created from. This is where using the successful status array helped us.
+                                                var checkedStatuses = successfulStatuses.filter(status => !uncheckedStatusesConverted.includes(status));
+                                                console.log("The array to generate the successful status params from: ", checkedStatuses);
+
+                                                // Generating the &search strings to be used in the URL.
+                                                checkedStatuses.forEach(status => {
+                                                    params += "&search%5Bstatus%5D%5B%5D=" + status;
+                                                });
+
+                                                return params;
+                                            }
+                                            // The user clicked the processor declined bar.
+                                            else if (datasetIndex == 1) {
+                                                // There's only one single status that corresponds to processor declines: processor_declined
+                                                // With that in mind, there's no filtering or anything like that to be done, just add the string to params and return it.
+                                                params += "&search%5Bstatus%5D%5B%5D=processor_declined";
+                                                return params;
+                                            }
+                                            // The user clicked the gateway rejected bar.
+                                            else {
+                                                // Similar situation here as with processor declines, except that there are many GW rejection statuses.
+                                                // Regardless, we don't do any sort of filtering between GW rejection reasons - they're just all tossed together.
+
+                                                // As such, all we have to do is create a GW rejection status array here.
+                                                var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
+
+                                                // Then just generate the &search strings from all of those strings and add them into params.
+                                                gatewayRejectedStatuses.forEach(status => {
+                                                    params += "&search%5Bstatus%5D%5B%5D=" + status;
+                                                });
+
+                                                return params;
+                                            }
+                                            // We don't have to worry about any other datasetIndex value cases. The bar chart only has 3 datasets so there's no possibility datasetIndex will be anything but 0, 1, or 2.
+                                        };
+
+                                        var cardTypeParams = generateCardTypeParams(allCardTypes);
+                                        console.log("The cardTypeParams generated: " + cardTypeParams);
+                                        var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
+                                        console.log("The payment method types generated: " + paymentMethodTypeParams);
+                                        var statusParams = generateStatusParams(datasetIndex);
+                                        console.log("The statuses generated: " + statusParams);
+
+                                        var merchantId = "{{merchantId}}";
+
+                                        var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams + paymentMethodTypeParams + statusParams + "&search%5Btype%5D%5B%5D=sale";
+                                        window.open(url, '_blank');
+                                    }
+                                },
                                 plugins: {
                                     tooltip: {
                                         callbacks: {
@@ -1054,192 +1053,6 @@
 
                         fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
 
-                        // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
-                        /*ctx.onclick = function(evt) {
-                            // Filling activeElements with the same getElementsAtEventForMode() function as in the other onclick.
-                            // Basically returns an array with all of the elements at the spot of the chart where the user clicks.
-                            var activeElements = transactionBarChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                            if (activeElements.length > 0) {
-                                var firstPoint = activeElements[0];
-                                var index = firstPoint.index;
-                                // This should let us know which of the bars the user clicked on. 0 = successful, 1 = processor declined, 2 = gw rejected.
-                                var datasetIndex = firstPoint.datasetIndex;
-                                console.log("The bar the user clicked: " + datasetIndex);
-
-                                // Advanced txn search demands that the date be formatted in MM/DD/YYYY format. Using moment to re-format the date as such.
-                                var date = moment(dates[index]).format("MM/DD/YYYY");
-                                console.log(date);
-
-                                // These are all of the possible card type values accepted as card type parameters by the adv txn search URL.
-                                var allCardTypes = ['Visa', 'MasterCard', 'American%20Express', 'Discover', 'JCB', 'Maestro', 'UnionPay', 'Elo', 'Hiper', 'Hipercard'];
-                                // All possible payment method type strings that the URL search string accepts.
-                                var allPaymentInstrumentTypes = ["CreditCardDetail", "ApplePayDetail", "VenmoAccountDetail", "PayPalDetail", "LocalPaymentDetail", "SamsungPayAttributesSnapshot", "Unknown", "AndroidPayCardDetail", "AndroidPayNetworkTokenDetail", "PaymentReaderAttributesSnapshot"];
-
-                                // This function returns the card type parameter search string to be added to the URL.
-                                function generateCardTypeParams(allCardTypes) {
-                                    // We define the string to be returned as an empty string.
-                                    var params = '';
-                                    // Creating an array consisting of the unchecked card type checkboxes.
-                                    var uncheckedCardTypes = $('#transaction-card-types-bar-chart input:not(:checked)').map(function() {
-                                        return this.value;
-                                    }).get();
-
-                                    console.log("Unchecked card types array: ", uncheckedCardTypes);
-
-                                    // The way the advanced txn search URL logic works is, if no parameters for any one of the categories is entered, then the search includes ALL of the parameters.
-                                    // So if we don't include any card type parameters, the search will automatically check all of them.
-                                    // With that in mind, we immediately check whether or not the user has unchecked any card types.
-                                    // If they have, uncheckedCardTypes will be populated/have a length greated than 0. If that's the case, then we need to make sure that that card type is not included in the parameters.
-                                    // If not though, meaning if they haven't unchecked any card types, then there's no need to include any card type parameters.
-                                    // That means they want all card types included so we just return the empty string; no card type &search strings to be included in the search at all.
-                                    if (uncheckedCardTypes.length == 0) {
-                                        return params;
-                                    }
-                                    else {
-                                        // Quick formatting to remove spaces and replace them with %20.
-                                        // Basically just doing that for Amex. The checkbox returns the value as "American Express" whereas it's "American%20Express" in the array we're generating the strings from.
-                                        // The g there is a "global" flag. Basically tells the function to replace all occurrences of the space here, not just the first it sees.
-                                        uncheckedCardTypes = uncheckedCardTypes.map(type => type.replace(/ /g, '%20'));
-
-                                        // Using filter() to create a new array that includes all of the card types in allCardTypes, EXCEPT those that are also in uncheckedCardTypes.
-                                        // It's parsing through each element in allCardTypes and checking if the condition (!uncheckedCardTypes.includes(type)) is true.
-                                        // If it returns true, meaning that the type is not included in uncheckedCardTypes, it's added to the new checkedCardTypes array.
-                                        // If it returns false, meaning that type is in uncheckedCardTypes, then it's not included in checkedCardTypes.
-                                        var checkedCardTypes = allCardTypes.filter(type => !uncheckedCardTypes.includes(type));
-
-                                        // Now we just iterate over every element in the new checkedCardTypes array, create the &search string with that type at the end of it, and add it to params.
-                                        checkedCardTypes.forEach(type => {
-                                            params += '&search%5Bcredit_card_card_type%5D%5B%5D=' + type;
-                                        });
-
-                                        console.log("The params we're returning: " + params);
-                                        // Returning our params var filled with a bunch of &search strings stitched together.
-                                        return params;
-                                    }
-                                };
-
-                                function generatePaymentInstrumentParams(allPaymentInstrumentTypes) {
-                                    var params = "";
-
-                                    var uncheckedPaymentMethodTypes = $('#transaction-types-bar-chart input:not(:checked)').map(function() {
-                                        return this.value;
-                                    }).get();
-
-                                    console.log(uncheckedPaymentMethodTypes);
-
-                                    if (uncheckedPaymentMethodTypes.length == 0) {
-                                        return params;
-                                    }
-                                    else {
-                                        // Creating a map to convert the values in uncheckedPaymentMethodTypes to corresponding values in allPaymentInstrumentTypes.
-                                        var paymentInstrumentMap = {
-                                            'Credit Card': ['CreditCardDetail'],
-                                            // Google Pay has two search terms, mapping this one into both.
-                                            'Google Pay': ['AndroidPayCardDetail', 'AndroidPayNetworkTokenDetail'],
-                                            'Apple Pay': ['ApplePayDetail'],
-                                            'Samsung Pay': ['SamsungPayAttributesSnapshot']
-                                        };
-
-                                        // Using the map on uncheckedPaymentMethodTypes to create a new array with the values we need.
-                                        // Because Google Pay needed to be mapped to two values, we use flatMap here so make sure the array is "flattened" into one value in each space.
-                                        var uncheckedPaymentMethodTypesConverted = uncheckedPaymentMethodTypes.flatMap(paymentType => paymentInstrumentMap[paymentType]);
-                                        console.log("Payment types after formatting: ", uncheckedPaymentMethodTypesConverted);
-
-                                        // Now that the array strings are in the proper values, we can filter allPaymentInstrumentTypes in the same way as in the other function.
-                                        var checkedPaymentInstruments = allPaymentInstrumentTypes.filter(paymentInstrument => !uncheckedPaymentMethodTypesConverted.includes(paymentInstrument));
-                                        console.log("The strings are to be generated from this: ", checkedPaymentInstruments);
-
-                                        // Now we generate the strings from the new array that was created from everything in allPaymentInstrumentTypes except for what was filtered out with uncheckedPaymentMethodTypesConverted.
-                                        checkedPaymentInstruments.forEach(paymentInstrument => {
-                                            params += "&search%5Bpayment_instrument_type%5D%5B%5D=" + paymentInstrument;
-                                        });
-
-                                        // Return the strings we just generated.
-                                        return params;
-                                    }
-                                };
-
-                                // This function works a bit different than the other two.
-                                // The statuses to be included depends on both the filters and the bar the user clicked on.
-                                // We pass the bar the user clicked on (via datasetIndex), then do the filtering depending on that value.
-                                function generateStatusParams(datasetIndex) {
-                                    var params = "";
-
-                                    var uncheckedStatuses = $('#transaction-statuses-bar-chart input:not(:checked)').map(function() {
-                                        return this.value;
-                                    }).get();
-
-                                    // The user clicked the successful transactions bar.
-                                    if (datasetIndex == 0) {
-                                        // These are all of the statuses that the URL accepts representing successful transactions.
-                                        // We create an array with only these specifically because if the user is clicking on this bar, it will inherently only include successful values.
-                                        // By creating the array like this now, we get rid of the need to filter out unsuccessful statuses later.
-                                        var successfulStatuses = ["authorized", "submitted_for_settlement", "settlement_pending", "settlement_confirmed", "settling", "settled"];
-
-                                        // Creating a map to format the statuses from the checkbox values into values the URL accepts
-                                        var statusMap = {
-                                            "authorized": "authorized",
-                                            "Submitted For Settlement": "submitted_for_settlement",
-                                            "Settlement Pending": "settlement_pending",
-                                            "Settlement Confirmed": "settlement_confirmed",
-                                            "Settling": "settling",
-                                            "Settled": "settled"
-                                        };
-
-                                        // Formatting the uncheckedStatuses array we created.
-                                        var uncheckedStatusesConverted = uncheckedStatuses.map(status => statusMap[status] || status);
-                                        console.log("Successful unchecked statuses after formatting: ", uncheckedStatusesConverted);
-
-                                        // Now generating the array that the search strings will be created from. This is where using the successful status array helped us.
-                                        var checkedStatuses = successfulStatuses.filter(status => !uncheckedStatusesConverted.includes(status));
-                                        console.log("The array to generate the successful status params from: ", checkedStatuses);
-
-                                        // Generating the &search strings to be used in the URL.
-                                        checkedStatuses.forEach(status => {
-                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
-                                        });
-
-                                        return params;
-                                    }
-                                    // The user clicked the processor declined bar.
-                                    else if (datasetIndex == 1) {
-                                        // There's only one single status that corresponds to processor declines: processor_declined
-                                        // With that in mind, there's no filtering or anything like that to be done, just add the string to params and return it.
-                                        params += "&search%5Bstatus%5D%5B%5D=processor_declined";
-                                        return params;
-                                    }
-                                    // The user clicked the gateway rejected bar.
-                                    else {
-                                        // Similar situation here as with processor declines, except that there are many GW rejection statuses.
-                                        // Regardless, we don't do any sort of filtering between GW rejection reasons - they're just all tossed together.
-
-                                        // As such, all we have to do is create a GW rejection status array here.
-                                        var gatewayRejectedStatuses = ["three_d_secure", "avs", "cvv", "avs_and_cvv", "risk_threshold", "fraud", "application_incomplete", "duplicate", "excessive_retry", "manual_transactions_disabled", "payment_method_blocked", "token_issuance", "union_pay_enrollment_required"];
-
-                                        // Then just generate the &search strings from all of those strings and add them into params.
-                                        gatewayRejectedStatuses.forEach(status => {
-                                            params += "&search%5Bstatus%5D%5B%5D=" + status;
-                                        });
-
-                                        return params;
-                                    }
-                                    // We don't have to worry about any other datasetIndex value cases. The bar chart only has 3 datasets so there's no possibility datasetIndex will be anything but 0, 1, or 2.
-                                };
-
-                                var cardTypeParams = generateCardTypeParams(allCardTypes);
-                                console.log("The cardTypeParams generated: " + cardTypeParams);
-                                var paymentMethodTypeParams = generatePaymentInstrumentParams(allPaymentInstrumentTypes);
-                                console.log("The payment method types generated: " + paymentMethodTypeParams);
-                                var statusParams = generateStatusParams(datasetIndex);
-                                console.log("The statuses generated: " + statusParams);
-
-                                var merchantId = "{{merchantId}}";
-
-                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/advanced_search?utf8=%E2%9C%93&search%5Bcreated_at%5D%5Bchecked%5D=created&search%5Bcreated_at%5D%5Bmax%5D=' + date + '&search%5Bcreated_at%5D%5Bmax_hour%5D=23&search%5Bcreated_at%5D%5Bmax_minute%5D=59&search%5Bcreated_at%5D%5Bmin%5D=' + date + cardTypeParams + paymentMethodTypeParams + statusParams + "&search%5Btype%5D%5B%5D=sale";
-                                window.open(url, '_blank');
-                            }
-                        };*/
-
                         // Adding a "pop out" functionality. User can click a button and the chart fills the entire browser.
                         popOutButton = document.getElementById("bar-chart-pop-out");
                         popOutButton.onclick = function() {
@@ -1296,12 +1109,7 @@
                             new Chart(clonedCtx, {
                                 type: transactionBarChart.config.type,
                                 data: transactionBarChart.config.data,
-                                options: {
-                                    ...transactionBarChart.config.options,
-                                    onClick: function(evt) {
-                                        console.log("onClick activated!");
-                                    }
-                                }
+                                options: transactionBarChart.config.options
                             });
                         };
                     };
