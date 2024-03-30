@@ -968,29 +968,10 @@
                                             mode: "xy",
                                             threshold: "20",
                                             onPan: function({chart}) {
-                                                // Assigning the x axis of the graph to a variable.
-                                                var xAxis = chart.scales['x'];
-
-                                                // This function is pulling the indices that the dates are at.
-                                                var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
-                                                var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
-
-                                                // To pull the actual date, we grab the index of the dates array with these above indices.
-                                                // Also using moment to format the dates.
-                                                var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-                                                var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-
-                                                // Here's where we generate the message and add it to the div we created in the HBS code.
-                                                var divMessage = document.getElementById('bar-chart-panning-message');
-                                                divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
+                                                onPanBarChart({chart}, "bar-chart-panning-message");
                                             },
                                             onPanComplete: function() {
-                                                // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
-                                                var messageDiv = document.getElementById('bar-chart-panning-message');
-                                                // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
-                                                setTimeout(function() {
-                                                    messageDiv.innerHTML = "";
-                                                }, 2500);
+                                                onPanCompleteBarChart("bar-chart-panning-message");
                                             }
                                         },
                                         limits: {
@@ -1011,37 +992,74 @@
                             }
                         });
 
-                        // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
-                        // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
-                        // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
+                        // Moving these onPan functions into their own definitions so that they can be re-used in both charts.
+                        function onPanBarChart({chart}, divId) {
+                            // Assigning the x axis of the graph to a variable.
+                            var xAxis = chart.scales['x'];
 
-                        // This var will be filled with the starting point of the pan operation.
-                        var panStartingPoint = null;
+                            // This function is pulling the indices that the dates are at.
+                            var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
+                            var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
 
-                        // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
-                        transactionBarChart.canvas.addEventListener('mousedown', function(event) {
-                            // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
-                            panStartingPoint = { x: event.clientX, y: event.clientY };
-                        });
+                            // To pull the actual date, we grab the index of the dates array with these above indices.
+                            // Also using moment to format the dates.
+                            var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                            var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
 
-                        // Event listener for the mousemove event - when the user moves their mouse/input.
-                        transactionBarChart.canvas.addEventListener('mousemove', function(e) {
-                            // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
-                            if (panStartingPoint && transactionBarChart.config.options.plugins.zoom.pan.enabled) {
-                                // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
-                                var diffX = Math.abs(e.clientX - panStartingPoint.x);
-                                var diffY = Math.abs(e.clientY - panStartingPoint.y);
+                            // Here's where we generate the message and add it to the div we created in the HBS code.
+                            var divMessage = document.getElementById(divId);
+                            divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
+                        }
 
-                                // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
-                                transactionBarChart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
-                            }
-                        });
+                        function onPanCompleteBarChart(divId) {
+                            // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
+                            var messageDiv = document.getElementById(divId);
+                            // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
+                            setTimeout(function() {
+                                messageDiv.innerHTML = "";
+                            }, 2500);
+                        }
 
-                        // Event listener for the mouseup event - user let the mouse/input go.
-                        transactionBarChart.canvas.addEventListener('mouseup', function() {
-                            // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
-                            panStartingPoint = null;
-                        });
+                        // Update: moving this inside of it's own function so that the logic can be applied to this original chart and the cloned chart.
+                        function setPanMode(chart) {
+
+                            // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
+                            // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
+                            // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
+
+                            // This var will be filled with the starting point of the pan operation.
+                            var panStartingPoint = null;
+
+                            // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
+                            chart.canvas.addEventListener('mousedown', function(event) {
+                                // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
+                                panStartingPoint = { x: event.clientX, y: event.clientY };
+                            });
+
+                            // Event listener for the mousemove event - when the user moves their mouse/input.
+                            chart.canvas.addEventListener('mousemove', function(e) {
+                                // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
+                                if (panStartingPoint && chart.config.options.plugins.zoom.pan.enabled) {
+                                    // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
+                                    var diffX = Math.abs(e.clientX - panStartingPoint.x);
+                                    var diffY = Math.abs(e.clientY - panStartingPoint.y);
+
+                                    // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
+                                    chart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
+
+                                    console.log('Panning enabled:', chart.config.options.plugins.zoom.pan.enabled);
+                                    console.log('Pan mode:', chart.config.options.plugins.zoom.pan.mode);
+                                }
+                            });
+
+                            // Event listener for the mouseup event - user let the mouse/input go.
+                            chart.canvas.addEventListener('mouseup', function() {
+                                // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
+                                panStartingPoint = null;
+                            });
+                        };
+
+                        setPanMode(transactionBarChart);
 
                         // This is setting the limits of the zoom plugin AFTER the chart is initially created.
                         // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
@@ -1067,6 +1085,15 @@
                             // This zIndex makes it sit on top of everything on the page.
                             overlay.style.zIndex = 1000;
 
+                            // Create a new div for the onPan message, this one for the overlay.
+                            var overlayMessageDiv = document.createElement("div");
+                            overlayMessageDiv.id = "overlay-bar-chart-message-div";
+                            overlayMessageDiv.style.position = 'absolute';
+                            overlayMessageDiv.style.bottom = '50px';
+                            overlayMessageDiv.style.right = '10px';
+                            overlayMessageDiv.style.zIndex = 1001;
+                            overlay.appendChild(overlayMessageDiv);
+
                             // Creating a button that allows to user to close the popped out graph.
                             var closeButton = document.createElement('button');
                             closeButton.innerHTML = 'Close';
@@ -1081,6 +1108,7 @@
                                 // Hide the cloned chart and show the original chart when the close button is clicked
                                 transactionBarChart.canvas.style.display = 'block';
                                 clonedCanvas.style.display = 'none';
+                                overlay.removeChild(overlayMessageDiv);
                                 document.body.removeChild(overlay);
                             };
                             overlay.appendChild(closeButton);
@@ -1102,15 +1130,33 @@
                             transactionBarChart.canvas.style.display = 'none';
                             clonedCanvas.style.display = 'block';
 
-                            // Assuming you have already cloned the canvas and have a reference to the cloned context
                             var clonedCtx = clonedCanvas.getContext("2d");
 
                             // Create the cloned chart with the same onClick function
-                            new Chart(clonedCtx, {
+                            var clonedBarChart = new Chart(clonedCtx, {
                                 type: transactionBarChart.config.type,
                                 data: transactionBarChart.config.data,
-                                options: transactionBarChart.config.options
+                                options: {
+                                    ...transactionBarChart.config.options,
+                                    plugins: {
+                                        ...transactionBarChart.config.options.plugins,
+                                        zoom: {
+                                            ...transactionBarChart.config.options.plugins.zoom,
+                                            pan: {
+                                                ...transactionBarChart.config.options.plugins.zoom.pan,
+                                                onPan: function({chart}) {
+                                                    onPanBarChart({chart}, "overlay-bar-chart-message-div");
+                                                },
+                                                onPanComplete: function() {
+                                                    onPanCompleteBarChart("overlay-bar-chart-message-div");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             });
+
+                            setPanMode(clonedBarChart);
                         };
                     };
 
