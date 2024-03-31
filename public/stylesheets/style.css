@@ -318,7 +318,7 @@ h5 {
   gap: 10px;
 }
 
-#start-date, #end-date, #graph-generator {
+#start-date, #end-date, #graph-generator, #bar-chart-pop-out, #bar-chart-pop-out-close-button {
   background-color: #ff8e51;
   border: none;
   color: rgb(41, 0, 106);
