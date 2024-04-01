@@ -20,11 +20,11 @@
         <div class="row">
             <div class="col-9">
                 <div class="graphStyle">
-                    <h1>Transactions Per Transaction</h1>
+                    <h1 id="line-chart-title">Transaction Timeline</h1>
                     <canvas id="transaction-line-chart"></canvas>
                 </div>
             </div>
-            <div class="col-3">
+            <div class="col-3" style="top: 75px">
                 <!-- Creating divs for the checkbox options for the line chart. -->
                 <div class="checkbox-cols">
                     <p>Payment Methods:</p>
@@ -47,13 +47,13 @@
                 <div class="graphStyle" style="position: relative;">
                     <div>
                         <button id="bar-chart-pop-out" style="position: absolute; left: 25px; top: 73px; display: none;">Pop Out</button>
-                        <h1 style="text-align: center;">Transactions Per Day</h1>
+                        <h1 id="bar-chart-title" style="text-align: center;">Transaction Volume by Day</h1>
                     </div>
                     <div id="bar-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
                     <canvas id="transaction-bar-chart"></canvas>
                 </div>
             </div>
-            <div class="col-3">
+            <div class="col-3" style="top: 75px">
                 <!-- Creating divs for the checkbox options for the bar chart. -->
                 <div class="checkbox-cols">
                     <p>Payment Methods:</p>
