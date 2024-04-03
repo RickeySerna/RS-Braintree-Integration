@@ -260,11 +260,6 @@ h5 {
   font-size: 25px;
 }
 
-.checkbox-cols {
-  padding-left: 50px !important;
-  padding-right: 50px !important;
-}
-
 #graph-area {
   position: relative;
   z-index: 1;
@@ -446,14 +441,16 @@ h5 {
   }
 }
 
+.checkbox-cols {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  margin-bottom: 20px;
+}
+
 .checkbox-cols p {
   color: #ff8e51;
   margin-bottom: 0;
   text-decoration: underline;
-}
-
-.checkbox-cols {
-  margin-bottom: 20px;
 }
 
 #line-chart-title, #bar-chart-title {
@@ -467,4 +464,5 @@ h5 {
 #graph-area {
   border: 5px solid #ff8e51c8;
   background-color: #29006a79;
+  overflow: hidden;
 }
