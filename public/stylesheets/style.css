@@ -466,3 +466,20 @@ h5 {
   background-color: #29006a79;
   overflow: hidden;
 }
+
+#analytics-intro {
+  color: #ff8e51;
+  font-size: 1.5em;
+  text-align: center;
+}
+
+.halloween-pumpkin-style {
+  background-image: url("halloween-pumpkin.gif");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  height: 150px;
+  width: 500px;
+  float: left;
+  margin-right: 10px;
+}

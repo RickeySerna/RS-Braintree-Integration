@@ -3,7 +3,18 @@
 
 <body>
     <div id="analytics-jumbotron" class="jumbotron">
-        <h1 id="analyticsHeader">Transaction Analytics</h1>
+        <h1 id="analyticsHeader">Welcome to Transaction Analytics!</h1>
+    </div>
+
+    <!-- Quick intro describing the page. -->
+    <div id="analytics-intro">
+        <br>
+        <!-- From John Carpenter himself. -->
+        <div class = "halloween-pumpkin-style"></div>
+        <div class = "halloween-pumpkin-style" style="float:right;"></div>
+        <p>This page will generate two graphs based on transactions from the Braintree gateway.</p>
+        <br style="clear:both;">
+        <p>Enter a search range below and hit enter to get started!</p>
     </div>
 
     <!-- Creating two input dates for the search parameters and a button to generate the graph. -->
@@ -15,69 +26,69 @@
         <button id="graph-generator">Search</button>
     </div>
 
-<div id="graph-area">
-    <!-- Div holding the line chart and its checkbox options. -->
-    <div class="row" style="border-bottom: 2.5px solid #ff8e51c8;">
-        <div class="col-10">
-            <div class="graphStyle">
-                <h1 id="line-chart-title">Transaction Timeline</h1>
-                <canvas id="transaction-line-chart"></canvas>
-            </div>
-        </div>
-        <div class="col-2" style="top: 75px">
-            <!-- Creating divs for the checkbox options for the line chart. -->
-            <div class="checkbox-cols">
-                <p>Payment Methods:</p>
-                <div id="transaction-types-line-chart"></div>
-            </div>
-            <div class="checkbox-cols">
-                <p>Statuses:</p>
-                <div id="transaction-statuses-line-chart"></div>
-            </div>
-            <div class="checkbox-cols">
-                <p>Card Types:</p>
-                <div id="transaction-card-types-line-chart"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Div holding the bar chart and its checkbox options. -->
-    <div class="row" style="border-top: 2.5px solid #ff8e51c8;">
-        <div class="col-10">
-            <div class="graphStyle" style="position: relative;">
-                <div>
-                    <button id="bar-chart-pop-out" style="position: absolute; left: 25px; top: 73px; display: none;">Pop Out</button>
-                    <h1 id="bar-chart-title" style="text-align: center;">Transaction Volume by Day</h1>
+    <div id="graph-area">
+        <!-- Div holding the line chart and its checkbox options. -->
+        <div class="row" style="border-bottom: 2.5px solid #ff8e51c8;">
+            <div class="col-10">
+                <div class="graphStyle">
+                    <h1 id="line-chart-title">Transaction Timeline</h1>
+                    <canvas id="transaction-line-chart"></canvas>
                 </div>
-                <div id="bar-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
-                <canvas id="transaction-bar-chart"></canvas>
+            </div>
+            <div class="col-2" style="top: 75px">
+                <!-- Creating divs for the checkbox options for the line chart. -->
+                <div class="checkbox-cols">
+                    <p>Payment Methods:</p>
+                    <div id="transaction-types-line-chart"></div>
+                </div>
+                <div class="checkbox-cols">
+                    <p>Statuses:</p>
+                    <div id="transaction-statuses-line-chart"></div>
+                </div>
+                <div class="checkbox-cols">
+                    <p>Card Types:</p>
+                    <div id="transaction-card-types-line-chart"></div>
+                </div>
             </div>
         </div>
-        <div class="col-2" style="top: 75px">
-            <!-- Creating divs for the checkbox options for the bar chart. -->
-            <div class="checkbox-cols">
-                <p>Payment Methods:</p>
-                <div id="transaction-types-bar-chart"></div>
-            </div>
-            <div class="checkbox-cols">
-                <p>Statuses:</p>
-                <div id="transaction-statuses-bar-chart"></div>
-            </div>
-            <div class="checkbox-cols">
-                <p>Card Types:</p>
-                <div id="transaction-card-types-bar-chart"></div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Adding a spinner that will be shown while the AJAX call runs in the background and is hidden after the call is done. -->
-    <div id="spinner-overlay">
-        <div id="analyticsSpinnerDiv">
-            <div id="theActualAnalyticsSpinner" class="spinner-border" role="status"></div>
-            <div class="spinner-text">Fetching data...</div>
+        <!-- Div holding the bar chart and its checkbox options. -->
+        <div class="row" style="border-top: 2.5px solid #ff8e51c8;">
+            <div class="col-10">
+                <div class="graphStyle" style="position: relative;">
+                    <div>
+                        <button id="bar-chart-pop-out" style="position: absolute; left: 25px; top: 73px; display: none;">Pop Out</button>
+                        <h1 id="bar-chart-title" style="text-align: center;">Transaction Volume by Day</h1>
+                    </div>
+                    <div id="bar-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
+                    <canvas id="transaction-bar-chart"></canvas>
+                </div>
+            </div>
+            <div class="col-2" style="top: 75px">
+                <!-- Creating divs for the checkbox options for the bar chart. -->
+                <div class="checkbox-cols">
+                    <p>Payment Methods:</p>
+                    <div id="transaction-types-bar-chart"></div>
+                </div>
+                <div class="checkbox-cols">
+                    <p>Statuses:</p>
+                    <div id="transaction-statuses-bar-chart"></div>
+                </div>
+                <div class="checkbox-cols">
+                    <p>Card Types:</p>
+                    <div id="transaction-card-types-bar-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Adding a spinner that will be shown while the AJAX call runs in the background and is hidden after the call is done. -->
+        <div id="spinner-overlay">
+            <div id="analyticsSpinnerDiv">
+                <div id="theActualAnalyticsSpinner" class="spinner-border" role="status"></div>
+                <div class="spinner-text">Fetching data...</div>
+            </div>
         </div>
     </div>
-</div>
 
     <script>
         // Declare the chart variable globally so that it's accessible when we run fetchTransactionData a second time.
