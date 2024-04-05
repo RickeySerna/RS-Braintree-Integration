@@ -784,7 +784,7 @@ app.post('/testing-result', (req, res, next) => {
 
   gateway.transaction.sale({
     amount: "100",
-    paymentMethodNonce: "fake-android-pay-visa-nonce",
+    paymentMethodToken: "8fjkn39j",
     options: {
       submitForSettlement: true
     },
