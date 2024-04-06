@@ -37,6 +37,7 @@
             <div class="col-10">
                 <div class="graphStyle">
                     <h1 id="line-chart-title">Transaction Timeline</h1>
+                    <div id="line-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
                     <canvas id="transaction-line-chart"></canvas>
                 </div>
             </div>
@@ -338,6 +339,70 @@
                         };
                     }
 
+                    // Moving these onPan functions into their own definitions so that they can be re-used in both charts.
+                    function onPanChartFunction({chart}, divId) {
+                        // Assigning the x axis of the graph to a variable.
+                        var xAxis = chart.scales['x'];
+
+                        // This function is pulling the indices that the dates are at.
+                        var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
+                        var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
+
+                        // To pull the actual date, we grab the index of the dates array with these above indices.
+                        // Also using moment to format the dates.
+                        var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+                        var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
+
+                        // Here's where we generate the message and add it to the div we created in the HBS code.
+                        var divMessage = document.getElementById(divId);
+                        divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
+                    }
+
+                    function onPanCompleteChartFunction (divId) {
+                        // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
+                        var messageDiv = document.getElementById(divId);
+                        // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
+                        setTimeout(function() {
+                            messageDiv.innerHTML = "";
+                        }, 2500);
+                    }
+
+                    // Update: moving this inside of it's own function so that the logic can be applied to this original chart and the cloned chart.
+                    function setPanMode(chart) {
+
+                        // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
+                        // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
+                        // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
+
+                        // This var will be filled with the starting point of the pan operation.
+                        var panStartingPoint = null;
+
+                        // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
+                        chart.canvas.addEventListener('mousedown', function(event) {
+                            // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
+                            panStartingPoint = { x: event.clientX, y: event.clientY };
+                        });
+
+                        // Event listener for the mousemove event - when the user moves their mouse/input.
+                        chart.canvas.addEventListener('mousemove', function(e) {
+                            // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
+                            if (panStartingPoint && chart.config.options.plugins.zoom.pan.enabled) {
+                                // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
+                                var diffX = Math.abs(e.clientX - panStartingPoint.x);
+                                var diffY = Math.abs(e.clientY - panStartingPoint.y);
+
+                                // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
+                                chart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
+                            }
+                        });
+
+                        // Event listener for the mouseup event - user let the mouse/input go.
+                        chart.canvas.addEventListener('mouseup', function() {
+                            // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
+                            panStartingPoint = null;
+                        });
+                    };
+
                     // afterDraw is a hook that executes after the chart is drawn. In our case, it generates the text we defined in fillSearchResultsInfo().
                     // Has to be declared outside of the chart as a plugin like this.
 
@@ -528,6 +593,38 @@
                                         beginAtZero: true
                                     }
                                 },
+                                // Adding an onclick handler which triggers when a datapoint in the graph is clicked.
+                                // It leads to the URL for that transaction in the BT Control Panel.
+                                // Update: moving this inside the chart config.
+                                onClick: function(evt) {
+                                    var chart = this;
+                                    // Once the user clicks somewhere on the chart, activePoints is filled with an array containing all of the datapoints in the graph.
+                                    var activePoints = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                                    // If the user didn't click on a datapoint specifically, that activePoints array will be empty, hence less than 0 and so we don't do anything more.
+                                    if (activePoints.length > 0) {
+                                        console.log(activePoints);
+                                        // If they clicked on a datapoint, activePoints will be filled with data and so we do all of this.
+                                        // The 'nearest' parameter in getElementsAtEventForMode means that the function returns the datapoints nearest to where we clicked.
+                                        // If we had mulltipe datapoints at the same location, the activePoints array would fill with all of them.
+                                        // In this case, the graph only has one datapoint in any given location so activePoints always has a length of 1.
+
+                                        // So now we create a var containing the object with that 1 datapoint in activePoints.
+                                        var firstPoint = activePoints[0];
+                                        // That object contains an index which is it's position in the dataset that the graph was created from.
+                                        // So if it was the 4 datapoint, the index here will be 3.
+                                        // Updating this to use the filtered index we used above. Now, it'll pull the transaction from the index that was filterd with the checkboxes.
+                                        var index = firstPoint.index;
+                                        // Now we take that index and index the ids array we got back from the AJAX call.
+                                        // The correct transaction ID will be pulled here since the graph was created from that ids array.
+                                        var transactionId = ids[index];
+                                        // Merchant ID is now pulled from the .env file.
+                                        var merchantId = "{{merchantId}}";
+
+                                        // Constructing the URL and opening it in a new tab.
+                                        var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/' + transactionId;
+                                        window.open(url, '_blank');
+                                    }
+                                },
                                 // It's working! tooltip is nested inside of plugins. Now it shows a proper label.
                                 plugins: {
                                     tooltip: {
@@ -555,46 +652,47 @@
                                                 ];
                                             }
                                         }
+                                    },
+                                    zoom: {
+                                        pan: {
+                                            enabled: true,
+                                            mode: "xy",
+                                            threshold: "20",
+                                            onPan: function({chart}) {
+                                                onPanChartFunction ({chart}, "line-chart-panning-message");
+                                            },
+                                            onPanComplete: function() {
+                                                onPanCompleteChartFunction ("line-chart-panning-message");
+                                            }
+                                        },
+                                        limits: {
+                                            // These are essentially just placeholder values now.
+                                            // The graph errors out if I remove the object altogether so we just leave this as and the values get replaced by this line: transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+                                            y: {min: 0, max: 100}
+                                        },
+                                        zoom: {
+                                            wheel: {
+                                                enabled: true,
+                                                speed: 0.05,
+                                                mode: 'xy',
+                                                modifierKey: "shift"
+                                            }
+                                        }
                                     }
                                 }
                             }
                         });
 
+                        setPanMode(transactionChart);
+
+                        var originalMaxYLineChart = transactionChart.scales['y'].max;
+                        console.log("Original upper Y axis limit, line chart: " + originalMaxYLineChart);
+                        transactionChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxYLineChart};
+
                         // Generate the information from the search results. Has to be done after the chart already exists so we call it after drawChart().
                         // Moving this inside of drawChart() so that it's called every time a filter is clicked. The chart breaks otherwise.
                         // The filtered arrays are passed into here now so that the information in the textbox updates based on the filters. If a transaction is filtered out, it's not used in any of the counts now.
                         fillSearchResultsInfo(filteredDates, filteredAmounts, filteredIDs, filteredStatuses, filteredTypes, filteredCardTypes);
-
-                        // Adding an onclick handler which triggers when a datapoint in the graph is clicked.
-                        // It leads to the URL for that transaction in the BT Control Panel.
-                        ctx.onclick = function(evt) {
-                            // Once the user clicks somewhere on the chart, activePoints is filled with an array containing all of the datapoints in the graph.
-                            var activePoints = transactionChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-                            // If the user didn't click on a datapoint specifically, that activePoints array will be empty, hence less than 0 and so we don't do anything more.
-                            if (activePoints.length > 0) {
-                                console.log(activePoints);
-                                // If they clicked on a datapoint, activePoints will be filled with data and so we do all of this.
-                                // The 'nearest' parameter in getElementsAtEventForMode means that the function returns the datapoints nearest to where we clicked.
-                                // If we had mulltipe datapoints at the same location, the activePoints array would fill with all of them.
-                                // In this case, the graph only has one datapoint in any given location so activePoints always has a length of 1.
-
-                                // So now we create a var containing the object with that 1 datapoint in activePoints.
-                                var firstPoint = activePoints[0];
-                                // That object contains an index which is it's position in the dataset that the graph was created from.
-                                // So if it was the 4 datapoint, the index here will be 3.
-                                // Updating this to use the filtered index we used above. Now, it'll pull the transaction from the index that was filterd with the checkboxes.
-                                var index = firstPoint.index;
-                                // Now we take that index and index the ids array we got back from the AJAX call.
-                                // The correct transaction ID will be pulled here since the graph was created from that ids array.
-                                var transactionId = ids[index];
-                                // Merchant ID is now pulled from the .env file.
-                                var merchantId = "{{merchantId}}";
-
-                                // Constructing the URL and opening it in a new tab.
-                                var url = 'https://sandbox.braintreegateway.com/merchants/' + merchantId + '/transactions/' + transactionId;
-                                window.open(url, '_blank');
-                            }
-                        };
                     }
 
                     // This function is generating the dates that will be the x axis on the bar chart.
@@ -986,10 +1084,10 @@
                                             mode: "xy",
                                             threshold: "20",
                                             onPan: function({chart}) {
-                                                onPanBarChart({chart}, "bar-chart-panning-message");
+                                                onPanChartFunction ({chart}, "bar-chart-panning-message");
                                             },
                                             onPanComplete: function() {
-                                                onPanCompleteBarChart("bar-chart-panning-message");
+                                                onPanCompleteChartFunction ("bar-chart-panning-message");
                                             }
                                         },
                                         limits: {
@@ -1010,79 +1108,15 @@
                             }
                         });
 
-                        // Moving these onPan functions into their own definitions so that they can be re-used in both charts.
-                        function onPanBarChart({chart}, divId) {
-                            // Assigning the x axis of the graph to a variable.
-                            var xAxis = chart.scales['x'];
-
-                            // This function is pulling the indices that the dates are at.
-                            var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
-                            var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
-
-                            // To pull the actual date, we grab the index of the dates array with these above indices.
-                            // Also using moment to format the dates.
-                            var leftDate = moment(dates[leftDateIndex], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-                            var rightDate = moment(dates[rightDateIndex - 1], 'YYYY-MM-DD').format('MMMM Do, YYYY');
-
-                            // Here's where we generate the message and add it to the div we created in the HBS code.
-                            var divMessage = document.getElementById(divId);
-                            divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
-                        }
-
-                        function onPanCompleteBarChart(divId) {
-                            // Once panning is complete, this function just empties the div we created so that the user doesn't see the message anymore.
-                            var messageDiv = document.getElementById(divId);
-                            // Setting a small timeout here so that the message doesn't disappear immediately. It displays for a few seconds before going away.
-                            setTimeout(function() {
-                                messageDiv.innerHTML = "";
-                            }, 2500);
-                        }
-
-                        // Update: moving this inside of it's own function so that the logic can be applied to this original chart and the cloned chart.
-                        function setPanMode(chart) {
-
-                            // The following event listeners are making it so that the pan mode of the chart is dynamically changed depending on how the user pans.
-                            // If the user tries to pan from left to right, the mode is set to "x" so that they can only pan on the x axis.
-                            // If the user pans up and down, it's set to "y" so they can only pan on the y axis.
-
-                            // This var will be filled with the starting point of the pan operation.
-                            var panStartingPoint = null;
-
-                            // Creating an event listener for the mousedown event on the chart - that's just when the user presses their mouse/input.
-                            chart.canvas.addEventListener('mousedown', function(event) {
-                                // So when the user presses down, we record where they pressed on the graph (the x,y point) into the panStartingPoint var we just declared.
-                                panStartingPoint = { x: event.clientX, y: event.clientY };
-                            });
-
-                            // Event listener for the mousemove event - when the user moves their mouse/input.
-                            chart.canvas.addEventListener('mousemove', function(e) {
-                                // First, we check if the user is panning by checking to see if panStartingPoint isn't null and if panning is enabled on the chart config.
-                                if (panStartingPoint && chart.config.options.plugins.zoom.pan.enabled) {
-                                    // If they're panning, we calculate the difference between where the user started panning and where the user currently has the mouse on both the X and Y axises.
-                                    var diffX = Math.abs(e.clientX - panStartingPoint.x);
-                                    var diffY = Math.abs(e.clientY - panStartingPoint.y);
-
-                                    // Then we compare those two differences; if the x difference is greater than the y difference, the mode is set to "x". Vice versa for "y".
-                                    chart.config.options.plugins.zoom.pan.mode = diffX > diffY ? "x" : "y";
-                                }
-                            });
-
-                            // Event listener for the mouseup event - user let the mouse/input go.
-                            chart.canvas.addEventListener('mouseup', function() {
-                                // All we do here is reset the panStartingPoint to null so that this is all ready to go again if the user starts panning again.
-                                panStartingPoint = null;
-                            });
-                        };
-
                         setPanMode(transactionBarChart);
 
                         // This is setting the limits of the zoom plugin AFTER the chart is initially created.
                         // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
                         // Now, when the user zooms all the way out, the chart will look exactly the same as it originally did before all of the zooming.
                         // Much better solution than the max array stuff we were doing!
-                        var originalMaxY = transactionBarChart.scales['y'].max;
-                        console.log("Original upper Y axis limit: " + originalMaxY);
-                        transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxY};
+                        var originalMaxYBarChart = transactionBarChart.scales['y'].max;
+                        console.log("Original upper Y axis limit, bar chart: " + originalMaxYBarChart);
+                        transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxYBarChart};
 
                         fillBarChartInfo(filteredDatesBarChart, filteredAmountsBarChart, filteredIDsBarChart, filteredStatusesBarChart, filteredTypesBarChart, filteredCardTypesBarChart);
 
@@ -1161,10 +1195,10 @@
                                             pan: {
                                                 ...transactionBarChart.config.options.plugins.zoom.pan,
                                                 onPan: function({chart}) {
-                                                    onPanBarChart({chart}, "overlay-bar-chart-message-div");
+                                                    onPanChartFunction ({chart}, "overlay-bar-chart-message-div");
                                                 },
                                                 onPanComplete: function() {
-                                                    onPanCompleteBarChart("overlay-bar-chart-message-div");
+                                                    onPanCompleteChartFunction ("overlay-bar-chart-message-div");
                                                 }
                                             }
                                         }
