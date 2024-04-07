@@ -36,7 +36,10 @@
         <div class="row" style="border-bottom: 2.5px solid #ff8e51c8;">
             <div class="col-10">
                 <div class="graphStyle">
-                    <h1 id="line-chart-title">Transaction Timeline</h1>
+                    <div>
+                        <button id="line-chart-pop-out" style="position: absolute; left: 40px; top: 73px; display: none;">Pop Out</button>
+                        <h1 id="line-chart-title">Transaction Timeline</h1>
+                    </div>
                     <div id="line-chart-panning-message" style="position: absolute; bottom: 50px; right: 10px; z-index: 10;"></div>
                     <canvas id="transaction-line-chart"></canvas>
                 </div>
@@ -673,7 +676,7 @@
                                         zoom: {
                                             wheel: {
                                                 enabled: true,
-                                                speed: 0.05,
+                                                speed: 0.005,
                                                 mode: 'xy',
                                                 modifierKey: "shift"
                                             }
@@ -693,6 +696,96 @@
                         // Moving this inside of drawChart() so that it's called every time a filter is clicked. The chart breaks otherwise.
                         // The filtered arrays are passed into here now so that the information in the textbox updates based on the filters. If a transaction is filtered out, it's not used in any of the counts now.
                         fillSearchResultsInfo(filteredDates, filteredAmounts, filteredIDs, filteredStatuses, filteredTypes, filteredCardTypes);
+
+                        // Adding the same pop out functionality to the line chart as well.
+                        // Adding a "pop out" functionality. User can click a button and the chart fills the entire browser.
+                        popOutButton = document.getElementById("line-chart-pop-out");
+                        popOutButton.onclick = function() {
+                            // Creating an "overlay" div where the chart will be placed. This will be placed on top of the browser.
+                            var overlay = document.createElement('div');
+                            overlay.style.position = 'fixed';
+                            overlay.style.top = 0;
+                            overlay.style.left = 0;
+                            overlay.style.width = '100%';
+                            overlay.style.height = '100%';
+                            overlay.style.backgroundColor = "#d9adff";
+                            // This zIndex makes it sit on top of everything on the page.
+                            overlay.style.zIndex = 1000;
+
+                            // Create a new div for the onPan message, this one for the overlay.
+                            var overlayMessageDiv = document.createElement("div");
+                            overlayMessageDiv.id = "overlay-line-chart-message-div";
+                            overlayMessageDiv.style.position = 'absolute';
+                            overlayMessageDiv.style.bottom = '50px';
+                            overlayMessageDiv.style.right = '10px';
+                            overlayMessageDiv.style.zIndex = 1001;
+                            overlay.appendChild(overlayMessageDiv);
+
+                            // Creating a button that allows to user to close the popped out graph.
+                            var closeButton = document.createElement('button');
+                            closeButton.innerHTML = 'Close';
+                            closeButton.style.position = 'absolute';
+                            closeButton.style.top = '10px';
+                            closeButton.style.left = '50px';
+                            closeButton.id = "line-chart-pop-out-close-button";
+                            closeButton.style.zIndex = 1001;
+                            closeButton.onclick = function(event) {
+                                // Prevent the event from bubbling up to the overlay.
+                                event.stopPropagation();
+
+                                // Hide the cloned chart and show the original chart when the close button is clicked
+                                transactionChart.canvas.style.display = 'block';
+                                clonedCanvas.style.display = 'none';
+                                overlay.removeChild(overlayMessageDiv);
+                                document.body.removeChild(overlay);
+                            };
+                            overlay.appendChild(closeButton);
+
+                            // Create a new canvas for the cloned chart
+                            var clonedCanvas = transactionChart.canvas.cloneNode(true);
+                            clonedCanvas.style.width = '80vw';
+                            clonedCanvas.style.height = '80vh';
+                            clonedCanvas.style.position = 'absolute';
+                            clonedCanvas.style.top = '50%';
+                            clonedCanvas.style.left = '50%';
+                            clonedCanvas.style.transform = 'translate(-50%, -50%)';
+                            overlay.appendChild(clonedCanvas);
+
+                            // Add the overlay to the body
+                            document.body.appendChild(overlay);
+
+                            // Hide the original chart and show the cloned chart
+                            transactionChart.canvas.style.display = 'none';
+                            clonedCanvas.style.display = 'block';
+
+                            var clonedCtx = clonedCanvas.getContext("2d");
+
+                            // Create the cloned chart with the same onClick function
+                            var clonedBarChart = new Chart(clonedCtx, {
+                                type: transactionChart.config.type,
+                                data: transactionChart.config.data,
+                                options: {
+                                    ...transactionChart.config.options,
+                                    plugins: {
+                                        ...transactionChart.config.options.plugins,
+                                        zoom: {
+                                            ...transactionChart.config.options.plugins.zoom,
+                                            pan: {
+                                                ...transactionChart.config.options.plugins.zoom.pan,
+                                                onPan: function({chart}) {
+                                                    onPanChartFunction ({chart}, "overlay-line-chart-message-div");
+                                                },
+                                                onPanComplete: function() {
+                                                    onPanCompleteChartFunction ("overlay-line-chart-message-div");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+
+                            setPanMode(clonedBarChart);
+                        };
                     }
 
                     // This function is generating the dates that will be the x axis on the bar chart.
@@ -1237,8 +1330,9 @@
                     $('#start-date').prop('disabled', false);
                     $('#end-date').prop('disabled', false);
 
-                    // Displaying the pop out button now that everything is rendered.
+                    // Displaying the pop out buttons now that everything is rendered.
                     document.getElementById("bar-chart-pop-out").style.display = "block";
+                    document.getElementById("line-chart-pop-out").style.display = "block";
                 },
                 error: function(jqXHR, status, error) {
                     console.log('AJAX call failed.');
@@ -1339,8 +1433,9 @@
                 // Search range was valid, show the spinner so the user sees that the search is working.
                 $('#spinner-overlay').show();
 
-                // Hiding the pop out button again, don't want the user to click it while the AJAX call is running.
+                // Hiding the pop out buttons again, don't want the user to click them while the AJAX call is running.
                 document.getElementById("bar-chart-pop-out").style.display = "none";
+                document.getElementById("line-chart-pop-out").style.display = "none";
 
                 // The search has started and we don't want the user to be able to run multiple searches at once so we also immediately disable the inputs.
                 // We use prop() to access the disabled property on the elements and set that to true. That... disables them. Who'd have thought!
