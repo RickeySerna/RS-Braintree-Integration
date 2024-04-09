@@ -156,15 +156,17 @@
 
                         // These are not defined globally anymore, they're just defined here each time the function is called. Functions the same.
                         // Resetting the amount to 0.
-                        searchAmountTotal = 0;
+                        let searchAmountTotal = 0;
                         // Resetting the declined amount to 0.
-                        processorDeclinedTotal = 0;
+                        let processorDeclinedTotal = 0;
                         // Resetting the rejected amount to 0.
-                        gatewayRejectedTotal = 0;
+                        let gatewayRejectedTotal = 0;
+                        // Resetting the general fails amount to 0.
+                        let otherFailuresTotal = 0;
                         // Resetting the transaction count to 0.
-                        numberOfTransactions = 0;
+                        let numberOfTransactions = 0;
                         // Emptying the map.
-                        transactionTypeCounts = {};
+                        let transactionTypeCounts = {};
 
                         // This will only count transactions that are not filtered out now.
                         for (let i = 0; i < filteredDates.length; i++) {
@@ -177,10 +179,14 @@
                         // This for loop fills searchAmountTotal, processorDeclinedTotal, and atewayRejectedTotal with the amounts of transactions with each status.
                         // We create a few cases that fit each status and each individual var has the amount added if the index in filteredStatuses matches that status.
                         for (let i = 0; i < filteredDates.length; i++) {
+                            // When filtering, having null values in the filteredAmountss arrays breaks the default case. So we add this to bypass that and avoid a NaN error.
+                            if (filteredAmounts[i] === null) continue;
                             let thisAmount = parseFloat(filteredAmounts[i]);
                             switch (filteredStatuses[i]) {
-                                // Both of these statuses are succesful so either one can add to searchAmountTotal.
+                                // All of these statuses are succesful so they can all be added to searchAmountTotal.
                                 case "Settled":
+                                case "Submitted For Settlement":
+                                case "Settling":
                                 case "Authorized":
                                     searchAmountTotal += thisAmount;
                                     break;
@@ -190,6 +196,8 @@
                                 case "Gateway Rejected":
                                     gatewayRejectedTotal += thisAmount;
                                     break;
+                                default:
+                                    otherFailuresTotal += thisAmount;
                             }
                         }
                         // When there are many transactions, long floating points are generated, like this: 677.8399999999999
@@ -198,9 +206,11 @@
                         searchAmountTotal = parseFloat(searchAmountTotal.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
                         processorDeclinedTotal = parseFloat(processorDeclinedTotal.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
                         gatewayRejectedTotal = parseFloat(gatewayRejectedTotal.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
+                        otherFailuresTotal = parseFloat(otherFailuresTotal.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
                         console.log("Total successfully transacted: " + searchAmountTotal)
                         console.log("Total amount Processor Declined: " + processorDeclinedTotal);
                         console.log("Total amount Gateway Rejected: " + gatewayRejectedTotal);
+                        console.log("Total amount failed otherwise: " + otherFailuresTotal);
 
                         for (let i = 0; i < types.length; i++) {
                             // Including this check now so that there doesn't end up being a category for null if the user filters anything out.
@@ -227,6 +237,7 @@
                         infoText += '   ' + 'Total amount successfully transacted: $' + searchAmountTotal + '\n';
                         infoText += '   ' + 'Total amount Processor Declined: $' + processorDeclinedTotal + '\n';
                         infoText += '   ' + 'Total amount Gateway Rejected: $' + gatewayRejectedTotal + '\n';
+                        infoText += '   ' + 'Total amount failed otherwise: $' + otherFailuresTotal + '\n';
                         infoText += '   ' + 'Total transactions of each type:\n';
                         for (var type in transactionTypeCounts) {
                             infoText += '   ' + '   ' + type + ': ' + transactionTypeCounts[type] + '\n';
@@ -256,15 +267,17 @@
                         console.log(transactionBarChart);
 
                         // Resetting the amount to 0.
-                        searchAmountTotalBar = 0;
+                        let searchAmountTotalBar = 0;
                         // Resetting the declined amount to 0.
-                        processorDeclinedTotalBar = 0;
+                        let processorDeclinedTotalBar = 0;
                         // Resetting the rejected amount to 0.
-                        gatewayRejectedTotalBar = 0;
+                        let gatewayRejectedTotalBar = 0;
                         // Resetting the transaction count to 0.
-                        numberOfTransactionsBar = 0;
+                        let numberOfTransactionsBar = 0;
+                        // Resetting the general fails amount to 0.
+                        let otherFailuresTotalBar = 0;
                         // Emptying the map.
-                        transactionTypeCountsBar = {};
+                        let transactionTypeCountsBar = {};
 
                         // Counting the number of transactions.
                         for (let i = 0; i < filteredDates.length; i++) {
@@ -272,15 +285,18 @@
                                 numberOfTransactionsBar += 1;
                             }
                         }
-                        console.log("Total transactions found: " + numberOfTransactions);
+                        console.log("Total transactions found: " + numberOfTransactionsBar);
 
                         // This for loop fills searchAmountTotal, processorDeclinedTotal, and gatewayRejectedTotal with the amounts of transactions with each status.
                         // We create a few cases that fit each status and each individual var has the amount added if the index in filteredStatuses matches that status.
                         for (let i = 0; i < filteredDates.length; i++) {
+                            if (filteredAmounts[i] === null) continue;
                             let thisAmount = parseFloat(filteredAmounts[i]);
                             switch (filteredStatuses[i]) {
                                 // Both of these statuses are succesful so either one can add to searchAmountTotal.
                                 case "Settled":
+                                case "Submitted For Settlement":
+                                case "Settling":
                                 case "Authorized":
                                     searchAmountTotalBar += thisAmount;
                                     break;
@@ -290,6 +306,8 @@
                                 case "Gateway Rejected":
                                     gatewayRejectedTotalBar += thisAmount;
                                     break;
+                                default:
+                                    otherFailuresTotalBar += thisAmount;
                             }
                         }
                         // When there are many transactions, long floating points are generated, like this: 677.8399999999999
@@ -297,9 +315,12 @@
                         searchAmountTotalBar = parseFloat(searchAmountTotalBar.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
                         processorDeclinedTotalBar = parseFloat(processorDeclinedTotalBar.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
                         gatewayRejectedTotalBar = parseFloat(gatewayRejectedTotalBar.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
+                        otherFailuresTotalBar = parseFloat(otherFailuresTotalBar.toFixed(2)).toLocaleString('en-US', {minimumFractionDigits: 2});
                         console.log("Total successfully transacted: " + searchAmountTotalBar);
                         console.log("Total amount Processor Declined: " + processorDeclinedTotalBar);
                         console.log("Total amount Gateway Rejected: " + gatewayRejectedTotalBar);
+                        console.log("Total amount failed otherwise: " + otherFailuresTotalBar);
+
 
                         for (let i = 0; i < types.length; i++) {
                             // Including this check now so that there doesn't end up being a category for null if the user filters anything out.
@@ -326,6 +347,7 @@
                         infoText += '   ' + 'Total amount successfully transacted: $' + searchAmountTotalBar + '\n';
                         infoText += '   ' + 'Total amount Processor Declined: $' + processorDeclinedTotalBar + '\n';
                         infoText += '   ' + 'Total amount Gateway Rejected: $' + gatewayRejectedTotalBar + '\n';
+                        infoText += '   ' + 'Total amount failed otherwise: $' + otherFailuresTotalBar + '\n';
                         infoText += '   ' + 'Total transactions of each type:\n';
                         for (var type in transactionTypeCountsBar) {
                             infoText += '   ' + '   ' + type + ': ' + transactionTypeCountsBar[type] + '\n';
