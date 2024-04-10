@@ -365,6 +365,27 @@
                         };
                     }
 
+                    // In the line chart, the x axis is just the dates of each individual transaction, not the date of each day.
+                    // So this was displaying incorrect dates. Need to make this pull the date of the txn instead.
+                    function onPanChartFunctionLineChart ({chart}, divId) {
+                        // Assigning the x axis of the graph to a variable.
+                        var xAxis = chart.scales['x'];
+
+                        // This function is pulling the indices that the dates are at.
+                        var leftDateIndex = xAxis.getValueForPixel(xAxis.left);
+                        var rightDateIndex = xAxis.getValueForPixel(xAxis.right);
+
+                        // To pull the actual date, we grab the index of the dates array with these above indices.
+                        // Also using moment to format the dates.
+                        // Pulling the createdAt array value instead of the dates array value.
+                        var leftDate = moment(createdAt[leftDateIndex], "MMMM Do, YYYY - h:mm A").format("MMMM Do, YYYY");
+                        var rightDate = moment(createdAt[rightDateIndex - 1], "MMMM Do, YYYY - h:mm A").format("MMMM Do, YYYY");
+
+                        // Here's where we generate the message and add it to the div we created in the HBS code.
+                        var divMessage = document.getElementById(divId);
+                        divMessage.innerHTML = "Displaying data from " + leftDate + " to " + rightDate;
+                    }
+
                     // Moving these onPan functions into their own definitions so that they can be re-used in both charts.
                     function onPanChartFunction({chart}, divId) {
                         // Assigning the x axis of the graph to a variable.
@@ -685,7 +706,7 @@
                                             mode: "xy",
                                             threshold: "20",
                                             onPan: function({chart}) {
-                                                onPanChartFunction ({chart}, "line-chart-panning-message");
+                                                onPanChartFunctionLineChart ({chart}, "line-chart-panning-message");
                                             },
                                             onPanComplete: function() {
                                                 onPanCompleteChartFunction ("line-chart-panning-message");
@@ -796,7 +817,7 @@
                                             pan: {
                                                 ...transactionChart.config.options.plugins.zoom.pan,
                                                 onPan: function({chart}) {
-                                                    onPanChartFunction ({chart}, "overlay-line-chart-message-div");
+                                                    onPanChartFunctionLineChart ({chart}, "overlay-line-chart-message-div");
                                                 },
                                                 onPanComplete: function() {
                                                     onPanCompleteChartFunction ("overlay-line-chart-message-div");
