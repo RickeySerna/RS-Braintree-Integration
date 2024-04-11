@@ -602,11 +602,15 @@
                         console.log("filteredTypes: ", filteredTypes);
                         console.log("filteredCardTypes: ", filteredCardTypes);
 
+                        let lineChartXAxis = createdAt.map(date => {
+                            return moment(date, 'MMMM Do, YYYY - h:mm A').format('YYYY-MM-DD');
+                        });
+
                         var ctx = document.getElementById('transaction-line-chart');
                         transactionChart = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: createdAt,
+                                labels: lineChartXAxis,
                                 datasets: [{
                                     label: 'Transactions',
                                     data: filteredAmounts,
