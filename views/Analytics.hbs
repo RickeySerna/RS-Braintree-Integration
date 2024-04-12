@@ -1239,7 +1239,7 @@
                                         zoom: {
                                             wheel: {
                                                 enabled: true,
-                                                speed: 0.05,
+                                                speed: 0.01,
                                                 mode: 'xy',
                                                 modifierKey: "shift"
                                             }
@@ -1248,6 +1248,22 @@
                                 }
                             }
                         });
+
+                        let originalRange = transactionBarChart.scales.y.max - transactionBarChart.scales.y.min;
+
+                        function onZoomFunction ({chart}) {
+                            console.log("onZoom triggering!");
+                            let currentRange = chart.scales.y.max - chart.scales.y.min;
+                            if (currentRange < originalRange * 0.05) {
+                                chart.options.plugins.zoom.zoom.wheel.enabled = false;
+                            }
+                            else {
+                                chart.options.plugins.zoom.zoom.wheel.enabled = true;
+                            }
+                            chart.update();
+                        };
+
+                        transactionBarChart.options.plugins.zoom.zoom.onZoom = onZoomFunction;
 
                         setPanMode(transactionBarChart);
 
