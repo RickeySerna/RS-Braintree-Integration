@@ -461,7 +461,7 @@
 
                     // This function will change the maximum y axis value of the chart it's called on.
                     function setChartYAxisManually (chart, max) {
-                        max = parseFloat(max).toFixed(0);
+                        max = parseFloat(max);
                         chart.options.scales.y.max = max;
                         chart.update();
                     }
@@ -679,7 +679,13 @@
                             options: {
                                 scales: {
                                     y: {
-                                        beginAtZero: true
+                                        beginAtZero: true,
+                                        ticks: {
+                                            // Setting the Y axis ticks to two decimal places and adding a dollar sign.
+                                            callback: function(value, index, values) {
+                                                return '$' + value.toFixed(2);
+                                            }
+                                        }
                                     }
                                 },
                                 // Adding an onclick handler which triggers when a datapoint in the graph is clicked.
@@ -1037,7 +1043,12 @@
                             options: {
                                 scales: {
                                     y: {
-                                        beginAtZero: true
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: function(value, index, values) {
+                                                return '$' + value.toFixed(2);
+                                            }
+                                        }
                                     }
                                 },
                                 // onclick function for the bar chart. This will create an advanced transaction search in the Control Panel that pulls all of the transactions that make up the bar the user is clicking.
