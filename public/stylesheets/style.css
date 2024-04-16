@@ -313,7 +313,7 @@ h5 {
   gap: 10px;
 }
 
-#start-date, #end-date, #graph-generator, #bar-chart-pop-out, #bar-chart-pop-out-close-button, #line-chart-pop-out, #line-chart-pop-out-close-button {
+#start-date, #end-date, #graph-generator, #bar-chart-pop-out, #bar-chart-pop-out-close-button, #line-chart-pop-out, #line-chart-pop-out-close-button, #line-chart-yaxis-submit, #bar-chart-yaxis-submit {
   background-color: #ff8e51;
   border: none;
   color: rgb(41, 0, 106);
@@ -325,7 +325,7 @@ h5 {
   z-index: 1000;
 }
 
-#start-date:hover, #end-date:hover, #graph-generator:hover, #bar-chart-pop-out:hover, #bar-chart-pop-out-close-button:hover, #line-chart-pop-out:hover, #line-chart-pop-out-close-button:hover {
+#start-date:hover, #end-date:hover, #graph-generator:hover, #bar-chart-pop-out:hover, #bar-chart-pop-out-close-button:hover, #line-chart-pop-out:hover, #line-chart-pop-out-close-button:hover, #line-chart-yaxis-submit:hover, #bar-chart-yaxis-submit:hover {
   background-color: #ff6a00;
 }
 
@@ -334,12 +334,12 @@ h5 {
   margin-left: 20px;
 }
 
-#graph-generator:active, #bar-chart-pop-out:active, #bar-chart-pop-out-close-button:active, #line-chart-pop-out:active, #line-chart-pop-out-close-button:active {
+#graph-generator:active, #bar-chart-pop-out:active, #bar-chart-pop-out-close-button:active, #line-chart-pop-out:active, #line-chart-pop-out-close-button:active, #line-chart-yaxis-submit:active, #bar-chart-yaxis-submit:active {
   background-color: rgb(41, 0, 106);
   color: rgb(255, 255, 255);
 }
 
-#graph-generator:focus, #start-date:focus, #end-date:focus, #bar-chart-pop-out:focus, #bar-chart-pop-out-close-button:focus, #line-chart-pop-out:focus, #line-chart-pop-out-close-button:focus {
+#graph-generator:focus, #start-date:focus, #end-date:focus, #bar-chart-pop-out:focus, #bar-chart-pop-out-close-button:focus, #line-chart-pop-out:focus, #line-chart-pop-out-close-button:focus, #line-chart-yaxis-submit:focus, #bar-chart-yaxis-submit:focus {
   outline: none;
   box-shadow: 0 0 0 3px #ff6a00;
 }
@@ -479,4 +479,16 @@ h5 {
   width: 450px;
   float: left;
   margin-right: 10px;
+}
+
+#line-chart-yvalue-input, #bar-chart-yvalue-input {
+  background-color: #ff8e51;
+  color: rgb(41, 0, 106);
+  border-radius: 5px;
+  border: 3px solid #ff6a00;
+  margin-bottom: 7.5px;
+}
+
+#line-chart-yvalue-input:focus, #bar-chart-yvalue-input:focus {
+  outline: none;
 }
