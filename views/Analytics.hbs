@@ -461,10 +461,38 @@
 
                     // This function will change the maximum y axis value of the chart it's called on.
                     function setChartYAxisManually (chart, max) {
-                        max = parseFloat(max);
-                        chart.options.scales.y.max = max;
-                        chart.update();
-                    }
+                        // Checking that the user entered a valid input in the first place.
+                        if (max === null || max === undefined) {
+                            alert("Please enter a number.");
+                            return;
+                        }
+                        else if (max === '') {
+                            alert("Please enter a number.");
+                            return;
+                        }
+                        // Checking if the input is actually a number.
+                        else if (isNaN(max)) {
+                            alert("Please enter a valid number.");
+                            return;
+                        }
+                        // Checking if it's infinite.
+                        // An infinite Y axis is not very use friendly.
+                        else if (!isFinite(max)) {
+                            alert("Please enter a finite number.");
+                            return;
+                        }
+                        // Checking if the input is greater than 0.
+                        else if (max <= 0) {
+                            alert("Please enter a number greater than 0.");
+                            return;
+                        }
+                        // All conditions passed, set the Y axis maximum.
+                        else {
+                            floatMax = parseFloat(max);
+                            chart.options.scales.y.max = floatMax;
+                            chart.update();
+                        }
+                    };
 
                     // Event listener function that both charts' buttons will use.
                     function handleYAxisSetButtonClick (event) {
