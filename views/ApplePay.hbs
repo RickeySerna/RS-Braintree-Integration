@@ -223,6 +223,7 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
           
   // This is where the Apple Pay URL and the merchant as a whole is validated with Apple's servers.
   session.onvalidatemerchant = function (event) {
+    console.log('onvalidatemerchant event:', event);
     btApplePayInstance.performValidation({
       // URL is loaded from BT.
       validationURL: event.validationURL,
@@ -242,7 +243,7 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
   // onpaymentauthorized is event handler triggered when the customer has authorizes the transaction with Touch ID, Face ID, or a passcode.
   // It's a callback with an event and that event contains a token which we pass to the BT Apple Pay instance to receive a nonce.
   session.onpaymentauthorized = function (event) {
-
+    console.log('onpaymentauthorized event:', event);
     // The event also has objects with the shipping and billing address the customer entered.
     // Grabbing the shipping address.
     if (event.payment.shippingContact) {
