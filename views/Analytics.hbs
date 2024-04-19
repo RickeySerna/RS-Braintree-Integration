@@ -519,9 +519,9 @@
 
                     // afterDraw is a hook that executes after the chart is drawn. In our case, it generates the text we defined in fillSearchResultsInfo().
                     // Has to be declared outside of the chart as a plugin like this.
-                    var afterDrawPlugin = {
-                        id: 'afterDrawPlugin',
-                        afterDraw: function(chart, args, options) {
+                    var beforeDrawPlugin = {
+                        id: 'beforeDrawPlugin',
+                        beforeDraw: function(chart, args, options) {
                             var ctx = chart.ctx;
                             var centerConfig = chart.options.elements.center;
                             var globalConfig = Chart.defaults.font;
@@ -580,7 +580,7 @@
                     };
 
                     // Then it's registered into the Chart.js object. It can actually be used in any chart we create now, that why it only has to be registered once for both charts..
-                    Chart.register(afterDrawPlugin);
+                    Chart.register(beforeDrawPlugin);
 
                     // These lines are creating arrays from the types and statuses arrays, but only with the unique values.
                     // A Set is an object that only allows unique values. So new Set(response.xxx) is creating Sets from those arrays and those sets inherently only contain the unique values in the array.
@@ -1289,8 +1289,9 @@
                                                     ids = idsRejected[index];
                                                 }
                                                 var labels = ["Total: $" + total];
+                                                labels.push("Transaction IDs:");
                                                 ids.forEach(function(id) {
-                                                    labels.push("Transaction ID: " + id);
+                                                    labels.push(id);
                                                 });
                                                 return labels;
                                             }
