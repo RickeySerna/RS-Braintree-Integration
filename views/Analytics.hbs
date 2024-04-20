@@ -760,7 +760,7 @@
                                             },
                                             label: function(context) {
                                                 var index = context.dataIndex;
-                                                var amount = amounts[index];
+                                                var amount = parseFloat(amounts[index]).toLocaleString('en-US', {minimumFractionDigits: 2});
                                                 var status = statuses[index];
                                                 var cardType = cardTypes[index];
                                                 var type = types[index];
@@ -1280,6 +1280,7 @@
                                                 var index = context.dataIndex;
                                                 var datasetIndex = context.datasetIndex;
                                                 var total = context.raw;
+                                                var totalFormatted = parseFloat(total).toLocaleString('en-US', {minimumFractionDigits: 2});
                                                 var ids;
                                                 if (datasetIndex === 0) {
                                                     ids = idsSuccessful[index];
@@ -1288,7 +1289,7 @@
                                                 } else {
                                                     ids = idsRejected[index];
                                                 }
-                                                var labels = ["Total: $" + total];
+                                                var labels = ["Total: $" + totalFormatted];
                                                 labels.push("Transaction IDs:");
                                                 ids.forEach(function(id) {
                                                     labels.push(id);
