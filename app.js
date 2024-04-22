@@ -783,8 +783,8 @@ app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
   gateway.transaction.sale({
-    amount: "100",
-    paymentMethodToken: "8fjkn39j",
+    amount: "4003.00",
+    paymentMethodNonce: "fake-paypal-one-time-nonce",
     options: {
       submitForSettlement: true
     },
@@ -843,7 +843,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       "samsung_pay_card": "Samsung Pay",
       "network_token": "Network Token",
       "masterpass_card": "Masterpass",
-      "visa_checkout_card": "Visa Checkout"
+      "visa_checkout_card": "Visa Checkout",
+      "paypal_account": "PayPal"
     };
     return types.map(type => TypeMap[type] || type);
   }
@@ -859,6 +860,8 @@ app.get('/transactionDataForAnalytics', (req, res) => {
       "authorization_expired": "Authorization Expired",
       "failed": "Failed",
       "settlement_declined": "Settlement Declined",
+      "settlement_pending": "Settlement Pending",
+      "settlement_confirmed": "Settlement Confirmed",
       "voided": "Voided"
     };
     return statuses.map(status => paymentTypeMap[status] || status);
