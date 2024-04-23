@@ -44,7 +44,7 @@
                     <canvas id="transaction-line-chart"></canvas>
                 </div>
             </div>
-            <div id="line-chart-right-column" class="col-2" style="top: 75px; display: none;">
+            <div id="line-chart-right-column" class="col-2" style="top: 30px; display: none;">
                 <!-- Creating divs for the checkbox options for the line chart. -->
                 <div class="checkbox-cols">
                     <p>Payment Methods:</p>
@@ -78,7 +78,7 @@
                     <canvas id="transaction-bar-chart"></canvas>
                 </div>
             </div>
-            <div id="bar-chart-right-column" class="col-2" style="top: 75px; display: none;">
+            <div id="bar-chart-right-column" class="col-2" style="top: 30px; display: none;">
                 <!-- Creating divs for the checkbox options for the bar chart. -->
                 <div class="checkbox-cols">
                     <p>Payment Methods:</p>
@@ -559,7 +559,7 @@
                             // Calculate the box width as a percentage of the chart width
                             var boxWidth = maxWidth + 2 * widthPadding;
                             // Calculate the box height based on the number of lines and line height
-                            var boxHeight = lines.length * lineHeight;
+                            var boxHeight = lines.length * lineHeight - 10;
 
                             // Ensure the boxWidth does not exceed the chart area width
                             if (boxWidth > chart.chartArea.width) {
