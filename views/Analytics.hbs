@@ -1494,6 +1494,25 @@
             }
         });
 
+        // Event listener for the user hitting Enter/Return on their keyboard inside of the Y max inputs.
+        // Works almost the same as the above one.
+        $('#line-chart-yvalue-input, #bar-chart-yvalue-input').on('keypress', function(event) {
+            if (event.which == 13) {
+                // This function will click different buttons depending on which field the user hit enter on.
+                // So we first we grab the ID of field they entered on.
+                var yMaxFieldID = $(this).attr("id");
+                console.log("Y Max field used: " + yMaxFieldID);
+
+                // Now depending on which field they entered, we "click" the corresponding button.
+                if (yMaxFieldID === "line-chart-yvalue-input") {
+                    $('#line-chart-yaxis-submit').click();
+                }
+                else if (yMaxFieldID === "bar-chart-yvalue-input") {
+                    $("#bar-chart-yaxis-submit").click();
+                }
+            }
+        });
+
         // This function ensures that the start date and end date the user enters for the search range is valid.
         function datesValidator(startDate, endDate) {
 
