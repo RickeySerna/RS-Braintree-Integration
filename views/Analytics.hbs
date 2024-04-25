@@ -587,9 +587,10 @@
                     // The ... is the spread operator. It sort of "breaks down" an iterable that's passed into it's individual parts.
                     // So it's passed a set containing unique types/statuses and it pulls out those unique types/statuses.
                     // Then this is all wrapped in [] so it's creating an array from those types/statuses that ... pulled out of the Set.
-                    var transactionTypes = [...new Set(types)];
-                    var transactionStatuses = [...new Set(statuses)];
-                    var transactionCardTypes = [...new Set(cardTypes)];
+                    // Update: throwing a sort() on the end of these so that the checkbox options are in alphabetical order when they're displayed to the user.
+                    var transactionTypes = [...new Set(types)].sort();
+                    var transactionStatuses = [...new Set(statuses)].sort();
+                    var transactionCardTypes = [...new Set(cardTypes)].sort();
 
                     // Checking that the arrays are accurate.
                     console.log("Transaction types array: ", transactionTypes);

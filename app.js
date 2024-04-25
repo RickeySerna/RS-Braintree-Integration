@@ -782,31 +782,40 @@ app.get('/testing', (req, res) => {
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
-  gateway.transaction.sale({
-    amount: "4003.00",
-    paymentMethodNonce: "fake-paypal-one-time-nonce",
-    options: {
-      submitForSettlement: true
-    },
-    deviceData: DeviceDataString
-  }, (error, result) => {
-    if (error) {
-      console.error(error);
-    }
-    console.log("Transaction ID: " + result.transaction.id);
-    if (result.success) {
-      console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: 'Success!'});
-    } else {
-      if (result.transaction.status == "processor_declined") {
-        console.log("Declined transaction status: " + result.transaction.status);
-        res.render('processordeclined', {transactionResponse: result});
-      } else {
-        console.log("Failed transaction status: " + result.transaction.status);
-        res.render('failed', {transactionResponse: result});
+  
+  gateway.paymentMethodNonce.create("6b3wngwx", function(err, response) {
+    const nonce = response.paymentMethodNonce.nonce;
+
+    gateway.transaction.sale({
+      amount: "100.00",
+      paymentMethodNonce: nonce,
+      customer: {
+        email: "jackdoh38783748@gmail.com"
+      },
+      options: {
+        submitForSettlement: true
+      },
+      deviceData: DeviceDataString
+    }, (error, result) => {
+      if (error) {
+        console.error(error);
       }
-    }
+      console.log("Transaction ID: " + result.transaction.id);
+      if (result.success) {
+        console.log("Successful transaction status: " + result.transaction.status);
+        res.render('success', {transactionResponse: result, title: 'Success!'});
+      } else {
+        if (result.transaction.status == "processor_declined") {
+          console.log("Declined transaction status: " + result.transaction.status);
+          res.render('processordeclined', {transactionResponse: result});
+        } else {
+          console.log("Failed transaction status: " + result.transaction.status);
+          res.render('failed', {transactionResponse: result});
+        }
+      }
+    });
   });
+
 });
 
 app.get('/Analytics', (req, res) => {
