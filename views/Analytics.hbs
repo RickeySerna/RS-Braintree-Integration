@@ -141,6 +141,10 @@
                     console.log("Type array: ", types);
                     console.log("Card type array: ", cardTypes);
 
+                    // Defining these inside of the success function as a whole so that I can pass them into the Y max event handlers.
+                    var originalMaxYLineChart;
+                    var originalMaxYBarChart;
+
                     // This function generates the filtered arrays that we were previously generating manually one by one.
                     // It returns an array built from the "array" it was passed.
                     // The array is filled with the property values which pass the filters.
@@ -495,7 +499,7 @@
                     };
 
                     // Event listener function that both charts' buttons will use.
-                    function handleYAxisSetButtonClick (event) {
+                    function handleYAxisSetButtonClick (event, originalYMax) {
                         // Grabbing the id of the button that was clicked.
                         let buttonId = event.target.id;
 
@@ -513,8 +517,15 @@
                         // Grab that max value that the user inputted.
                         let max = document.getElementById(inputId).value;
 
-                        // Set the chart with that value.
-                        setChartYAxisManually(chart, max);
+                        // Checking if max is greater than the original Y maximum. Allowing this led to weird behavior in the chart, so cutting that off now.
+                        if (max > originalYMax) {
+                            alert("Cannot set Y max greater than the original setting.");
+                            return;
+                        }
+                        else {
+                            // Set the chart with that value.
+                            setChartYAxisManually(chart, max);
+                        }
                     }
 
                     // afterDraw is a hook that executes after the chart is drawn. In our case, it generates the text we defined in fillSearchResultsInfo().
@@ -809,7 +820,7 @@
 
                         setPanMode(transactionChart);
 
-                        var originalMaxYLineChart = transactionChart.scales['y'].max;
+                        originalMaxYLineChart = transactionChart.scales['y'].max;
                         console.log("Original upper Y axis limit, line chart: " + originalMaxYLineChart);
                         transactionChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxYLineChart};
 
@@ -1335,7 +1346,7 @@
                         // First, we extract the top y value that was automatically set by Chart.js, then we add the limits in after the fact.
                         // Now, when the user zooms all the way out, the chart will look exactly the same as it originally did before all of the zooming.
                         // Much better solution than the max array stuff we were doing!
-                        var originalMaxYBarChart = transactionBarChart.scales['y'].max;
+                        originalMaxYBarChart = transactionBarChart.scales['y'].max;
                         console.log("Original upper Y axis limit, bar chart: " + originalMaxYBarChart);
                         transactionBarChart.options.plugins.zoom.limits.y = {min: 0, max: originalMaxYBarChart};
 
@@ -1451,8 +1462,13 @@
                     });
 
                     // Event listeners for the buttons to manually update the y axis max value.
-                    document.getElementById('line-chart-yaxis-submit').addEventListener('click', handleYAxisSetButtonClick);
-                    document.getElementById('bar-chart-yaxis-submit').addEventListener('click', handleYAxisSetButtonClick);
+                    // Update: these passing the original Y Max values into these, to be used as a threshold/maximum on how high the user can set the Y max.
+                    document.getElementById('line-chart-yaxis-submit').addEventListener('click', function(event) {
+                        handleYAxisSetButtonClick(event, originalMaxYLineChart);
+                    });
+                    document.getElementById('bar-chart-yaxis-submit').addEventListener('click', function(event) {
+                        handleYAxisSetButtonClick(event, originalMaxYBarChart);
+                    });
 
                     // Hiding the spinner again once everything is done with the AJAX call.
                     $('#spinner-overlay').hide();
