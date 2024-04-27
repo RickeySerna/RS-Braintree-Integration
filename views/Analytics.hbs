@@ -115,6 +115,11 @@
         // Declaring another variable for the bar chart.
         var transactionBarChart;
 
+        // Defining these inside of the success function as a whole so that I can pass them into the Y max event handlers.
+        // Update: moving these completely outside of the AJAX function since it seems like they weren't getting overwritten properly. Now they are.
+        var originalMaxYLineChart;
+        var originalMaxYBarChart;
+
         // Setting the AJAX call inside of a function so that we can readily call it again when the button is clicked.
         function generateGraph(startDate, endDate) {
             $.ajax({
@@ -140,10 +145,6 @@
                     console.log("Status array: ", statuses);
                     console.log("Type array: ", types);
                     console.log("Card type array: ", cardTypes);
-
-                    // Defining these inside of the success function as a whole so that I can pass them into the Y max event handlers.
-                    var originalMaxYLineChart;
-                    var originalMaxYBarChart;
 
                     // This function generates the filtered arrays that we were previously generating manually one by one.
                     // It returns an array built from the "array" it was passed.
@@ -1464,9 +1465,11 @@
                     // Event listeners for the buttons to manually update the y axis max value.
                     // Update: these passing the original Y Max values into these, to be used as a threshold/maximum on how high the user can set the Y max.
                     document.getElementById('line-chart-yaxis-submit').addEventListener('click', function(event) {
+                        console.log("Line chart original max Y value: " + originalMaxYLineChart);
                         handleYAxisSetButtonClick(event, originalMaxYLineChart);
                     });
                     document.getElementById('bar-chart-yaxis-submit').addEventListener('click', function(event) {
+                        console.log("Bar chart original max Y value: " + originalMaxYBarChart);
                         handleYAxisSetButtonClick(event, originalMaxYBarChart);
                     });
 
@@ -1639,6 +1642,15 @@
                 $('#transaction-types-bar-chart').empty();
                 $('#transaction-statuses-bar-chart').empty();
                 $('#transaction-card-types-bar-chart').empty();
+
+                // The event handlers were sticking onto the elements when a second search was created, leading to multiple error messages displayed.
+                // So now we clone the buttons here when a new search is created.
+                let newLineChartButton = $("#line-chart-yaxis-submit").clone(true);
+                let newBarChartButton = $("#bar-chart-yaxis-submit").clone(true);
+
+                // Then replace the buttons with their clones. So now the clone will only have one event handler when the AJAX call adds them.
+                $("#line-chart-yaxis-submit").replaceWith(newLineChartButton);
+                $("#bar-chart-yaxis-submit").replaceWith(newBarChartButton);
 
                 // Run the function to create the graph with these dates as the search parameters.
                 generateGraph(startDate, endDate);
