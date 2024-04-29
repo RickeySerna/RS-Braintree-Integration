@@ -13,6 +13,7 @@ var logger = require('morgan');
 var io = require("./socketapi.js");
 var chalk = require('chalk');
 var moment = require('moment-timezone');
+const favicon = require('serve-favicon');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -31,6 +32,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+app.use(favicon(path.join(__dirname, "public", "stylesheets", "8bitpumpkin.png")));
 
 // Creating this to log in the server when a user accesses a page.
 app.use('*', function (req, res, next) {
