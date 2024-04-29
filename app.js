@@ -167,7 +167,7 @@ app.get('/3D-Secure', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
     res.render('3D-Secure', {
       clientToken: response.clientToken,
-      title: 'Spooky 3D Secure!'
+      title: "Three-Dimensional Terror"
 	  });
   });
 });
@@ -373,7 +373,7 @@ app.get('/recent-transactions', (req, res) => {
           return 0 // Equal dates! Move nothing.
         }
       });
-      res.render('recent-transactions', {txnSearchResults: txnSearchResults, txnCount: txnCount});
+      res.render('recent-transactions', {txnSearchResults: txnSearchResults, txnCount: txnCount, title: "Recent Scares"});
     }, 10000);
   };
 
@@ -774,7 +774,7 @@ app.get('/testing', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
     res.render('testing', {
       clientToken: response.clientToken,
-      title: 'API Testing'
+      title: "Frankenstein Testing Area"
 	  });
   });
 });
@@ -820,7 +820,10 @@ app.post('/testing-result', (req, res, next) => {
 
 app.get('/Analytics', (req, res) => {
   // Passing the merchant ID here from the .env file as well so that it doesn't have to be hardcoded in the onclick handler.
-  res.render('Analytics', { merchantId: process.env.MERCHANT_ID });
+  res.render('Analytics', {
+    merchantId: process.env.MERCHANT_ID,
+    title: "Spooktistics"
+  });
 });
 
 app.get('/transactionDataForAnalytics', (req, res) => {
