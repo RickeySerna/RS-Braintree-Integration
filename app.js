@@ -785,9 +785,22 @@ app.get('/testing', (req, res) => {
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
+  gateway.subscription.create({
+    paymentMethodToken: "f8wcsda0",
+    planId: "8hnm",
+    trialDuration: 1,
+    trialDurationUnit: "day",
+    trialPeriod: true
+  }, (err, result) => {
+    res.json(result);
+  });
   
-  gateway.paymentMethodNonce.create("6b3wngwx", function(err, response) {
+  /*gateway.paymentMethodNonce.create("6b3wngwx", function(err, response) {
     const nonce = response.paymentMethodNonce.nonce;
+
+
+
+
 
     gateway.transaction.sale({
       amount: "100.00",
@@ -816,9 +829,7 @@ app.post('/testing-result', (req, res, next) => {
           res.render('failed', {transactionResponse: result});
         }
       }
-    });
-  });
-
+    });*/
 });
 
 app.get('/Analytics', (req, res) => {
