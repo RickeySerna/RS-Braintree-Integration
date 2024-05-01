@@ -62,62 +62,72 @@ app.post('/transaction-with-token', (req, res, next) => {
   const email = req.body.email;
   const phone = req.body.phoneNumber;
   const DeviceDataString = req.body.DeviceDataString;
+  // Doing this converts the value from a string to a bool.
+  const SubscriptionSetter = req.body.SubscriptionSetter.toLowerCase() === "true";
+
 
   console.log("Nonce in the server, token checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, token checkout: " + DeviceDataString);
 
-  const thisCustomer = gateway.customer.create({
-    firstName: first,
-    lastName: last,
-    email: email,
-    phone: phone,
-    paymentMethodNonce:PaymentMethodNonce,
-    creditCard: {
-      options: {
-        verifyCard: true,
-        verificationAmount: "1"
-      }
-    },
-    deviceData: DeviceDataString
-  }, (error, result) => {
-    if (error) {
-      console.error(error);
-    }
-    if (result.success == true) {
-      let cusResponseObject = result;
-      gateway.transaction.sale({
-        amount: amountFromClient,
-        paymentMethodToken: result.customer.creditCards[0].token,
+  // If the user chose to create a subscription, we go through this flow which creates a subscription.
+  if (SubscriptionSetter) {
+    console.log("Going to create a subscription now!");
+  }
+  // If not, we go through the original flow which creates a transaction.
+  else {
+    const thisCustomer = gateway.customer.create({
+      firstName: first,
+      lastName: last,
+      email: email,
+      phone: phone,
+      paymentMethodNonce:PaymentMethodNonce,
+      creditCard: {
         options: {
-          // This option requests the funds from the transaction
-          // once it has been authorized successfully
-          submitForSettlement: true
-        },
-        deviceData: DeviceDataString
-      }, (error, result) => {
-        if (error) {
-          console.error(error);
+          verifyCard: true,
+          verificationAmount: "1"
         }
-        console.log("Transaction ID: " + result.transaction.id);
-        console.log("Transaction status: " + result.transaction.status);
-        if (result.success == true) {
-          console.log("Successful transaction status: " + result.transaction.status);
-          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
-        } else {
-          if (result.transaction.status == "processor_declined") {
-            console.log("Declined transaction status: " + result.transaction.status);
-            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+      },
+      deviceData: DeviceDataString
+    }, (error, result) => {
+      if (error) {
+        console.error(error);
+      }
+      if (result.success == true) {
+        let cusResponseObject = result;
+        gateway.transaction.sale({
+          amount: amountFromClient,
+          paymentMethodToken: result.customer.creditCards[0].token,
+          options: {
+            // This option requests the funds from the transaction
+            // once it has been authorized successfully
+            submitForSettlement: true
+          },
+          deviceData: DeviceDataString
+        }, (error, result) => {
+          if (error) {
+            console.error(error);
           }
-          else {
-            console.log("Failed transaction status: " + result.transaction.status);
-            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          console.log("Transaction ID: " + result.transaction.id);
+          console.log("Transaction status: " + result.transaction.status);
+          if (result.success == true) {
+            console.log("Successful transaction status: " + result.transaction.status);
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          } else {
+            if (result.transaction.status == "processor_declined") {
+              console.log("Declined transaction status: " + result.transaction.status);
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            }
+            else {
+              console.log("Failed transaction status: " + result.transaction.status);
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            }
           }
-        }
-      });
-    } else {
-      res.json(result);
-    };
-  });
+        });
+      } else {
+        res.json(result);
+      };
+    });
+  }
 });
 
 app.post('/transaction-with-nonce', (req, res, next) => {

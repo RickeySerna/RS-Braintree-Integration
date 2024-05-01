@@ -66,11 +66,15 @@
     </div>
 
     <div>
-      <input id='payment-nethod-nonce' name= 'PaymentMethodNonce' type='hidden' />
+      <input id ='payment-nethod-nonce' name = 'PaymentMethodNonce' type ='hidden' />
     </div>
 
     <div>
-      <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
+      <input id ='device-data-string' name = 'DeviceDataString' type ='hidden' />
+    </div>
+
+    <div>
+      <input id ='subscription-setter' name = 'SubscriptionSetter' type ='hidden' />
     </div>
     
     <div class = "submitButton">
@@ -92,6 +96,7 @@
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
   var theNonce = document.querySelector('#payment-nethod-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
+  var subscriptionSetter = document.querySelector('#subscription-setter');
   var button = document.getElementById("submitButton");
 
   console.log("Client token: " + clientToken);
@@ -243,6 +248,8 @@
             else {
               document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
               theNonce.value = payload.nonce;
+              subscriptionSetter.value = document.forms["checkoutForm"]["subscriptionCheck"].checked;
+              console.log("Create subscription: " + subscriptionSetter.value);
               console.log("Nonce on client: " + payload.nonce);
               form.submit();
             }
