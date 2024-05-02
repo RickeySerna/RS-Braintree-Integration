@@ -72,6 +72,62 @@ app.post('/transaction-with-token', (req, res, next) => {
   // If the user chose to create a subscription, we go through this flow which creates a subscription.
   if (SubscriptionSetter) {
     console.log("Going to create a subscription now!");
+    const thisCustomer = gateway.customer.create({
+      firstName: first,
+      lastName: last,
+      email: email,
+      phone: phone,
+      paymentMethodNonce:PaymentMethodNonce,
+      creditCard: {
+        options: {
+          verifyCard: true,
+          verificationAmount: "1"
+        }
+      },
+      deviceData: DeviceDataString
+    }, (error, result) => {
+      if (error) {
+        console.error(error);
+      }
+      if (result.success == true) {
+        let cusResponseObject = result;
+        console.log("The token: " + result.customer.creditCards[0].token);
+        gateway.subscription.create({
+          price: amountFromClient,
+          paymentMethodToken: result.customer.creditCards[0].token,
+          // Have to have a plan when creating a sub so I created a general membership subscription.
+          planId: "g54r",
+          options: {
+            startImmediately: true
+          }
+          //deviceData: DeviceDataString
+        }, (error, result) => {
+          if (error) {
+            console.error(error);
+          }
+          console.log("Transaction ID: ", result.subscription.transactions[0].id);
+          console.log("Transaction status: " + result.subscription.transactions[0].status);
+          res.json(result);
+/*
+          if (result.success == true) {
+            console.log("Successful transaction status: " + result.transaction.status);
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          } else {
+            if (result.transaction.status == "processor_declined") {
+              console.log("Declined transaction status: " + result.transaction.status);
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            }
+            else {
+              console.log("Failed transaction status: " + result.transaction.status);
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            }
+          }*/
+        });
+      }
+      else {
+        res.json(result);
+      };
+    });
   }
   // If not, we go through the original flow which creates a transaction.
   else {
