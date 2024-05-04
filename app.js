@@ -110,15 +110,16 @@ app.post('/transaction-with-token', (req, res, next) => {
 
           if (result.success == true) {
             console.log("Successful transaction status: " + result.subscription.transactions[0].status);
-            res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
-          } else {
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          }
+          else {
             if (result.subscription.transactions[0].status == "processor_declined") {
               console.log("Declined transaction status: " + result.subscription.transactions[0].status);
-              res.render('processordeclined', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
             }
             else {
               console.log("Failed transaction status: " + result.subscription.transactions[0].status);
-              res.render('failed', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
             }
           }
         });
