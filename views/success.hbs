@@ -15,7 +15,7 @@
             {{#if transactionResponse.transaction.customer.firstName}}
               {{transactionResponse.transaction.customer.firstName}}
             {{else}}
-              {{transactionResponse.subscription.transactions[0].customer.firstName}}
+              {{transactionResponse.customer.firstName}}
             {{/if}}!
           </h1>
           <p class="lead subtitle" style="color: #E66C2C;">
@@ -23,7 +23,7 @@
             {{#if transactionResponse.transaction.customer.email}}
               {{transactionResponse.transaction.customer.email}}
             {{else}}
-              {{transactionResponse.subscription.transactions[0].customer.email}}
+              {{transactionResponse.customer.email}}
             {{/if}}.
           </p>
           <p class="lead subtitle" style="color: #E66C2C;">Be on the lookout for your package within 3-5 business days!</p>

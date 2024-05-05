@@ -71,6 +71,7 @@ app.post('/transaction-with-token', (req, res, next) => {
 
   // If the user chose to create a subscription, we go through this flow which creates a subscription.
   if (SubscriptionSetter) {
+    console.log("Creating a subscription.");
     const thisCustomer = gateway.customer.create({
       firstName: first,
       lastName: last,
@@ -99,7 +100,7 @@ app.post('/transaction-with-token', (req, res, next) => {
           options: {
             startImmediately: true
           }
-          //deviceData: DeviceDataString
+//          deviceData: DeviceDataString
         }, (error, result) => {
           if (error) {
             console.error(error);
@@ -110,16 +111,16 @@ app.post('/transaction-with-token', (req, res, next) => {
 
           if (result.success == true) {
             console.log("Successful transaction status: " + result.subscription.transactions[0].status);
-            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
           }
           else {
             if (result.subscription.transactions[0].status == "processor_declined") {
               console.log("Declined transaction status: " + result.subscription.transactions[0].status);
-              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('processordeclined', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
             }
             else {
               console.log("Failed transaction status: " + result.subscription.transactions[0].status);
-              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('failed', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
             }
           }
         });
@@ -131,6 +132,7 @@ app.post('/transaction-with-token', (req, res, next) => {
   }
   // If not, we go through the original flow which creates a transaction.
   else {
+    console.log("Creating a transaction.");
     const thisCustomer = gateway.customer.create({
       firstName: first,
       lastName: last,
@@ -165,10 +167,12 @@ app.post('/transaction-with-token', (req, res, next) => {
           }
           console.log("Transaction ID: " + result.transaction.id);
           console.log("Transaction status: " + result.transaction.status);
+
           if (result.success == true) {
             console.log("Successful transaction status: " + result.transaction.status);
             res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
-          } else {
+          }
+          else {
             if (result.transaction.status == "processor_declined") {
               console.log("Declined transaction status: " + result.transaction.status);
               res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
