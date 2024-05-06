@@ -100,27 +100,28 @@ app.post('/transaction-with-token', (req, res, next) => {
           options: {
             startImmediately: true
           }
-//          deviceData: DeviceDataString
+          //deviceData: DeviceDataString
         }, (error, result) => {
           if (error) {
             console.error(error);
           }
-
-          console.log("Transaction ID: ", result.subscription.transactions[0].id);
-          console.log("Transaction status: " + result.subscription.transactions[0].status);
-
+          
           if (result.success == true) {
             console.log("Successful transaction status: " + result.subscription.transactions[0].status);
+            console.log("Transaction ID: ", result.subscription.transactions[0].id);
             res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
           }
+          // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
           else {
-            if (result.subscription.transactions[0].status == "processor_declined") {
-              console.log("Declined transaction status: " + result.subscription.transactions[0].status);
-              res.render('processordeclined', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
+            if (result.transaction.status == "processor_declined") {
+              console.log("Declined transaction status: " + result.transaction.status);
+              console.log("The declined transaction: ", result.transaction.id);
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
             }
             else {
-              console.log("Failed transaction status: " + result.subscription.transactions[0].status);
-              res.render('failed', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
+              console.log("Failed transaction status: " + result.transaction.status);
+              console.log("The failed transaction: ", result.transaction.id);
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
             }
           }
         });
