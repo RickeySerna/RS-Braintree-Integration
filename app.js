@@ -105,23 +105,23 @@ app.post('/transaction-with-token', (req, res, next) => {
           if (error) {
             console.error(error);
           }
-          
+
           if (result.success == true) {
             console.log("Successful transaction status: " + result.subscription.transactions[0].status);
             console.log("Transaction ID: ", result.subscription.transactions[0].id);
-            res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject});
+            res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "It's Halloween. Everyone's entitled to one good scare."});
           }
           // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
           else {
             if (result.transaction.status == "processor_declined") {
               console.log("Declined transaction status: " + result.transaction.status);
               console.log("The declined transaction: ", result.transaction.id);
-              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
             }
             else {
               console.log("Failed transaction status: " + result.transaction.status);
               console.log("The failed transaction: ", result.transaction.id);
-              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
             }
           }
         });
@@ -171,16 +171,16 @@ app.post('/transaction-with-token', (req, res, next) => {
 
           if (result.success == true) {
             console.log("Successful transaction status: " + result.transaction.status);
-            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "It's alive! IT'S ALIIIIIVE!!"});
           }
           else {
             if (result.transaction.status == "processor_declined") {
               console.log("Declined transaction status: " + result.transaction.status);
-              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
             }
             else {
               console.log("Failed transaction status: " + result.transaction.status);
-              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
             }
           }
         });
@@ -224,14 +224,14 @@ app.post('/transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: 'Success!'});
+      res.render('success', {transactionResponse: result, title: "They're coming to get you, Barbara."});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
-        res.render('processordeclined', {transactionResponse: result});
+        res.render('processordeclined', {transactionResponse: result, title: "One, two, Freddy's coming for you."});
       } else {
         console.log("Failed transaction status: " + result.transaction.status);
-        res.render('failed', {transactionResponse: result});
+        res.render('failed', {transactionResponse: result, title: "One, two, Freddy's coming for you."});
       }
     }
   });
@@ -305,14 +305,14 @@ app.post('/3DS-transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: 'Success!'});
+      res.render('success', {transactionResponse: result, title: "Be afraid. Be very afraid."});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
-        res.render('processordeclined', {transactionResponse: result});
+        res.render('processordeclined', {transactionResponse: result, title: "That's much too vulgar a display of power, Karras."});
       } else {
         console.log("Failed transaction status: " + result.transaction.status);
-        res.render('failed', {transactionResponse: result});
+        res.render('failed', {transactionResponse: result, title: "That's much too vulgar a display of power, Karras."});
       }
     }
   });
@@ -398,15 +398,15 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
             console.log("Transaction status: " + result.transaction.status);
             if (result.success == true) {
               console.log("Successful transaction status: " + result.transaction.status);
-              res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The children of the night. What music they make.”"});
             } else {
               if (result.transaction.status == "processor_declined") {
                 console.log("Declined transaction status: " + result.transaction.status);
-                res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "When there's no more room in Hell, the dead will walk the Earth."});
               }
               else {
                 console.log("Failed transaction status: " + result.transaction.status);
-                res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "When there's no more room in Hell, the dead will walk the Earth."});
               }
             }
           });
@@ -519,14 +519,14 @@ app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: "It's alive! IT'S ALIIIIIVE!!"});
+      res.render('success', {transactionResponse: result, title: "We have such sights to show you!"});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
-        res.render('processordeclined', {transactionResponse: result, title: "I'm sorry, Dave. I'm afraid I can't do that."});
+        res.render('processordeclined', {transactionResponse: result, title: "Hi, I'm Chucky! Wanna play?"});
       } else {
         console.log("Failed transaction status: " + result.transaction.status);
-        res.render('failed', {transactionResponse: result, title: "I'm sorry, Dave. I'm afraid I can't do that."});
+        res.render('failed', {transactionResponse: result, title: "Hi, I'm Chucky! Wanna play?"});
       }
     }
   });
@@ -595,15 +595,15 @@ app.post('/apple-pay-transaction-with-token', (req, res, next) => {
         console.log("Transaction status: " + result.transaction.status);
         if (result.success == true) {
           console.log("Successful transaction status: " + result.transaction.status);
-          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "Here's Johnny!"});
         } else {
           if (result.transaction.status == "processor_declined") {
             console.log("Declined transaction status: " + result.transaction.status);
-            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "Sometimes, dead is better."});
           }
           else {
             console.log("Failed transaction status: " + result.transaction.status);
-            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "Sometimes, dead is better."});
           }
         }
       });
@@ -676,14 +676,14 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: 'Success!'});
+      res.render('success', {transactionResponse: result, title: "Come in, dispatch. Send. More. Paramedics."});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
-        res.render('processordeclined', {transactionResponse: result});
+        res.render('processordeclined', {transactionResponse: result, title: "Death by stereo!"});
       } else {
         console.log("Failed transaction status: " + result.transaction.status);
-        res.render('failed', {transactionResponse: result});
+        res.render('failed', {transactionResponse: result, title: "Death by stereo!"});
       }
     }
   });
@@ -781,15 +781,15 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
               console.log("Transaction status: " + result.transaction.status);
               if (result.success == true) {
                 console.log("Successful transaction status: " + result.transaction.status);
-                res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "You've got red on you."});
               } else {
                 if (result.transaction.status == "processor_declined") {
                   console.log("Declined transaction status: " + result.transaction.status);
-                  res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                  res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "We all go a little mad sometimes."});
                 }
                 else {
                   console.log("Failed transaction status: " + result.transaction.status);
-                  res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+                  res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "We all go a little mad sometimes."});
                 }
               }
             });
@@ -825,15 +825,15 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
           console.log("Transaction status: " + result.transaction.status);
           if (result.success == true) {
             console.log("Successful transaction status: " + result.transaction.status);
-            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject});
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "You've got red on you."});
           } else {
             if (result.transaction.status == "processor_declined") {
               console.log("Declined transaction status: " + result.transaction.status);
-              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "We all go a little mad sometimes."});
             }
             else {
               console.log("Failed transaction status: " + result.transaction.status);
-              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject});
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "We all go a little mad sometimes."});
             }
           }
         });
