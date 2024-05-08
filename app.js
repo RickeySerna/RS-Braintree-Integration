@@ -77,7 +77,7 @@ app.post('/transaction-with-token', (req, res, next) => {
       lastName: last,
       email: email,
       phone: phone,
-      paymentMethodNonce:PaymentMethodNonce,
+      paymentMethodNonce: PaymentMethodNonce,
       creditCard: {
         options: {
           verifyCard: true,
