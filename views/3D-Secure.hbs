@@ -82,9 +82,13 @@
     </div>
       
     <div class="form-row">
-      <div class = "col-md-2 mb-3">
+      <div class = "col-md-1 mb-3">
         <label class = "labelStyle" for="saveCardCheck">Save your card for future use?</label>
         <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+      </div>
+      <div class = "col-md-1 mb-3">
+        <label class = "labelStyle" for="subscriptionCheck">Create a subscription?</label>
+        <input class="form-control inputClass" type="checkbox" id="subscriptionCheck" name="subscriptionCreator">
       </div>
       <div class = "col-md-5 mb-3">
         <label class = "labelStyle" for="cvv">CVV</label>
@@ -102,6 +106,10 @@
 
     <div>
       <input id='device-data-string' name= 'DeviceDataString' type='hidden' />
+    </div>
+
+    <div>
+      <input id ='subscription-setter' name = 'SubscriptionSetter' type ='hidden' />
     </div>
 
     <div class = "submitButton">
@@ -124,6 +132,7 @@
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
   var theNonce = document.querySelector('#payment-method-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
+  var subscriptionSetter = document.querySelector('#subscription-setter');
   var socket = io();
   var button = document.getElementById("submitButton");
   var autofillButton = document.getElementById("autofillButton");
@@ -137,6 +146,7 @@
     let emailInputted = document.forms["checkoutForm"]["email-address"].value;
     let phoneInputted = document.forms["checkoutForm"]["phone-number"].value;
     let saveCardCheckboxBool = document.forms["checkoutForm"]["saveCardCheck"].checked;
+    let subscriptionCheckboxBool = document.forms["checkoutForm"]["subscriptionCheck"].checked;
     // Found this email regex on Stack Overflow. Seems to work well!
     let reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
     let regionInputted = document.forms["checkoutForm"]["region-code"].value;
@@ -151,7 +161,8 @@
       // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
       console.log("nope, it's not checked");
       document.forms["checkoutForm"].action = "/3DS-transaction-with-nonce";
-    } else {
+    }
+    else {
       // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
       console.log("yep, it's checked")
       document.forms["checkoutForm"].action = "/3DS-transaction-with-token";
@@ -195,6 +206,10 @@
     }
     else if ((regionInputted.length > 0) && (regionInputted.length != 2)) {
       alert("Please enter a valid region code.");
+      return false;
+    }
+    else if ((saveCardCheckboxBool == false) && (subscriptionCheckboxBool == true)) {
+      alert("Card must be saved in order to create a subscription.");
       return false;
     }
     // Having this return true here instead. That'll be assigned to a value and checked later.
@@ -351,7 +366,10 @@
             document.getElementById('submitButton').outerHTML = '<button class="spinner-border m-1" style="color: #e66d2c; background: rgba(0,0,0,0);" role="status" type="button" disabled></button>';
             autofillButton.outerHTML = '<button class="spinner-grow m-1" style="color: #7d766e;" role="status" type="button" disabled></button>';
             autofillText.outerHTML = '<label style = "color: #7d766e; opacity: 0.5;" for="autofillButton" id="autofillLabel">Press this button to autofill the above fields</label>';
-            
+
+            subscriptionSetter.value = document.forms["checkoutForm"]["subscriptionCheck"].checked;
+            console.log("Create a subscription? " + subscriptionSetter.value);
+
             // Checking that the nonce and BIN can successfully be accessed.
             console.log("First nonce on client: " + payload.nonce);
             console.log("BIN on client: " + payload.details.bin);
@@ -372,7 +390,7 @@
               challengeRequested: true,
               /*onLookupComplete: function (data, next) {
                 next();
-              }*/
+              },*/
               billingAddress: {
                 givenName: document.forms["checkoutForm"]["first-name"].value,
                 surname: document.forms["checkoutForm"]["last-name"].value,
