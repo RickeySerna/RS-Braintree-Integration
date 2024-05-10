@@ -333,91 +333,190 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
   const postCode = req.body.postalCode;
   const country = req.body.countryCode;
   const DeviceDataString = req.body.DeviceDataString;
+  const SubscriptionSetter = req.body.SubscriptionSetter.toLowerCase() === "true";
   
 
   console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, 3DS token checkout: " + DeviceDataString);
 
-  const thisCustomer = gateway.customer.create({
-    firstName: first,
-    lastName: last,
-    email: email,
-    phone: phone,
-    paymentMethodNonce:PaymentMethodNonce,
-    deviceData: DeviceDataString,
-    creditCard: {
-      billingAddress: {
-        firstName: first,
-        lastName: last,
-        streetAddress: streetAddress,
-        extendedAddress: adtlAddress,
-        locality: city,
-        region: region,
-        countryCodeAlpha2: country,
-        postalCode: postCode
-      },
-      options: {
-        verifyCard: true,
-        verificationAmount: "1"
-      }
-    }
-  }, (error, result) => {
-    if (result.success == true) {
-      let cusResponseObject = result;
-      // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
-      // Then we'll pass that back to the client to be run through verifyCard() again.
-      gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
-        if (response.success == true) {
-          // Here is our new nonce and BIN.
-          const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
-          const BINGeneratedFromToken = response.paymentMethodNonce.details.bin;
-          console.log("Nonce generated from token: " + nonceGeneratedFromToken);
-          console.log("BIN generated from token: " + BINGeneratedFromToken);
-
-          // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
-          // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
-          // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
-          io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
-
-          // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
-          // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
-          // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
-          let new3DSenrichedNonceFromClient = await io.returnNonce();
-          console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
-
-          // Now we've got the nonce, let's create the transaction!
-          gateway.transaction.sale({
-            amount: amountFromClient,
-            paymentMethodNonce: new3DSenrichedNonceFromClient,
-            options: {
-              submitForSettlement: true
-            },
-            deviceData: DeviceDataString
-          }, (error, result) => {
-            console.log("Transaction ID: " + result.transaction.id);
-            console.log("Transaction status: " + result.transaction.status);
-            if (result.success == true) {
-              console.log("Successful transaction status: " + result.transaction.status);
-              res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The children of the night. What music they make.”"});
-            } else {
-              if (result.transaction.status == "processor_declined") {
-                console.log("Declined transaction status: " + result.transaction.status);
-                res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "When there's no more room in Hell, the dead will walk the Earth."});
-              }
-              else {
-                console.log("Failed transaction status: " + result.transaction.status);
-                res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "When there's no more room in Hell, the dead will walk the Earth."});
-              }
-            }
-          });
-        } else {
-          res.json(response);
+  if (SubscriptionSetter) {
+    console.log("Creating a subscription.");
+    const thisCustomer = gateway.customer.create({
+      firstName: first,
+      lastName: last,
+      email: email,
+      phone: phone,
+      paymentMethodNonce:PaymentMethodNonce,
+      deviceData: DeviceDataString,
+      creditCard: {
+        billingAddress: {
+          firstName: first,
+          lastName: last,
+          streetAddress: streetAddress,
+          extendedAddress: adtlAddress,
+          locality: city,
+          region: region,
+          countryCodeAlpha2: country,
+          postalCode: postCode
+        },
+        options: {
+          verifyCard: true,
+          verificationAmount: "1"
         }
-      });
-    } else {
-      res.json(result);
-    };
-  });
+      }
+    }, (error, result) => {
+      if (result.success == true) {
+        let cusResponseObject = result;
+        // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
+        // Then we'll pass that back to the client to be run through verifyCard() again.
+        gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
+          if (response.success == true) {
+            // Here is our new nonce and BIN.
+            const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
+            const BINGeneratedFromToken = response.paymentMethodNonce.details.bin;
+            console.log("Nonce generated from token: " + nonceGeneratedFromToken);
+            console.log("BIN generated from token: " + BINGeneratedFromToken);
+
+            // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
+            // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
+            // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+            io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
+
+            // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
+            // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
+            // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
+            let new3DSenrichedNonceFromClient = await io.returnNonce();
+            console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
+
+            // Now we've got the nonce, let's create the subscription!
+            gateway.subscription.create({
+              price: amountFromClient,
+              // Normally, subscriptions are created from tokens, but we want this to be a 3DS auth'd sub. So we use the nonce we just created.
+              paymentMethodNonce: new3DSenrichedNonceFromClient,
+              // Have to have a plan when creating a sub so I created a general membership subscription.
+              planId: "g54r",
+              options: {
+                startImmediately: true
+              }
+              //deviceData: DeviceDataString
+            }, (error, result) => {
+              if (error) {
+                console.error(error);
+              }
+            
+              if (result.success == true) {
+                console.log("Successful transaction status: " + result.subscription.transactions[0].status);
+                console.log("Transaction ID: ", result.subscription.transactions[0].id);
+                res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "I realized that what was living behind that boy's eyes was purely and simply evil."});
+              }
+              // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
+              else {
+                if (result.transaction.status == "processor_declined") {
+                  console.log("Declined transaction status: " + result.transaction.status);
+                  console.log("The declined transaction: ", result.transaction.id);
+                  res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "In space no can hear you scream."});
+                }
+                else {
+                  console.log("Failed transaction status: " + result.transaction.status);
+                  console.log("The failed transaction: ", result.transaction.id);
+                  res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "In space no can hear you scream."});
+                }
+              }
+            });
+          }
+          else {
+            res.json(response);
+          }
+        });
+      }
+      else {
+        res.json(result);
+      };
+    });
+  }
+  else {
+    console.log("Creating a transaction.");
+    const thisCustomer = gateway.customer.create({
+      firstName: first,
+      lastName: last,
+      email: email,
+      phone: phone,
+      paymentMethodNonce: PaymentMethodNonce,
+      deviceData: DeviceDataString,
+      creditCard: {
+        billingAddress: {
+          firstName: first,
+          lastName: last,
+          streetAddress: streetAddress,
+          extendedAddress: adtlAddress,
+          locality: city,
+          region: region,
+          countryCodeAlpha2: country,
+          postalCode: postCode
+        },
+        options: {
+          verifyCard: true,
+          verificationAmount: "1"
+        }
+      }
+    }, (error, result) => {
+      if (result.success == true) {
+        let cusResponseObject = result;
+        // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
+        // Then we'll pass that back to the client to be run through verifyCard() again.
+        gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
+          if (response.success == true) {
+            // Here is our new nonce and BIN.
+            const nonceGeneratedFromToken = response.paymentMethodNonce.nonce;
+            const BINGeneratedFromToken = response.paymentMethodNonce.details.bin;
+            console.log("Nonce generated from token: " + nonceGeneratedFromToken);
+            console.log("BIN generated from token: " + BINGeneratedFromToken);
+
+            // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
+            // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
+            // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+            io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
+
+            // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
+            // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
+            // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
+            let new3DSenrichedNonceFromClient = await io.returnNonce();
+            console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
+
+            // Now we've got the nonce, let's create the transaction!
+            gateway.transaction.sale({
+              amount: amountFromClient,
+              paymentMethodNonce: new3DSenrichedNonceFromClient,
+              options: {
+                submitForSettlement: true
+              },
+              deviceData: DeviceDataString
+            }, (error, result) => {
+              console.log("Transaction ID: " + result.transaction.id);
+              console.log("Transaction status: " + result.transaction.status);
+              if (result.success == true) {
+                console.log("Successful transaction status: " + result.transaction.status);
+                res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The children of the night. What music they make.”"});
+              } else {
+                if (result.transaction.status == "processor_declined") {
+                  console.log("Declined transaction status: " + result.transaction.status);
+                  res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "When there's no more room in Hell, the dead will walk the Earth."});
+                }
+                else {
+                  console.log("Failed transaction status: " + result.transaction.status);
+                  res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "When there's no more room in Hell, the dead will walk the Earth."});
+                }
+              }
+            });
+          } else {
+            res.json(response);
+          }
+        });
+      } else {
+        res.json(result);
+      };
+    });
+  }
 });
 
 app.get('/recent-transactions', (req, res) => {
