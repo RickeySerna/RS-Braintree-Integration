@@ -394,7 +394,10 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
               // Normally, subscriptions are created from tokens, but we want this to be a 3DS auth'd sub. So we use the nonce we just created.
               paymentMethodNonce: new3DSenrichedNonceFromClient,
               // Have to have a plan when creating a sub so I created a general membership subscription.
-              planId: "g54r",
+              planId: "g54r",/*
+              shipping: {
+                firstName: "John"
+              },*/
               options: {
                 startImmediately: true
               }
