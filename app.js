@@ -340,7 +340,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
   console.log("Device data string in server, 3DS token checkout: " + DeviceDataString);
 
   if (SubscriptionSetter) {
-    console.log("Creating a subscription.");
+    console.log("Creating a subscription");
     const thisCustomer = gateway.customer.create({
       firstName: first,
       lastName: last,
@@ -367,8 +367,10 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
     }, (error, result) => {
       if (result.success == true) {
         let cusResponseObject = result;
+        console.log("Generated token: " + result.customer.creditCards[0].token);
         // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
         // Then we'll pass that back to the client to be run through verifyCard() again.
+        console.log("Generating a new nonce from the token");
         gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
           if (response.success == true) {
             // Here is our new nonce and BIN.
@@ -380,6 +382,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
             // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
             // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
             // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+            console.log("Sending new nonce to client");
             io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
 
             // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
@@ -394,10 +397,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
               // Normally, subscriptions are created from tokens, but we want this to be a 3DS auth'd sub. So we use the nonce we just created.
               paymentMethodNonce: new3DSenrichedNonceFromClient,
               // Have to have a plan when creating a sub so I created a general membership subscription.
-              planId: "g54r",/*
-              shipping: {
-                firstName: "John"
-              },*/
+              planId: "g54r",
               options: {
                 startImmediately: true
               }
@@ -438,7 +438,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
     });
   }
   else {
-    console.log("Creating a transaction.");
+    console.log("Creating a transaction");
     const thisCustomer = gateway.customer.create({
       firstName: first,
       lastName: last,
@@ -465,8 +465,10 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
     }, (error, result) => {
       if (result.success == true) {
         let cusResponseObject = result;
+        console.log("Generated token: " + result.customer.creditCards[0].token);
         // In order for 3DS to apply to the transaction after vaulting, we need to generate a new nonce from the newly created token
         // Then we'll pass that back to the client to be run through verifyCard() again.
+        console.log("Generating a new nonce from the token");
         gateway.paymentMethodNonce.create(result.customer.creditCards[0].token, async function(err, response) {
           if (response.success == true) {
             // Here is our new nonce and BIN.
@@ -478,6 +480,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
             // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
             // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
             // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+            console.log("Sending new nonce to client");
             io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
 
             // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
@@ -841,6 +844,7 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
       // Now that the customer is created, we check for whether or not a 3DS transaction was requested.
       // If so, we go through the paymentmethodnonce.create() -> transaction.sale() flow that uses socket.io.
       if (threeDScheckValue == "true") {
+        console.log("Generating a new nonce from the token");
         gateway.paymentMethodNonce.create(result.customer.androidPayCards[0].token, async function(err, response) {
           if (response.success == true) {
             // Here is our new nonce and BIN.
@@ -852,6 +856,7 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
             // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
             // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
             // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
+            console.log("Sending new nonce to client");
             io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
   
             // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
