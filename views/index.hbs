@@ -119,7 +119,12 @@
       // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
       console.log("nope, it's not checked");
       document.forms["checkoutForm"].action = "/transaction-with-nonce";
-    } else {
+    }
+    // Didn't like that the URL always shows transactions. Adding the subscription stuff to it's own POST route now.
+    else if (saveCardCheckboxBool && subscriptionCheckboxBool) {
+      document.forms["checkoutForm"].action = "/subscription";
+    }
+    else {
       // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
       console.log("yep, it's checked")
       document.forms["checkoutForm"].action = "/transaction-with-token";

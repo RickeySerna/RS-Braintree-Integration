@@ -69,126 +69,61 @@ app.post('/transaction-with-token', (req, res, next) => {
   console.log("Nonce in the server, token checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, token checkout: " + DeviceDataString);
 
-  // If the user chose to create a subscription, we go through this flow which creates a subscription.
-  if (SubscriptionSetter) {
-    console.log("Creating a subscription.");
-    const thisCustomer = gateway.customer.create({
-      firstName: first,
-      lastName: last,
-      email: email,
-      phone: phone,
-      paymentMethodNonce: PaymentMethodNonce,
-      creditCard: {
+  console.log("Creating a transaction.");
+  const thisCustomer = gateway.customer.create({
+    firstName: first,
+    lastName: last,
+    email: email,
+    phone: phone,
+    paymentMethodNonce:PaymentMethodNonce,
+    creditCard: {
+      options: {
+        verifyCard: true,
+        verificationAmount: "1"
+      }
+    },
+    deviceData: DeviceDataString
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    if (result.success == true) {
+      let cusResponseObject = result;
+      gateway.transaction.sale({
+        amount: amountFromClient,
+        paymentMethodToken: result.customer.creditCards[0].token,
         options: {
-          verifyCard: true,
-          verificationAmount: "1"
+          // This option requests the funds from the transaction
+          // once it has been authorized successfully
+          submitForSettlement: true
+        },
+        deviceData: DeviceDataString
+      }, (error, result) => {
+        if (error) {
+          console.error(error);
         }
-      },
-      deviceData: DeviceDataString
-    }, (error, result) => {
-      if (error) {
-        console.error(error);
-      }
-      if (result.success == true) {
-        let cusResponseObject = result;
-        console.log("The token: " + result.customer.creditCards[0].token);
-        gateway.subscription.create({
-          price: amountFromClient,
-          paymentMethodToken: result.customer.creditCards[0].token,
-          // Have to have a plan when creating a sub so I created a general membership subscription.
-          planId: "g54r",
-          options: {
-            startImmediately: true
-          }
-          //deviceData: DeviceDataString
-        }, (error, result) => {
-          if (error) {
-            console.error(error);
-          }
+        console.log("Transaction ID: " + result.transaction.id);
+        console.log("Transaction status: " + result.transaction.status);
 
-          if (result.success == true) {
-            console.log("Successful transaction status: " + result.subscription.transactions[0].status);
-            console.log("Transaction ID: ", result.subscription.transactions[0].id);
-            res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "It's Halloween. Everyone's entitled to one good scare."});
-          }
-          // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
-          else {
-            if (result.transaction.status == "processor_declined") {
-              console.log("Declined transaction status: " + result.transaction.status);
-              console.log("The declined transaction: ", result.transaction.id);
-              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
-            }
-            else {
-              console.log("Failed transaction status: " + result.transaction.status);
-              console.log("The failed transaction: ", result.transaction.id);
-              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
-            }
-          }
-        });
-      }
-      else {
-        res.json(result);
-      };
-    });
-  }
-  // If not, we go through the original flow which creates a transaction.
-  else {
-    console.log("Creating a transaction.");
-    const thisCustomer = gateway.customer.create({
-      firstName: first,
-      lastName: last,
-      email: email,
-      phone: phone,
-      paymentMethodNonce:PaymentMethodNonce,
-      creditCard: {
-        options: {
-          verifyCard: true,
-          verificationAmount: "1"
+        if (result.success == true) {
+          console.log("Successful transaction status: " + result.transaction.status);
+          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "It's alive! IT'S ALIIIIIVE!!"});
         }
-      },
-      deviceData: DeviceDataString
-    }, (error, result) => {
-      if (error) {
-        console.error(error);
-      }
-      if (result.success == true) {
-        let cusResponseObject = result;
-        gateway.transaction.sale({
-          amount: amountFromClient,
-          paymentMethodToken: result.customer.creditCards[0].token,
-          options: {
-            // This option requests the funds from the transaction
-            // once it has been authorized successfully
-            submitForSettlement: true
-          },
-          deviceData: DeviceDataString
-        }, (error, result) => {
-          if (error) {
-            console.error(error);
-          }
-          console.log("Transaction ID: " + result.transaction.id);
-          console.log("Transaction status: " + result.transaction.status);
-
-          if (result.success == true) {
-            console.log("Successful transaction status: " + result.transaction.status);
-            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "It's alive! IT'S ALIIIIIVE!!"});
+        else {
+          if (result.transaction.status == "processor_declined") {
+            console.log("Declined transaction status: " + result.transaction.status);
+            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
           }
           else {
-            if (result.transaction.status == "processor_declined") {
-              console.log("Declined transaction status: " + result.transaction.status);
-              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
-            }
-            else {
-              console.log("Failed transaction status: " + result.transaction.status);
-              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
-            }
+            console.log("Failed transaction status: " + result.transaction.status);
+            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
           }
-        });
-      } else {
-        res.json(result);
-      };
-    });
-  }
+        }
+      });
+    } else {
+      res.json(result);
+    };
+  });
 });
 
 app.post('/transaction-with-nonce', (req, res, next) => {
@@ -234,6 +169,77 @@ app.post('/transaction-with-nonce', (req, res, next) => {
         res.render('failed', {transactionResponse: result, title: "One, two, Freddy's coming for you."});
       }
     }
+  });
+});
+
+app.post('/subscription', (req, res, next) => {
+  const PaymentMethodNonce = req.body.PaymentMethodNonce;
+  // Using toFixed to round the amount after the second decimal. So if a long floating point is entered, it's cut off at the 2nd decimal.
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  const first = req.body.firstName;
+  const last = req.body.lastName;
+  const email = req.body.email;
+  const phone = req.body.phoneNumber;
+  const DeviceDataString = req.body.DeviceDataString;
+
+  console.log("Creating a subscription.");
+  const thisCustomer = gateway.customer.create({
+    firstName: first,
+    lastName: last,
+    email: email,
+    phone: phone,
+    paymentMethodNonce: PaymentMethodNonce,
+    creditCard: {
+      options: {
+        verifyCard: true,
+        verificationAmount: "1"
+      }
+    },
+    deviceData: DeviceDataString
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    if (result.success == true) {
+      let cusResponseObject = result;
+      console.log("The token: " + result.customer.creditCards[0].token);
+      gateway.subscription.create({
+        price: amountFromClient,
+        paymentMethodToken: result.customer.creditCards[0].token,
+        // Have to have a plan when creating a sub so I created a general membership subscription.
+        planId: "g54r",
+        options: {
+          startImmediately: true
+        }
+        //deviceData: DeviceDataString
+      }, (error, result) => {
+        if (error) {
+          console.error(error);
+        }
+
+        if (result.success == true) {
+          console.log("Successful transaction status: " + result.subscription.transactions[0].status);
+          console.log("Transaction ID: ", result.subscription.transactions[0].id);
+          res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "It's Halloween. Everyone's entitled to one good scare."});
+        }
+        // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
+        else {
+          if (result.transaction.status == "processor_declined") {
+            console.log("Declined transaction status: " + result.transaction.status);
+            console.log("The declined transaction: ", result.transaction.id);
+            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
+          }
+          else {
+            console.log("Failed transaction status: " + result.transaction.status);
+            console.log("The failed transaction: ", result.transaction.id);
+            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
+          }
+        }
+      });
+    }
+    else {
+      res.json(result);
+    };
   });
 });
 
