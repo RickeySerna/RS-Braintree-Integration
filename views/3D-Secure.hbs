@@ -162,6 +162,9 @@
       console.log("nope, it's not checked");
       document.forms["checkoutForm"].action = "/3DS-transaction-with-nonce";
     }
+    else if (saveCardCheckboxBool && subscriptionCheckboxBool) {
+      document.forms["checkoutForm"].action = "/3DS-subscription";
+    }
     else {
       // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
       console.log("yep, it's checked")
