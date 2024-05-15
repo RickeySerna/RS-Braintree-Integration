@@ -62,8 +62,6 @@ app.post('/transaction-with-token', (req, res, next) => {
   const email = req.body.email;
   const phone = req.body.phoneNumber;
   const DeviceDataString = req.body.DeviceDataString;
-  // Doing this converts the value from a string to a bool.
-  const SubscriptionSetter = req.body.SubscriptionSetter.toLowerCase() === "true";
 
 
   console.log("Nonce in the server, token checkout: " + PaymentMethodNonce);
@@ -340,7 +338,6 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
   const postCode = req.body.postalCode;
   const country = req.body.countryCode;
   const DeviceDataString = req.body.DeviceDataString;
-  const SubscriptionSetter = req.body.SubscriptionSetter.toLowerCase() === "true";
   
 
   console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);
@@ -447,7 +444,6 @@ app.post("/3DS-subscription", (req, res, next) => {
   const postCode = req.body.postalCode;
   const country = req.body.countryCode;
   const DeviceDataString = req.body.DeviceDataString;
-  const SubscriptionSetter = req.body.SubscriptionSetter.toLowerCase() === "true";
   
 
   console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);

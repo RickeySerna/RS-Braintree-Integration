@@ -72,10 +72,6 @@
     <div>
       <input id ='device-data-string' name = 'DeviceDataString' type ='hidden' />
     </div>
-
-    <div>
-      <input id ='subscription-setter' name = 'SubscriptionSetter' type ='hidden' />
-    </div>
     
     <div class = "submitButton">
         <button id="submitButton" class="btn btn-outline-primary buttonStyle" type="submit" disabled>Pay</button>
@@ -96,7 +92,6 @@
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
   var theNonce = document.querySelector('#payment-method-nonce');
   var deviceDataString = document.querySelector('#device-data-string');
-  var subscriptionSetter = document.querySelector('#subscription-setter');
   var button = document.getElementById("submitButton");
 
   console.log("Client token: " + clientToken);
@@ -258,10 +253,6 @@
               // Adding the nonce to the form.
               theNonce.value = payload.nonce;
 
-              // Setting the subscription value; this will be passed to the server and it will decide whether or not a subscription is made.
-              subscriptionSetter.value = document.forms["checkoutForm"]["subscriptionCheck"].checked;
-
-              console.log("Create subscription: " + subscriptionSetter.value);
               console.log("Nonce on client: " + payload.nonce);
 
               // Submitting the form and all hidden inputs to the server for processing.
