@@ -608,6 +608,10 @@
                     console.log("Transaction types array: ", transactionTypes);
                     console.log("Transaction statuses array: ", transactionStatuses);
 
+                    // All three of the below forEach functions perform the same task; automatically add buttons to the checkbox sections.
+                    // We take the 3 arrays we just created^ and run forEach on all of them. Each individual item in the arrays is used as the label and value for each button.
+                    // Because the arrays inherently list each option one time, we just need to go through and create one button for each item in the array.
+                    
                     // Update; added styles here. Since these are generated programmatically, the styles in the stylesheet don't seem to apply. Doing it here instead.
                     // Add checkboxes for each transaction type
                     transactionTypes.forEach(function(type) {
