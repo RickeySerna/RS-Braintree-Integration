@@ -225,7 +225,8 @@ document.getElementById("apple-pay-button").addEventListener("click", function(e
   session.onvalidatemerchant = function (event) {
     console.log('onvalidatemerchant event:', event);
     btApplePayInstance.performValidation({
-      // URL is loaded from BT.
+      // Calls a URL from Apple where the merchant's registration is validated directly with Apple.
+      // Their servers return a response indicating either that the merchant has successfully registered with Apple or not.
       validationURL: event.validationURL,
       displayName: "Gardensound Inc."
     }, function (validationErr, merchantSession) {
