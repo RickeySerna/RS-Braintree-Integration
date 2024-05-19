@@ -1,0 +1,163 @@
+<head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+  <div id="paypalDiv" style="display:none;">
+    <form id="paypal-form" action="/apple-pay-transaction-with-nonce" method="post">
+
+      <div class="container">
+        <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please ensure that you are using Safari and the HTTPS connection. <a href="https://localhost:8000/ApplePay">https://localhost:8000</a></p>
+      </div>
+
+      <div class="form-row justify-content-md-center">
+        <div class = "col-md-2 mb-3">
+          <label class = "APlabelStyle" for="saveCardCheck">Save your card for future use?</label>
+          <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+        </div>
+        <div class = "col-md-2 mb-3">
+          <label class = "APlabelStyle" for="Amount">Amount</label>
+          <input class="form-control APinputClass" name="amount" id="amount" placeholder="99.99" required>
+        </div>
+      </div>
+					
+      <div style = "text-align:center">
+        <p class="lead subtitle" style="color: #E66C2C;">Press the Apple Pay button below to complete payment!</p>
+        <input class = "applePayButtonStyle" type="image" name="applePayButton" id="apple-pay-button"/>
+      </div>
+
+      <!-- Hidden input for the nonce. -->
+      <div>
+        <input type="hidden" id='payment-method-nonce' name="ApplePayNonce">
+      </div>
+
+      <!-- Hidden inputs for the payment data, one for the shipping address object and one for the billing address object. -->
+      <div>
+        <input id='ap-payment-shipping-data' name = 'APPaymentShippingData' type='hidden' />
+      </div>
+
+      <div>
+        <input id='ap-payment-billing-data' name = 'APPaymentBillingData' type='hidden' />
+      </div>
+
+      <!-- Hidden input for the device data string. -->
+      <div>
+        <input id='ap-device-data' name = 'APDeviceData' type='hidden' />
+      </div>
+
+    </form>
+  </div>
+
+</body>
+
+<script>
+var clientToken = '{{{clientToken}}}';
+var form = document.querySelector('#apple-pay-form');
+var nonce = document.querySelector('#payment-method-nonce');
+var APPaymentShippingData = document.querySelector('#ap-payment-shipping-data');
+var APPaymentBillingData = document.querySelector("#ap-payment-billing-data");
+var deviceDataString = document.querySelector('#ap-device-data');
+console.log("Client token in PayPal: " + clientToken);
+
+function inputValidation() {
+  let amountInputted = document.forms["apple-pay-form"]["amount"].value;
+  let saveCardCheckboxBool = document.forms["apple-pay-form"]["saveCardCheck"].checked;
+
+    // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
+  if (saveCardCheckboxBool == false) {
+    // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
+    console.log("nope, it's not checked");
+    document.forms["apple-pay-form"].action = "/apple-pay-transaction-with-nonce";
+  } else {
+    // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
+    console.log("yep, it's checked")
+    document.forms["apple-pay-form"].action = "/apple-pay-transaction-with-token";
+  }
+
+  let formDestination = document.forms["apple-pay-form"].action;
+  console.log("Form action: " + formDestination);
+
+  // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
+  if (isNaN(amountInputted) || amountInputted == "") {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a number.");
+    return false;
+  }
+  // Making sure the number is positive and not 0.
+  else if (((Number(amountInputted) * -1) > 0) || (Number(amountInputted) * Number(amountInputted) == 0)) {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a positive number.");
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
+braintree.client.create({
+  authorization: clientToken
+}, function (clientErr, clientInstance) {
+  if (clientErr) {
+    console.error('Error creating client:', clientErr);
+    return;
+  }
+
+
+  // Create a PayPal Checkout component.
+  braintree.paypalCheckout.create({
+    client: clientInstance
+  }, function (paypalCheckoutErr, paypalCheckoutInstance) {
+    // Stop if there was a problem creating PayPal Checkout.
+    // This could happen if there was a network error or if it's incorrectly configured.
+    if (paypalCheckoutErr) {
+      console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
+      return;
+    }
+
+    // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
+    document.getElementById("paypalDiv").style.display = "inline";
+  });
+
+  braintree.applePay.create({
+    client: clientInstance
+  }, function (applePayErr, applePayInstance) {
+    if (applePayErr) {
+      console.error('Error creating applePayInstance:', applePayErr);
+      return;
+    }
+
+      btApplePayInstance = applePayInstance;
+  });
+
+  // Creating the data collector instance to pass device data into Apple Pay txns.
+  braintree.dataCollector.create({
+    client: clientInstance
+  }, function (err, dataCollectorInstance) {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    var deviceData = dataCollectorInstance.deviceData;
+    console.log("Device data: ", deviceData);
+    deviceDataString.value = deviceData;
+  });
+});
+
+// Button event listener, you have to place the var session = new ApplePaySession() inside this listener or else you'll get an error!
+document.getElementById("paypal-button").addEventListener("click", function(e){
+  // Prevent form from submitting before buyer goes through Apple Pay authorization
+  e.preventDefault();
+
+  var inputChecker = inputValidation();
+  console.log("Input verified value: " + inputChecker);
+
+  // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+  if (inputChecker == false) {
+    return;
+  }
+  else {
+
+  }
+});
+</script>

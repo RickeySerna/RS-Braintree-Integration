@@ -973,6 +973,15 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
   });
 });
 
+app.get('/PayPal', (req, res) => {
+  gateway.clientToken.generate({}, (err, response) => {
+    res.render('PayPal', {
+      clientToken: response.clientToken,
+      title: 'PayPal'
+	  });
+  });
+});
+
 app.get('/testing', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
     res.render('testing', {
