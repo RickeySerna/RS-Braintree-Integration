@@ -200,6 +200,12 @@ h5 {
   text-align: center;
 }
 
+.PPlabelStyle {
+  color: #ff8e51;
+  display: block;
+  text-align: center;
+}
+
 .form-control.inputClass {
   background-color: #e66d2c45;
   color: #ff8e51;
@@ -228,6 +234,17 @@ h5 {
 }
 
 .form-control.APinputClass:focus {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+}
+
+.form-control.PPinputClass {
+  background-color: #e66d2c45;
+  color: #ff8e51;
+  margin : 0 auto;
+}
+
+.form-control.PPinputClass:focus {
   background-color: #e66d2c45;
   color: #ff8e51;
 }

@@ -8,17 +8,17 @@
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
-        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please ensure that you are using Safari and the HTTPS connection. <a href="https://localhost:8000/ApplePay">https://localhost:8000</a></p>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please select the PayPal button below to complete your purchase.</p>
       </div>
 
       <div class="form-row justify-content-md-center">
         <div class = "col-md-2 mb-3">
-          <label class = "APlabelStyle" for="saveCardCheck">Save your card for future use?</label>
-          <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+          <label class = "PPlabelStyle" for="saveCardCheck">Save your card for future use?</label>
+          <input class="form-control PPinputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
         </div>
         <div class = "col-md-2 mb-3">
-          <label class = "APlabelStyle" for="Amount">Amount</label>
-          <input class="form-control APinputClass" name="amount" id="amount" placeholder="99.99" required>
+          <label class = "PPlabelStyle" for="Amount">Amount</label>
+          <input class="form-control PPinputClass" name="amount" id="amount" placeholder="99.99" required>
         </div>
       </div>
 					
@@ -43,7 +43,7 @@
 
       <!-- Hidden input for the device data string. -->
       <div>
-        <input id='ap-device-data' name = 'APDeviceData' type='hidden' />
+        <input id='pp-device-data' name = 'PPDeviceData' type='hidden' />
       </div>
 
     </form>
@@ -53,29 +53,29 @@
 
 <script>
 var clientToken = '{{{clientToken}}}';
-var form = document.querySelector('#apple-pay-form');
+var form = document.querySelector('#paypal-form');
 var nonce = document.querySelector('#payment-method-nonce');
 var APPaymentShippingData = document.querySelector('#ap-payment-shipping-data');
 var APPaymentBillingData = document.querySelector("#ap-payment-billing-data");
-var deviceDataString = document.querySelector('#ap-device-data');
+var deviceDataString = document.querySelector('#pp-device-data');
 console.log("Client token in PayPal: " + clientToken);
 
 function inputValidation() {
-  let amountInputted = document.forms["apple-pay-form"]["amount"].value;
-  let saveCardCheckboxBool = document.forms["apple-pay-form"]["saveCardCheck"].checked;
+  let amountInputted = document.forms["paypal-form"]["amount"].value;
+  let saveCardCheckboxBool = document.forms["paypal-form"]["saveCardCheck"].checked;
 
     // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
   if (saveCardCheckboxBool == false) {
     // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
     console.log("nope, it's not checked");
-    document.forms["apple-pay-form"].action = "/apple-pay-transaction-with-nonce";
+    document.forms["paypal-form"].action = "/apple-pay-transaction-with-nonce";
   } else {
     // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
     console.log("yep, it's checked")
-    document.forms["apple-pay-form"].action = "/apple-pay-transaction-with-token";
+    document.forms["paypal-form"].action = "/apple-pay-transaction-with-token";
   }
 
-  let formDestination = document.forms["apple-pay-form"].action;
+  let formDestination = document.forms["paypal-form"].action;
   console.log("Form action: " + formDestination);
 
   // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
@@ -103,7 +103,6 @@ braintree.client.create({
     return;
   }
 
-
   // Create a PayPal Checkout component.
   braintree.paypalCheckout.create({
     client: clientInstance
@@ -116,18 +115,81 @@ braintree.client.create({
     }
 
     // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
+
+    paypalCheckoutInstance.loadPayPalSDK({
+      // The PayPal script is now loaded on the page and
+      // window.paypal.Buttons is now available to use
+
+      // render the PayPal button (see Render the PayPal Button section)
+      currency: "USD",
+      intent: "capture"
+    }, function () {
+      paypal.Buttons({
+        fundingSource: paypal.FUNDING.PAYPAL,
+
+        createOrder: function () {
+          return paypalCheckoutInstance.createPayment({
+            flow: 'checkout', // Required
+            amount: 10.00, // Required
+            currency: 'USD', // Required, must match the currency passed in with loadPayPalSDK
+
+            intent: 'capture', // Must match the intent passed in with loadPayPalSDK
+
+            enableShippingAddress: true,
+            shippingAddressEditable: false,
+            shippingAddressOverride: {
+              recipientName: 'Scruff McGruff',
+              line1: '1234 Main St.',
+              line2: 'Unit 1',
+              city: 'Chicago',
+              countryCode: 'US',
+              postalCode: '60652',
+              state: 'IL',
+              phone: '123.456.7890'
+            }
+          });
+        },
+
+        onShippingChange: function (data, actions) {
+          // Perform some validation or calculation logic on 'data'
+
+          if ( /* need to update shipping options or lineItems */ ) {
+            return paypalCheckoutInstance.updatePayment({
+              amount: 10.00,              // Required
+              currency: 'USD',
+              lineItems: [...],           // Required
+              paymentId: data.paymentId,  // Required
+              shippingOptions: [...],     // Optional       
+            });
+          }
+          else if (/* address not supported */) {
+            return actions.reject();
+          }
+
+          return actions.resolve();
+        },
+
+        onApprove: function (data, actions) {
+          return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+            // Submit 'payload.nonce' to your server
+          });
+        },
+
+        onCancel: function (data) {
+          console.log('PayPal payment cancelled', JSON.stringify(data, 0, 2));
+        },
+
+        onError: function (err) {
+          console.error('PayPal error', err);
+        }
+        }).render('#paypal-button').then(function () {
+        // The PayPal button will be rendered in an html element with the ID
+        // 'paypal-button'. This function will be called when the PayPal button
+        // is set up and ready to be used
+      });
+    });
+
     document.getElementById("paypalDiv").style.display = "inline";
-  });
-
-  braintree.applePay.create({
-    client: clientInstance
-  }, function (applePayErr, applePayInstance) {
-    if (applePayErr) {
-      console.error('Error creating applePayInstance:', applePayErr);
-      return;
-    }
-
-      btApplePayInstance = applePayInstance;
   });
 
   // Creating the data collector instance to pass device data into Apple Pay txns.
