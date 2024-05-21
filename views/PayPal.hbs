@@ -21,10 +21,9 @@
           <input class="form-control PPinputClass" name="amount" id="amount" placeholder="99.99" required>
         </div>
       </div>
-					
-      <div style = "text-align:center">
-        <p class="lead subtitle" style="color: #E66C2C;">Press the Apple Pay button below to complete payment!</p>
-        <input class = "applePayButtonStyle" type="image" name="applePayButton" id="apple-pay-button"/>
+
+      <div class="paypal-container">
+        <div id="paypal-button"></div>
       </div>
 
       <!-- Hidden input for the nonce. -->
@@ -150,10 +149,10 @@ braintree.client.create({
           });
         },
 
-        onShippingChange: function (data, actions) {
+        /*onShippingChange: function (data, actions) {
           // Perform some validation or calculation logic on 'data'
 
-          if ( /* need to update shipping options or lineItems */ ) {
+          if ( /* need to update shipping options or lineItems *//* ) {
             return paypalCheckoutInstance.updatePayment({
               amount: 10.00,              // Required
               currency: 'USD',
@@ -162,12 +161,12 @@ braintree.client.create({
               shippingOptions: [...],     // Optional       
             });
           }
-          else if (/* address not supported */) {
-            return actions.reject();
+          else if (/* address not supported *///) {
+/*            return actions.reject();
           }
 
           return actions.resolve();
-        },
+        },*/
 
         onApprove: function (data, actions) {
           return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {

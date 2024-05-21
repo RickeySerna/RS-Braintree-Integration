@@ -249,6 +249,11 @@ h5 {
   color: #ff8e51;
 }
 
+.paypal-container {
+  display: flex;
+  justify-content: center;
+}
+
  .btn-outline-primary.buttonStyle {
   background-color: #e66d2c;
   color: black;
