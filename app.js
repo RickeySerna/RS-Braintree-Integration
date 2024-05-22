@@ -982,6 +982,75 @@ app.get('/PayPal', (req, res) => {
   });
 });
 
+app.post('/paypal-transaction-with-nonce', (req, res, next) => {
+  const PayPalNonce = req.body.PayPalNonce;
+  // I wanted to remove this Number function here since we do it on the client, but some reason that breaks everything if a long decimal is added. Weird.
+  //const amountFromClient = Number(req.body.amount).toFixed(2);
+  //const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
+  //const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
+  //const DeviceDataString = req.body.APDeviceData;
+
+  console.log("PayPal nonce in app.js: " + PayPalNonce);
+/*  console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
+  console.log("Apple Pay billing address object in server: ", APPaymentBillingData);
+  // Checking that I'm accessing the data correctly.
+  console.log("Shipping address: " + APPaymentShippingData.addressLines[0] + ", Extended shipping address: " + APPaymentShippingData.addressLines[1]);
+
+  const ApplePayTransaction = gateway.transaction.sale({
+    amount: amountFromClient,
+    paymentMethodNonce: ApplePayNonce,
+    customer: {
+      firstName: APPaymentBillingData.givenName,
+      lastName: APPaymentBillingData.familyName,
+      phone: APPaymentShippingData.phoneNumber,
+      email: APPaymentShippingData.emailAddress
+    },
+    billing: {
+      firstName: APPaymentBillingData.givenName,
+      lastName: APPaymentBillingData.familyName,
+      // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
+      // Indexing the array to grab the individual addresses.
+      streetAddress: APPaymentBillingData.addressLines[0],
+      extendedAddress: APPaymentBillingData.addressLines[1],
+      locality: APPaymentBillingData.locality,
+      region: APPaymentBillingData.administrativeArea,
+      postalCode: APPaymentBillingData.postalCode,
+      countryCodeAlpha2: APPaymentBillingData.countryCode
+    },
+    shipping: {
+      firstName: APPaymentShippingData.givenName,
+      lastName: APPaymentShippingData.familyName,
+      streetAddress: APPaymentShippingData.addressLines[0],
+      extendedAddress: APPaymentShippingData.addressLines[1],
+      locality: APPaymentShippingData.locality,
+      region: APPaymentShippingData.administrativeArea,
+      postalCode: APPaymentShippingData.postalCode,
+      countryCodeAlpha2: APPaymentShippingData.countryCode
+    },
+    options: {
+      submitForSettlement: true
+    },
+    deviceData: DeviceDataString
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    console.log("Transaction ID: " + result.transaction.id);
+    if (result.success) {
+      console.log("Successful transaction status: " + result.transaction.status);
+      res.render('success', {transactionResponse: result, title: "We have such sights to show you!"});
+    } else {
+      if (result.transaction.status == "processor_declined") {
+        console.log("Declined transaction status: " + result.transaction.status);
+        res.render('processordeclined', {transactionResponse: result, title: "Hi, I'm Chucky! Wanna play?"});
+      } else {
+        console.log("Failed transaction status: " + result.transaction.status);
+        res.render('failed', {transactionResponse: result, title: "Hi, I'm Chucky! Wanna play?"});
+      }
+    }
+  });*/
+});
+
 app.get('/testing', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
     res.render('testing', {

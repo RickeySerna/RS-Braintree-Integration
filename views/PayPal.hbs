@@ -4,7 +4,7 @@
 
 <body>
   <div id="paypalDiv" style="display:none;">
-    <form id="paypal-form" action="/apple-pay-transaction-with-nonce" method="post">
+    <form id="paypal-form" action="/paypal-transaction-with-nonce" method="post">
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
@@ -28,7 +28,7 @@
 
       <!-- Hidden input for the nonce. -->
       <div>
-        <input type="hidden" id='payment-method-nonce' name="ApplePayNonce">
+        <input type="hidden" id='payment-method-nonce' name="PayPalNonce">
       </div>
 
       <!-- Hidden inputs for the payment data, one for the shipping address object and one for the billing address object. -->
@@ -67,7 +67,7 @@ function inputValidation() {
   if (saveCardCheckboxBool == false) {
     // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
     console.log("nope, it's not checked");
-    document.forms["paypal-form"].action = "/apple-pay-transaction-with-nonce";
+    document.forms["paypal-form"].action = "/paypal-transaction-with-nonce";
   } else {
     // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
     console.log("yep, it's checked")
@@ -170,7 +170,10 @@ braintree.client.create({
 
         onApprove: function (data, actions) {
           return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-            // Submit 'payload.nonce' to your server
+            // Here's our nonce! Adding it to the form and submitting the form to the server.
+            console.log("PayPal nonce: " + payload.nonce);
+            nonce.value = payload.nonce;
+            form.submit();
           });
         },
 
