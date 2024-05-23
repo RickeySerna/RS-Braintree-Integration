@@ -112,86 +112,99 @@ braintree.client.create({
       console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
       return;
     }
-
-    // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
-
-    paypalCheckoutInstance.loadPayPalSDK({
-      // The PayPal script is now loaded on the page and
-      // window.paypal.Buttons is now available to use
-
-      // render the PayPal button (see Render the PayPal Button section)
-      currency: "USD",
-      intent: "capture"
-    }, function () {
-      paypal.Buttons({
-        fundingSource: paypal.FUNDING.PAYPAL,
-
-        createOrder: function () {
-          return paypalCheckoutInstance.createPayment({
-            flow: 'checkout', // Required
-            amount: 10.00, // Required
-            currency: 'USD', // Required, must match the currency passed in with loadPayPalSDK
-
-            intent: 'capture', // Must match the intent passed in with loadPayPalSDK
-
-            enableShippingAddress: true,
-            shippingAddressEditable: false,
-            shippingAddressOverride: {
-              recipientName: 'Scruff McGruff',
-              line1: '1234 Main St.',
-              line2: 'Unit 1',
-              city: 'Chicago',
-              countryCode: 'US',
-              postalCode: '60652',
-              state: 'IL',
-              phone: '123.456.7890'
-            }
-          });
-        },
-
-        /*onShippingChange: function (data, actions) {
-          // Perform some validation or calculation logic on 'data'
-
-          if ( /* need to update shipping options or lineItems *//* ) {
-            return paypalCheckoutInstance.updatePayment({
-              amount: 10.00,              // Required
-              currency: 'USD',
-              lineItems: [...],           // Required
-              paymentId: data.paymentId,  // Required
-              shippingOptions: [...],     // Optional       
-            });
-          }
-          else if (/* address not supported *///) {
-/*            return actions.reject();
-          }
-
-          return actions.resolve();
-        },*/
-
-        onApprove: function (data, actions) {
-          return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-            // Here's our nonce! Adding it to the form and submitting the form to the server.
-            console.log("PayPal nonce: " + payload.nonce);
-            nonce.value = payload.nonce;
-            form.submit();
-          });
-        },
-
-        onCancel: function (data) {
-          console.log('PayPal payment cancelled', JSON.stringify(data, 0, 2));
-        },
-
-        onError: function (err) {
-          console.error('PayPal error', err);
-        }
-        }).render('#paypal-button').then(function () {
-        // The PayPal button will be rendered in an html element with the ID
-        // 'paypal-button'. This function will be called when the PayPal button
-        // is set up and ready to be used
-      });
-    });
-
+    // Render the div holding the PayPal checkout form once we can load the SDK successfully.
     document.getElementById("paypalDiv").style.display = "inline";
+
+/*    var inputChecker = inputValidation();
+    console.log("Input verified value: " + inputChecker);
+
+    // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+    if (inputChecker == false) {
+      return;
+    }
+    else {*/
+      // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
+
+      paypalCheckoutInstance.loadPayPalSDK({
+        // The PayPal script is now loaded on the page and
+        // window.paypal.Buttons is now available to use
+
+        // render the PayPal button (see Render the PayPal Button section)
+        currency: "USD",
+        intent: "capture"
+      }, function () {
+        paypal.Buttons({
+          fundingSource: paypal.FUNDING.PAYPAL,
+
+          createOrder: function () {
+
+            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+            console.log(amountFromForm);
+            
+            return paypalCheckoutInstance.createPayment({
+              flow: 'checkout', // Required
+              amount: amountFromForm, // Required
+              currency: 'USD', // Required, must match the currency passed in with loadPayPalSDK
+
+              intent: 'capture', // Must match the intent passed in with loadPayPalSDK
+
+              enableShippingAddress: true,
+              shippingAddressEditable: false,
+              shippingAddressOverride: {
+                recipientName: 'Scruff McGruff',
+                line1: '1234 Main St.',
+                line2: 'Unit 1',
+                city: 'Chicago',
+                countryCode: 'US',
+                postalCode: '60652',
+                state: 'IL',
+                phone: '123.456.7890'
+              }
+            });
+          },
+
+          /*onShippingChange: function (data, actions) {
+            // Perform some validation or calculation logic on 'data'
+
+            if ( /* need to update shipping options or lineItems *//* ) {
+              return paypalCheckoutInstance.updatePayment({
+                amount: 10.00,              // Required
+                currency: 'USD',
+                lineItems: [...],           // Required
+                paymentId: data.paymentId,  // Required
+                shippingOptions: [...],     // Optional       
+              });
+            }
+            else if (/* address not supported *///) {
+  /*            return actions.reject();
+            }
+
+            return actions.resolve();
+          },*/
+
+          onApprove: function (data, actions) {
+            return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+              // Here's our nonce! Adding it to the form and submitting the form to the server.
+              console.log("PayPal nonce: " + payload.nonce);
+              nonce.value = payload.nonce;
+              form.submit();
+            });
+          },
+
+          onCancel: function (data) {
+            console.log('PayPal payment cancelled', JSON.stringify(data, 0, 2));
+          },
+
+          onError: function (err) {
+            console.error('PayPal error', err);
+          }
+          }).render('#paypal-button').then(function () {
+          // The PayPal button will be rendered in an html element with the ID
+          // 'paypal-button'. This function will be called when the PayPal button
+          // is set up and ready to be used
+        });
+      });
+//    }
   });
 
   // Creating the data collector instance to pass device data into Apple Pay txns.
@@ -212,16 +225,5 @@ braintree.client.create({
 document.getElementById("paypal-button").addEventListener("click", function(e){
   // Prevent form from submitting before buyer goes through Apple Pay authorization
   e.preventDefault();
-
-  var inputChecker = inputValidation();
-  console.log("Input verified value: " + inputChecker);
-
-  // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
-  if (inputChecker == false) {
-    return;
-  }
-  else {
-
-  }
 });
 </script>

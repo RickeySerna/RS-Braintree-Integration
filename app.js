@@ -985,7 +985,7 @@ app.get('/PayPal', (req, res) => {
 app.post('/paypal-transaction-with-nonce', (req, res, next) => {
   const PayPalNonce = req.body.PayPalNonce;
   // I wanted to remove this Number function here since we do it on the client, but some reason that breaks everything if a long decimal is added. Weird.
-  //const amountFromClient = Number(req.body.amount).toFixed(2);
+  const amountFromClient = Number(req.body.amount).toFixed(2);
   //const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
   //const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
   //const DeviceDataString = req.body.APDeviceData;
@@ -995,11 +995,11 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
   console.log("Apple Pay billing address object in server: ", APPaymentBillingData);
   // Checking that I'm accessing the data correctly.
   console.log("Shipping address: " + APPaymentShippingData.addressLines[0] + ", Extended shipping address: " + APPaymentShippingData.addressLines[1]);
-
-  const ApplePayTransaction = gateway.transaction.sale({
+*/
+  gateway.transaction.sale({
     amount: amountFromClient,
-    paymentMethodNonce: ApplePayNonce,
-    customer: {
+    paymentMethodNonce: PayPalNonce,
+/*    customer: {
       firstName: APPaymentBillingData.givenName,
       lastName: APPaymentBillingData.familyName,
       phone: APPaymentShippingData.phoneNumber,
@@ -1026,11 +1026,11 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
       region: APPaymentShippingData.administrativeArea,
       postalCode: APPaymentShippingData.postalCode,
       countryCodeAlpha2: APPaymentShippingData.countryCode
-    },
+    },*/
     options: {
       submitForSettlement: true
     },
-    deviceData: DeviceDataString
+    //deviceData: DeviceDataString
   }, (error, result) => {
     if (error) {
       console.error(error);
@@ -1048,7 +1048,7 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
         res.render('failed', {transactionResponse: result, title: "Hi, I'm Chucky! Wanna play?"});
       }
     }
-  });*/
+  });
 });
 
 app.get('/testing', (req, res) => {
