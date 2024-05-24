@@ -988,7 +988,7 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
   const amountFromClient = Number(req.body.amount).toFixed(2);
   //const APPaymentShippingData = JSON.parse(req.body.APPaymentShippingData);
   //const APPaymentBillingData = JSON.parse(req.body.APPaymentBillingData);
-  //const DeviceDataString = req.body.APDeviceData;
+  const DeviceDataString = req.body.PPDeviceData;
 
   console.log("PayPal nonce in app.js: " + PayPalNonce);
 /*  console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
@@ -1030,7 +1030,7 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
     options: {
       submitForSettlement: true
     },
-    //deviceData: DeviceDataString
+    deviceData: DeviceDataString
   }, (error, result) => {
     if (error) {
       console.error(error);
