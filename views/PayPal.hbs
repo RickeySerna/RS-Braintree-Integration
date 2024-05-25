@@ -33,11 +33,7 @@
 
       <!-- Hidden inputs for the payment data, one for the shipping address object and one for the billing address object. -->
       <div>
-        <input id='ap-payment-shipping-data' name = 'APPaymentShippingData' type='hidden' />
-      </div>
-
-      <div>
-        <input id='ap-payment-billing-data' name = 'APPaymentBillingData' type='hidden' />
+        <input id='pp-payment-data' name = 'PPPaymentData' type='hidden' />
       </div>
 
       <!-- Hidden input for the device data string. -->
@@ -54,8 +50,7 @@
 var clientToken = '{{{clientToken}}}';
 var form = document.querySelector('#paypal-form');
 var nonce = document.querySelector('#payment-method-nonce');
-var APPaymentShippingData = document.querySelector('#ap-payment-shipping-data');
-var APPaymentBillingData = document.querySelector("#ap-payment-billing-data");
+var PPPaymentData = document.querySelector('#pp-payment-data');
 var deviceDataString = document.querySelector('#pp-device-data');
 console.log("Client token in PayPal: " + clientToken);
 
@@ -143,9 +138,7 @@ braintree.client.create({
               flow: 'checkout', // Required
               amount: amountFromForm, // Required
               currency: 'USD', // Required, must match the currency passed in with loadPayPalSDK
-
               intent: 'capture', // Must match the intent passed in with loadPayPalSDK
-
               enableShippingAddress: true,
               shippingAddressEditable: false,
               shippingAddressOverride: {
@@ -183,9 +176,14 @@ braintree.client.create({
 
         onApprove: function (data, actions) {
           return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-            // Here's our nonce! Adding it to the form and submitting the form to the server.
+            // Here's our nonce!
             console.log("PayPal nonce: " + payload.nonce);
+            console.log("PayPal object: ", payload);
+
+            // Adding it to the form as well as the entire payment data object to the form.
+            // That object contains all of the customer/address information passed in the PayPal form, that info will be used in the server.
             nonce.value = payload.nonce;
+            PPPaymentData.value = JSON.stringify(payload);
             form.submit();
           });
         },
