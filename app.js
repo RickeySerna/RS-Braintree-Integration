@@ -991,22 +991,18 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
 
   console.log("PayPal nonce in app.js: " + PayPalNonce);
   console.log("PayPal payment data: ", PPPaymentData);
-/*  console.log("Apple Pay shipping address object in server: ", APPaymentShippingData);
-  console.log("Apple Pay billing address object in server: ", APPaymentBillingData);
-  // Checking that I'm accessing the data correctly.
-  console.log("Shipping address: " + APPaymentShippingData.addressLines[0] + ", Extended shipping address: " + APPaymentShippingData.addressLines[1]);
-*/
+
   gateway.transaction.sale({
     amount: amountFromClient,
     paymentMethodNonce: PayPalNonce,
-/*    customer: {
-      firstName: APPaymentBillingData.givenName,
-      lastName: APPaymentBillingData.familyName,
-      phone: APPaymentShippingData.phoneNumber,
-      email: APPaymentShippingData.emailAddress
+    customer: {
+      firstName: PPPaymentData.details.firstName,
+      lastName: PPPaymentData.details.lastName,
+      phone: PPPaymentData.details.shippingAddress.phone,
+      email: PPPaymentData.details.email
     },
     billing: {
-      firstName: APPaymentBillingData.givenName,
+      /*firstName: APPaymentBillingData.givenName,
       lastName: APPaymentBillingData.familyName,
       // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
       // Indexing the array to grab the individual addresses.
@@ -1014,19 +1010,19 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
       extendedAddress: APPaymentBillingData.addressLines[1],
       locality: APPaymentBillingData.locality,
       region: APPaymentBillingData.administrativeArea,
-      postalCode: APPaymentBillingData.postalCode,
-      countryCodeAlpha2: APPaymentBillingData.countryCode
+      postalCode: APPaymentBillingData.postalCode,*/
+      countryCodeAlpha2: PPPaymentData.details.billingAddress.countryCode
     },
     shipping: {
-      firstName: APPaymentShippingData.givenName,
-      lastName: APPaymentShippingData.familyName,
-      streetAddress: APPaymentShippingData.addressLines[0],
-      extendedAddress: APPaymentShippingData.addressLines[1],
-      locality: APPaymentShippingData.locality,
-      region: APPaymentShippingData.administrativeArea,
-      postalCode: APPaymentShippingData.postalCode,
-      countryCodeAlpha2: APPaymentShippingData.countryCode
-    },*/
+      firstName: PPPaymentData.details.firstName,
+      lastName: PPPaymentData.details.lastName,
+      streetAddress: PPPaymentData.details.shippingAddress.line1,
+      extendedAddress: PPPaymentData.details.shippingAddress.line2,
+      locality: PPPaymentData.details.shippingAddress.city,
+      region: PPPaymentData.details.shippingAddress.state,
+      postalCode: PPPaymentData.details.shippingAddress.postalCode,
+      countryCodeAlpha2: PPPaymentData.details.shippingAddress.countryCode
+    },
     options: {
       submitForSettlement: true
     },
@@ -1035,7 +1031,9 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
     if (error) {
       console.error(error);
     }
+
     console.log("Transaction ID: " + result.transaction.id);
+
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
       res.render('success', {transactionResponse: result, title: "We have such sights to show you!"});
