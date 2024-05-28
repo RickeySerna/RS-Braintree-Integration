@@ -1014,8 +1014,10 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
       countryCodeAlpha2: PPPaymentData.details.billingAddress.countryCode
     },
     shipping: {
-      firstName: PPPaymentData.details.firstName,
-      lastName: PPPaymentData.details.lastName,
+      // The shipping address name is just thrown into one big string, recipientName.
+      // Breaking it apart in the same way I did with Google Pay.^
+      firstName: (PPPaymentData.details.shippingAddress.recipientName).substring(0, PPPaymentData.details.shippingAddress.recipientName.indexOf(' ')),
+      lastName: (PPPaymentData.details.shippingAddress.recipientName).substring(PPPaymentData.details.shippingAddress.recipientName.indexOf(' ') + 1),
       streetAddress: PPPaymentData.details.shippingAddress.line1,
       extendedAddress: PPPaymentData.details.shippingAddress.line2,
       locality: PPPaymentData.details.shippingAddress.city,
