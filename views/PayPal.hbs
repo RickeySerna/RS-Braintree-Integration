@@ -148,22 +148,27 @@ braintree.client.create({
         /*onShippingChange: function (data, actions) {
           // Perform some validation or calculation logic on 'data'
 
-          if ( /* need to update shipping options or lineItems *//* ) {
+          var internationalShippingCharge = 20.00;
+          var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+
+          if (data.shippingAddress.country !== 'US') {
+            // If the shipping address is not in the US, add the international shipping charge.
+            amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
+
             return paypalCheckoutInstance.updatePayment({
-              amount: 10.00,              // Required
+              amount: amountFromForm,
               currency: 'USD',
-              lineItems: [...],           // Required
-              paymentId: data.paymentId,  // Required
-              shippingOptions: [...],     // Optional       
+              paymentId: data.paymentId,
+            }).then(function() {
+              return actions.resolve();
             });
           }
-          else if (/* address not supported *///) {
-/*            return actions.reject();
-          }
 
+          // If the shipping address is in the US, just resolve the promise without updating the payment.
           return actions.resolve();
         },*/
 
+        // Triggered when the user successfully completes the PayPal checkout.
         onApprove: function (data, actions) {
           return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
             // Here's our nonce!
@@ -178,6 +183,7 @@ braintree.client.create({
           });
         },
 
+        // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
         onCancel: function (data) {
           console.log('PayPal payment cancelled', JSON.stringify(data, 0, 2));
         },
