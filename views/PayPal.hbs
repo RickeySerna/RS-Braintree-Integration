@@ -131,6 +131,7 @@ braintree.client.create({
             return;
           }
           else {
+            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
             var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
             console.log(amountFromForm);
             
@@ -185,12 +186,14 @@ braintree.client.create({
 
         // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
         onCancel: function (data) {
-          console.log('PayPal payment cancelled', JSON.stringify(data, 0, 2));
+          console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
         },
 
+        // Triggered when there is an error with the PayPal checkout.
         onError: function (err) {
-          console.error('PayPal error', err);
+          console.error("PayPal error: ", err);
         }
+
         }).render('#paypal-button').then(function () {
         // The PayPal button will be rendered in an html element with the ID
         // 'paypal-button'. This function will be called when the PayPal button
@@ -211,11 +214,5 @@ p
     console.log("Device data: ", deviceData);
     deviceDataString.value = deviceData;
   });
-});
-
-// Button event listener, you have to place the var session = new ApplePaySession() inside this listener or else you'll get an error!
-document.getElementById("paypal-button").addEventListener("click", function(e){
-  // Prevent form from submitting before buyer goes through Apple Pay authorization
-  e.preventDefault();
 });
 </script>
