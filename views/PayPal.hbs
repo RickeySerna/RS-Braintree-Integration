@@ -26,6 +26,10 @@
         <div id="paypal-button"></div>
       </div>
 
+      <div class="paypal-container">
+        <div id="paypal-button2"></div>
+      </div>
+
       <!-- Hidden input for the nonce. -->
       <div>
         <input type="hidden" id='payment-method-nonce' name="PayPalNonce">
@@ -117,7 +121,10 @@ braintree.client.create({
 
       // render the PayPal button (see Render the PayPal Button section)
       currency: "USD",
-      intent: "capture"
+      intent: "capture",
+      dataAttributes: {
+        namespace: 'PayPalSDK'
+      }
     }, function () {
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
@@ -200,8 +207,102 @@ braintree.client.create({
         // is set up and ready to be used
       });
     });
+
+
+    paypalCheckoutInstance.loadPayPalSDK({
+      // The PayPal script is now loaded on the page and
+      // window.paypal.Buttons is now available to use
+
+      // render the PayPal button (see Render the PayPal Button section)
+      currency: "USD",
+      intent: "capture",
+      dataAttributes: {
+        namespace: 'PayPalSDK2'
+      }
+    }, function () {
+      paypal.Buttons({
+        fundingSource: paypal.FUNDING.PAYPAL,
+        createOrder: function () {
+
+          var inputChecker = inputValidation();
+          console.log("Input verified value: " + inputChecker);
+
+          // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+          if (inputChecker == false) {
+            return;
+          }
+          else {
+            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
+            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+            console.log(amountFromForm);
+            
+            return paypalCheckoutInstance.createPayment({
+              flow: 'checkout',
+              amount: amountFromForm,
+              currency: 'USD',
+              intent: 'capture',
+              enableShippingAddress: true,
+              shippingAddressEditable: true
+            });
+          }
+        },
+
+        /*onShippingChange: function (data, actions) {
+          // Perform some validation or calculation logic on 'data'
+
+          var internationalShippingCharge = 20.00;
+          var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+
+          if (data.shippingAddress.country !== 'US') {
+            // If the shipping address is not in the US, add the international shipping charge.
+            amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
+
+            return paypalCheckoutInstance.updatePayment({
+              amount: amountFromForm,
+              currency: 'USD',
+              paymentId: data.paymentId,
+            }).then(function() {
+              return actions.resolve();
+            });
+          }
+
+          // If the shipping address is in the US, just resolve the promise without updating the payment.
+          return actions.resolve();
+        },*/
+
+        // Triggered when the user successfully completes the PayPal checkout.
+        onApprove: function (data, actions) {
+          return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+            // Here's our nonce!
+            console.log("PayPal nonce: " + payload.nonce);
+            console.log("PayPal object: ", payload);
+
+            // Adding it to the form as well as the entire payment data object to the form.
+            // That object contains all of the customer/address information passed in the PayPal form, that info will be used in the server.
+            nonce.value = payload.nonce;
+            PPPaymentData.value = JSON.stringify(payload);
+            form.submit();
+          });
+        },
+
+        // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
+        onCancel: function (data) {
+          console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
+        },
+
+        // Triggered when there is an error with the PayPal checkout.
+        onError: function (err) {
+          console.error("PayPal error: ", err);
+        }
+
+        }).render('#paypal-button2').then(function () {
+        // The PayPal button will be rendered in an html element with the ID
+        // 'paypal-button'. This function will be called when the PayPal button
+        // is set up and ready to be used
+      });
+    });
   });
-p
+
   // Creating the data collector instance to pass device data into PayPal txns.
   braintree.dataCollector.create({
     client: clientInstance
