@@ -121,10 +121,7 @@ braintree.client.create({
 
       // render the PayPal button (see Render the PayPal Button section)
       currency: "USD",
-      intent: "capture",
-      dataAttributes: {
-        namespace: 'PayPalSDK'
-      }
+      intent: "capture"
     }, function () {
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
@@ -206,20 +203,8 @@ braintree.client.create({
         // 'paypal-button'. This function will be called when the PayPal button
         // is set up and ready to be used
       });
-    });
 
-
-    paypalCheckoutInstance.loadPayPalSDK({
-      // The PayPal script is now loaded on the page and
-      // window.paypal.Buttons is now available to use
-
-      // render the PayPal button (see Render the PayPal Button section)
-      currency: "USD",
-      intent: "capture",
-      dataAttributes: {
-        namespace: 'PayPalSDK2'
-      }
-    }, function () {
+      // Instead of doing the namespace stuff, just using a second .Buttons() call.
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
         createOrder: function () {
@@ -295,6 +280,7 @@ braintree.client.create({
           console.error("PayPal error: ", err);
         }
 
+        // This one renders to the other PayPal button div we created.
         }).render('#paypal-button2').then(function () {
         // The PayPal button will be rendered in an html element with the ID
         // 'paypal-button'. This function will be called when the PayPal button
