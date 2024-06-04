@@ -121,7 +121,10 @@ braintree.client.create({
 
       // render the PayPal button (see Render the PayPal Button section)
       currency: "USD",
-      intent: "capture"
+      intent: "capture",
+      dataAttributes: {
+        namespace: 'PayPalSDK'
+      }
     }, function () {
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
@@ -203,33 +206,67 @@ braintree.client.create({
         // 'paypal-button'. This function will be called when the PayPal button
         // is set up and ready to be used
       });
+    });
+  });
 
-      // Instead of doing the namespace stuff, just using a second .Buttons() call.
+  // Creating the data collector instance to pass device data into PayPal txns.
+  braintree.dataCollector.create({
+    client: clientInstance
+  }, function (err, dataCollectorInstance) {
+    if (err) {
+      console.error(err);
+      return;
+    }
+    var deviceData = dataCollectorInstance.deviceData;
+    console.log("Device data: ", deviceData);
+    deviceDataString.value = deviceData;
+  });
+});
+
+
+braintree.client.create({
+  authorization: clientToken
+}, function (clientErr, clientInstance) {
+  if (clientErr) {
+    console.error('Error creating client:', clientErr);
+    return;
+  }
+
+  // Create a PayPal Checkout component.
+  braintree.paypalCheckout.create({
+    client: clientInstance
+  }, function (paypalCheckoutErr, paypalCheckoutInstance2) {
+    // Stop if there was a problem creating PayPal Checkout.
+    // This could happen if there was a network error or if it's incorrectly configured.
+    if (paypalCheckoutErr) {
+      console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
+      return;
+    }
+    // Render the div holding the PayPal checkout form once we can load the SDK successfully.
+    document.getElementById("paypalDiv").style.display = "inline";
+
+    // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
+    paypalCheckoutInstance2.loadPayPalSDK({
+      // The PayPal script is now loaded on the page and
+      // window.paypal.Buttons is now available to use
+
+      // render the PayPal button (see Render the PayPal Button section)
+      vault: true,
+      dataAttributes: {
+        namespace: 'PayPalSDK2'
+      }
+    }, function () {
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
-        createOrder: function () {
+        createBillingAgreement: function () {
+          return paypalCheckoutInstance2.createPayment({
+            flow: 'vault', // Required
 
-          var inputChecker = inputValidation();
-          console.log("Input verified value: " + inputChecker);
-
-          // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
-          if (inputChecker == false) {
-            return;
-          }
-          else {
-            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
-            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-            console.log(amountFromForm);
-            
-            return paypalCheckoutInstance.createPayment({
-              flow: 'checkout',
-              amount: amountFromForm,
-              currency: 'USD',
-              intent: 'capture',
-              enableShippingAddress: true,
-              shippingAddressEditable: true
-            });
-          }
+            // The following are optional params
+            billingAgreementDescription: 'Your agreement description',
+            enableShippingAddress: true,
+            shippingAddressEditable: true
+          });
         },
 
         /*onShippingChange: function (data, actions) {
@@ -257,7 +294,7 @@ braintree.client.create({
 
         // Triggered when the user successfully completes the PayPal checkout.
         onApprove: function (data, actions) {
-          return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+          return paypalCheckoutInstance2.tokenizePayment(data, function (err, payload) {
             // Here's our nonce!
             console.log("PayPal nonce: " + payload.nonce);
             console.log("PayPal object: ", payload);
@@ -280,26 +317,12 @@ braintree.client.create({
           console.error("PayPal error: ", err);
         }
 
-        // This one renders to the other PayPal button div we created.
         }).render('#paypal-button2').then(function () {
         // The PayPal button will be rendered in an html element with the ID
         // 'paypal-button'. This function will be called when the PayPal button
         // is set up and ready to be used
       });
     });
-  });
-
-  // Creating the data collector instance to pass device data into PayPal txns.
-  braintree.dataCollector.create({
-    client: clientInstance
-  }, function (err, dataCollectorInstance) {
-    if (err) {
-      console.error(err);
-      return;
-    }
-    var deviceData = dataCollectorInstance.deviceData;
-    console.log("Device data: ", deviceData);
-    deviceDataString.value = deviceData;
   });
 });
 </script>
