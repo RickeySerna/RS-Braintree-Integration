@@ -114,6 +114,128 @@ braintree.client.create({
     // Render the div holding the PayPal checkout form once we can load the SDK successfully.
     document.getElementById("paypalDiv").style.display = "inline";
 
+      // Creating the button for the checkout flow.
+      paypal.Buttons({
+        fundingSource: paypal.FUNDING.PAYPAL,
+        createOrder: function () {
+
+          var inputChecker = inputValidation();
+          console.log("Input verified value: " + inputChecker);
+
+          // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+          if (inputChecker == false) {
+            return;
+          }
+          else {
+            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
+            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+            console.log(amountFromForm);
+            
+            return paypalCheckoutInstance.createPayment({
+              flow: 'checkout',
+              amount: amountFromForm,
+              currency: 'USD',
+              intent: 'capture',
+              enableShippingAddress: true,
+              shippingAddressEditable: true
+              // Add other configuration options if needed
+            });
+          }
+        },
+
+        /*onShippingChange: function (data, actions) {
+          // Perform some validation or calculation logic on 'data'
+
+          var internationalShippingCharge = 20.00;
+          var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+
+          if (data.shippingAddress.country !== 'US') {
+            // If the shipping address is not in the US, add the international shipping charge.
+            amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
+
+            return paypalCheckoutInstance.updatePayment({
+              amount: amountFromForm,
+              currency: 'USD',
+              paymentId: data.paymentId,
+            }).then(function() {
+              return actions.resolve();
+            });
+          }
+
+          // If the shipping address is in the US, just resolve the promise without updating the payment.
+          return actions.resolve();
+        },*/
+
+        // Triggered when the user successfully completes the PayPal checkout.
+        onApprove: function (data, actions) {
+          return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+            // Here's our nonce!
+            console.log("PayPal checkout flow nonce: " + payload.nonce);
+            console.log("PayPal checkout flow object: ", payload);
+
+            // Adding it to the form as well as the entire payment data object to the form.
+            // That object contains all of the customer/address information passed in the PayPal form, that info will be used in the server.
+            nonce.value = payload.nonce;
+            PPPaymentData.value = JSON.stringify(payload);
+            form.submit();
+          });
+        },
+
+        // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
+        onCancel: function (data) {
+          console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
+        },
+
+        // Triggered when there is an error with the PayPal checkout.
+        onError: function (err) {
+          console.error("PayPal error: ", err);
+        }
+
+        }).render('#paypal-button').then(function () {
+        // The PayPal button will be rendered in an html element with the ID
+        // 'paypal-button'. This function will be called when the PayPal button
+        // is set up and ready to be used
+      });
+
+      // Creating the button for the vault flow.
+      paypal.Buttons({
+        fundingSource: paypal.FUNDING.PAYPAL,
+        
+        createBillingAgreement: function () {
+          return paypalCheckoutInstance.createPayment({
+            flow: 'vault',
+            billingAgreementDescription: 'Your agreement description',
+            enableShippingAddress: true,
+            shippingAddressEditable: true
+          });
+        },
+
+        onApprove: function (data, actions) {
+          return paypalCheckoutInstance.tokenizePayment(data)
+            .then(function (payload) {
+              console.log("PayPal vault flow nonce: " + payload.nonce);
+              console.log("PayPal vault flow object: ", payload);
+              // Submit `payload.nonce` to your server
+            });
+        },
+
+        // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
+        onCancel: function (data) {
+          console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
+        },
+
+        // Triggered when there is an error with the PayPal checkout.
+        onError: function (err) {
+          console.error("PayPal error: ", err);
+        }
+
+        }).render('#paypal-button2').then(function () {
+        // The PayPal button will be rendered in an html element with the ID
+        // 'paypal-button'. This function will be called when the PayPal button
+        // is set up and ready to be used
+      });
+
+/*
     // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
     paypalCheckoutInstance.loadPayPalSDK({
       // The PayPal script is now loaded on the page and
@@ -177,7 +299,7 @@ braintree.client.create({
         },*/
 
         // Triggered when the user successfully completes the PayPal checkout.
-        onApprove: function (data, actions) {
+        /*onApprove: function (data, actions) {
           return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
             // Here's our nonce!
             console.log("PayPal nonce: " + payload.nonce);
@@ -206,7 +328,7 @@ braintree.client.create({
         // 'paypal-button'. This function will be called when the PayPal button
         // is set up and ready to be used
       });
-    });
+    });*/
   });
 
   // Creating the data collector instance to pass device data into PayPal txns.
@@ -220,109 +342,6 @@ braintree.client.create({
     var deviceData = dataCollectorInstance.deviceData;
     console.log("Device data: ", deviceData);
     deviceDataString.value = deviceData;
-  });
-});
-
-
-braintree.client.create({
-  authorization: clientToken
-}, function (clientErr, clientInstance) {
-  if (clientErr) {
-    console.error('Error creating client:', clientErr);
-    return;
-  }
-
-  // Create a PayPal Checkout component.
-  braintree.paypalCheckout.create({
-    client: clientInstance
-  }, function (paypalCheckoutErr, paypalCheckoutInstance2) {
-    // Stop if there was a problem creating PayPal Checkout.
-    // This could happen if there was a network error or if it's incorrectly configured.
-    if (paypalCheckoutErr) {
-      console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
-      return;
-    }
-    // Render the div holding the PayPal checkout form once we can load the SDK successfully.
-    document.getElementById("paypalDiv").style.display = "inline";
-
-    // Load the PayPal JS SDK (see Load the PayPal JS SDK section)
-    paypalCheckoutInstance2.loadPayPalSDK({
-      // The PayPal script is now loaded on the page and
-      // window.paypal.Buttons is now available to use
-
-      // render the PayPal button (see Render the PayPal Button section)
-      vault: true,
-      dataAttributes: {
-        namespace: 'PayPalSDK2'
-      }
-    }, function () {
-      paypal.Buttons({
-        fundingSource: paypal.FUNDING.PAYPAL,
-        createBillingAgreement: function () {
-          return paypalCheckoutInstance2.createPayment({
-            flow: 'vault', // Required
-
-            // The following are optional params
-            billingAgreementDescription: 'Your agreement description',
-            enableShippingAddress: true,
-            shippingAddressEditable: true
-          });
-        },
-
-        /*onShippingChange: function (data, actions) {
-          // Perform some validation or calculation logic on 'data'
-
-          var internationalShippingCharge = 20.00;
-          var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-
-          if (data.shippingAddress.country !== 'US') {
-            // If the shipping address is not in the US, add the international shipping charge.
-            amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
-
-            return paypalCheckoutInstance.updatePayment({
-              amount: amountFromForm,
-              currency: 'USD',
-              paymentId: data.paymentId,
-            }).then(function() {
-              return actions.resolve();
-            });
-          }
-
-          // If the shipping address is in the US, just resolve the promise without updating the payment.
-          return actions.resolve();
-        },*/
-
-        // Triggered when the user successfully completes the PayPal checkout.
-        onApprove: function (data, actions) {
-          return paypalCheckoutInstance2.tokenizePayment(data, function (err, payload) {
-            // Here's our nonce!
-            console.log("PayPal nonce: " + payload.nonce);
-            console.log("PayPal object: ", payload);
-
-            // Adding it to the form as well as the entire payment data object to the form.
-            // That object contains all of the customer/address information passed in the PayPal form, that info will be used in the server.
-            nonce.value = payload.nonce;
-            PPPaymentData.value = JSON.stringify(payload);
-            form.submit();
-          });
-        },
-
-        // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
-        onCancel: function (data) {
-          console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
-        },
-
-        // Triggered when there is an error with the PayPal checkout.
-        onError: function (err) {
-          console.error("PayPal error: ", err);
-        }
-
-        }).render('#paypal-button2').then(function () {
-        // The PayPal button will be rendered in an html element with the ID
-        // 'paypal-button'. This function will be called when the PayPal button
-        // is set up and ready to be used
-      });
-    });
   });
 });
 </script>
