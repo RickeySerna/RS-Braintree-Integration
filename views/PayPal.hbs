@@ -224,6 +224,8 @@ braintree.client.create({
 
               nonce.value = payload.nonce;
               PPPaymentData.value = JSON.stringify(payload);
+              PPFlowUsed.value = "vault";
+              console.log("Flow used: " + PPFlowUsed.value);
               form.submit();
             });
         },

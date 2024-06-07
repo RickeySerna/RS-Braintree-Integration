@@ -1004,7 +1004,7 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
         phone: PPPaymentData.details.shippingAddress.phone,
         email: PPPaymentData.details.email
       },
-    billing: {
+      billing: {
         /*firstName: APPaymentBillingData.givenName,
         lastName: APPaymentBillingData.familyName,
         // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
@@ -1053,8 +1053,80 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
       }
     });
   }
-  else {
-    console.log("Vault flow to be used!");
+  else if (PPFlowUsed == "vault") {
+    gateway.customer.create({
+      firstName: PPPaymentData.details.firstName,
+      lastName: PPPaymentData.details.lastName,
+      email: PPPaymentData.details.email,
+      //phone: phone,
+      paymentMethodNonce: PayPalNonce,
+      deviceData: DeviceDataString
+    }, (error, result) => {
+      if (error) {
+        console.error(error);
+      }
+      if (result.success == true) {
+        let cusResponseObject = result;
+        console.log(cusResponseObject);
+
+        gateway.transaction.sale({
+          amount: amountFromClient,
+          paymentMethodToken: result.customer.paypalAccounts[0].token,
+          billing: {
+            /*firstName: APPaymentBillingData.givenName,
+            lastName: APPaymentBillingData.familyName,
+            // Apple apparently just tosses the address and extended address into an array like this: addressLines: [ '709 Meridian Avenue', 'Suite A' ]
+            // Indexing the array to grab the individual addresses.
+            streetAddress: APPaymentBillingData.addressLines[0],
+            extendedAddress: APPaymentBillingData.addressLines[1],
+            locality: APPaymentBillingData.locality,
+            region: APPaymentBillingData.administrativeArea,
+            postalCode: APPaymentBillingData.postalCode,*/
+            countryCodeAlpha2: PPPaymentData.details.countryCode
+          },
+          shipping: {
+            firstName: (PPPaymentData.details.shippingAddress.recipientName).substring(0, PPPaymentData.details.shippingAddress.recipientName.indexOf(' ')),
+            lastName: (PPPaymentData.details.shippingAddress.recipientName).substring(PPPaymentData.details.shippingAddress.recipientName.indexOf(' ') + 1),
+            streetAddress: PPPaymentData.details.shippingAddress.line1,
+            extendedAddress: PPPaymentData.details.shippingAddress.line2,
+            locality: PPPaymentData.details.shippingAddress.city,
+            region: PPPaymentData.details.shippingAddress.state,
+            postalCode: PPPaymentData.details.shippingAddress.postalCode,
+            countryCodeAlpha2: PPPaymentData.details.shippingAddress.countryCode
+          },
+          options: {
+            // This option requests the funds from the transaction
+            // once it has been authorized successfully
+            submitForSettlement: true
+          },
+          deviceData: DeviceDataString
+        }, (error, result) => {
+          if (error) {
+            console.error(error);
+          }
+          
+          console.log("Transaction ID: " + result.transaction.id);
+  
+          if (result.success == true) {
+            console.log("Successful transaction status: " + result.transaction.status);
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "It's alive! IT'S ALIIIIIVE!!"});
+          }
+          else {
+            if (result.transaction.status == "processor_declined") {
+              console.log("Declined transaction status: " + result.transaction.status);
+              res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
+            }
+            else {
+              console.log("Failed transaction status: " + result.transaction.status);
+              res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "I'm sorry, Dave. I'm afraid I can't do that."});
+            }
+          }
+        });
+      }
+      else {
+        res.json(result);
+      };
+    });
   }
 });
 
