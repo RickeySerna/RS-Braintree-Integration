@@ -13,8 +13,8 @@
 
       <div class="form-row justify-content-md-center">
         <div class = "col-md-2 mb-3">
-          <label class = "PPlabelStyle" for="saveCardCheck">Save your card for future use?</label>
-          <input class="form-control PPinputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
+          <label class = "PPlabelStyle" for="subscriptionCheck">Create a subscription?</label>
+          <input class="form-control PPinputClass" type="checkbox" id="subscriptionCheck" name="subscriptionCreator">
         </div>
         <div class = "col-md-2 mb-3">
           <label class = "PPlabelStyle" for="Amount">Amount</label>
@@ -75,16 +75,18 @@ console.log("Client token in PayPal: " + clientToken);
 function inputValidation() {
   let amountInputted = document.forms["paypal-form"]["amount"].value;
   let saveCardCheckboxBool = document.forms["paypal-form"]["saveCardCheck"].checked;
+  let subscriptionCheckboxBool = document.forms["paypal-form"]["subscriptionCheck"].checked;
+  console.log("Subscription checker status: " + subscriptionCheckboxBool);
 
     // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
-  if (saveCardCheckboxBool == false) {
+  if (subscriptionCheckboxBool == false) {
     // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
     console.log("nope, it's not checked");
     document.forms["paypal-form"].action = "/paypal-transaction-with-nonce";
   } else {
     // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
     console.log("yep, it's checked")
-    document.forms["paypal-form"].action = "/apple-pay-transaction-with-token";
+    document.forms["paypal-form"].action = "/paypal-subscription";
   }
 
   let formDestination = document.forms["paypal-form"].action;
