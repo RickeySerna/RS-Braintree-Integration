@@ -74,7 +74,6 @@ console.log("Client token in PayPal: " + clientToken);
 
 function inputValidation() {
   let amountInputted = document.forms["paypal-form"]["amount"].value;
-  let saveCardCheckboxBool = document.forms["paypal-form"]["saveCardCheck"].checked;
   let subscriptionCheckboxBool = document.forms["paypal-form"]["subscriptionCheck"].checked;
   console.log("Subscription checker status: " + subscriptionCheckboxBool);
 
@@ -83,7 +82,8 @@ function inputValidation() {
     // The box is not checked, the customer doesn't want their card saved, submit the form to a checkout that just uses the nonce in a sale call.
     console.log("nope, it's not checked");
     document.forms["paypal-form"].action = "/paypal-transaction-with-nonce";
-  } else {
+  }
+  else {
     // The box is checked, customer wants their card saved, submit the form to our original function which creates a token, then a txn from that token.
     console.log("yep, it's checked")
     document.forms["paypal-form"].action = "/paypal-subscription";
@@ -133,30 +133,31 @@ braintree.client.create({
       // Creating the button for the checkout flow.
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
-        createOrder: function () {
 
+        onClick: function() {
           var inputChecker = inputValidation();
           console.log("Input verified value: " + inputChecker);
 
           // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
           if (inputChecker == false) {
-            return;
+            return false; // This will prevent the button from opening the PayPal window.
           }
-          else {
-            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
-            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-            console.log(amountFromForm);
-            
-            return paypalCheckoutInstance.createPayment({
-              flow: 'checkout',
-              amount: amountFromForm,
-              currency: 'USD',
-              intent: 'capture',
-              enableShippingAddress: true,
-              shippingAddressEditable: true
-              // Add other configuration options if needed
-            });
-          }
+        },
+
+        createOrder: function () {
+          // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
+          var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+          console.log(amountFromForm);
+          
+          return paypalCheckoutInstance.createPayment({
+            flow: 'checkout',
+            amount: amountFromForm,
+            currency: 'USD',
+            intent: 'capture',
+            enableShippingAddress: true,
+            shippingAddressEditable: true
+            // Add other configuration options if needed
+          });
         },
 
         /*onShippingChange: function (data, actions) {
@@ -219,6 +220,16 @@ braintree.client.create({
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
 
+        onClick: function() {
+          var inputChecker = inputValidation();
+          console.log("Input verified value: " + inputChecker);
+
+          // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+          if (inputChecker == false) {
+            return false; // This will prevent the button from opening the PayPal window.
+          }
+        },
+
         createBillingAgreement: function () {
           return paypalCheckoutInstance.createPayment({
             flow: "vault",
@@ -260,35 +271,35 @@ braintree.client.create({
       // Creating the button for the checkout with vault flow.
       paypal.Buttons({
         fundingSource: paypal.FUNDING.PAYPAL,
-        createOrder: function () {
-
+        onClick: function() {
           var inputChecker = inputValidation();
           console.log("Input verified value: " + inputChecker);
 
           // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
           if (inputChecker == false) {
-            return;
+            return false; // This will prevent the button from opening the PayPal window.
           }
-          else {
-            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
-            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-            console.log(amountFromForm);
-            
-            return paypalCheckoutInstance.createPayment({
-              flow: 'checkout',
-              amount: amountFromForm,
-              currency: 'USD',
-              intent: 'capture',
-              // Here's the difference between this one and the checkout flow.
-              // With this flow we create a billing agreement along with the payment so we can store the nonce if we want to as well.
-              requestBillingAgreement: true,
-              billingAgreementDetails: {
-                description: "How sweet - fresh meat! Thanks for subscribing to Gardensound."
-              },
-              enableShippingAddress: true,
-              shippingAddressEditable: true
-            });
-          }
+        },
+
+        createOrder: function () {
+          // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
+          var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+          console.log(amountFromForm);
+          
+          return paypalCheckoutInstance.createPayment({
+            flow: 'checkout',
+            amount: amountFromForm,
+            currency: 'USD',
+            intent: 'capture',
+            // Here's the difference between this one and the checkout flow.
+            // With this flow we create a billing agreement along with the payment so we can store the nonce if we want to as well.
+            requestBillingAgreement: true,
+            billingAgreementDetails: {
+              description: "How sweet - fresh meat! Thanks for subscribing to Gardensound."
+            },
+            enableShippingAddress: true,
+            shippingAddressEditable: true
+          });
         },
 
         onApprove: function (data, actions) {
