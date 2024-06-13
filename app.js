@@ -1191,6 +1191,76 @@ app.post('/paypal-transaction-with-nonce', (req, res, next) => {
   }
 });
 
+app.post('/paypal-subscription', (req, res, next) => {
+  const PayPalNonce = req.body.PayPalNonce;
+  // I wanted to remove this Number function here since we do it on the client, but some reason that breaks everything if a long decimal is added. Weird.
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  const PPPaymentData = JSON.parse(req.body.PPPaymentData);
+  const DeviceDataString = req.body.PPDeviceData;
+  const PPFlowUsed = req.body.PPFlowUsed;
+
+  console.log("PayPal nonce in app.js: " + PayPalNonce);
+  console.log("PayPal payment data: ", PPPaymentData);
+  console.log("PayPal flow used: " + PPFlowUsed);
+
+  gateway.customer.create({
+    firstName: PPPaymentData.details.firstName,
+    lastName: PPPaymentData.details.lastName,
+    email: PPPaymentData.details.email,
+    //phone: phone,
+    paymentMethodNonce: PayPalNonce,
+    deviceData: DeviceDataString
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+    }
+    if (result.success == true) {
+      let cusResponseObject = result;
+      console.log(cusResponseObject);
+
+      gateway.subscription.create({
+        price: amountFromClient,
+        paymentMethodToken: result.customer.paypalAccounts[0].token,
+        // Have to have a plan when creating a sub so I created a general membership subscription.
+        planId: "g54r",
+        options: {
+          startImmediately: true,
+          paypal: {
+            description: "Hello world!"
+          }
+        }
+        //deviceData: DeviceDataString
+      }, (error, result) => {
+        if (error) {
+          console.error(error);
+        }
+
+        if (result.success == true) {
+          console.log("Successful transaction status: " + result.subscription.transactions[0].status);
+          console.log("Transaction ID: ", result.subscription.transactions[0].id);
+          res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "It's Halloween. Everyone's entitled to one good scare."});
+        }
+        // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
+        else {
+          if (result.transaction.status == "processor_declined") {
+            console.log("Declined transaction status: " + result.transaction.status);
+            console.log("The declined transaction: ", result.transaction.id);
+            res.render('processordeclined', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
+          }
+          else {
+            console.log("Failed transaction status: " + result.transaction.status);
+            console.log("The failed transaction: ", result.transaction.id);
+            res.render('failed', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "The call is coming from inside the house!"});
+          }
+        }
+      });
+    }
+    else {
+      res.json(result);
+    };
+  });
+});
+
 app.get('/testing', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
     res.render('testing', {
