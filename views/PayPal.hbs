@@ -320,7 +320,17 @@ braintree.client.create({
               PPPaymentData.value = JSON.stringify(payload);
               PPFlowUsed.value = "checkoutwithvault";
               console.log("Flow used: " + PPFlowUsed.value);
-              form.submit();
+
+
+              console.log("Form action in checkout flow: " + form.action);
+              // The checkout flow does not work with subscriptions. Throwing an error if the user tries to create a sub with this flow.
+              if (form.action == "http://localhost:3000/paypal-transaction-with-nonce") {
+                form.submit();
+              }
+              else {
+                alert("Subscriptions cannot be generated using a nonce from the checkout with vault flow.");
+                return;
+              }
             });
         },
 
