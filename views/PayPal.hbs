@@ -94,7 +94,7 @@ function inputValidation() {
   // Making sure the input is actually a number. The second condition is somewat redundant because the field is required, but just in case.
   if (isNaN(amountInputted) || amountInputted == "") {
     console.log("Amount field value: " + amountInputted);
-    alert("Please enter a number.");
+    alert("Please enter a valid number.");
     return false;
   }
   // Making sure the number is positive and not 0.
@@ -158,28 +158,33 @@ braintree.client.create({
           });
         },
 
-        /*onShippingChange: function (data, actions) {
-          // Perform some validation or calculation logic on 'data'
-
+        // Triggered when the user changes their selected shipping address in the PayPal pop-up.
+        // The below code basically just checks if the country is outside of the US and adds a $20 shipping charge if so.
+        onShippingChange: function (data, actions) {
           var internationalShippingCharge = 20.00;
           var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+          console.log("Data object: " + data.shipping_address.country_code);
 
-          if (data.shippingAddress.country !== 'US') {
+          // This was previously throwing an error because my path to the country code was incorrect.
+          if (data.shipping_address.country_code !== 'US') {
             // If the shipping address is not in the US, add the international shipping charge.
             amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
+            amountInForm = document.forms["paypal-form"]["amount"];
+            amountInForm.value+=internationalShippingCharge;
 
             return paypalCheckoutInstance.updatePayment({
               amount: amountFromForm,
               currency: 'USD',
-              paymentId: data.paymentId,
+              paymentId: data.paymentID,
             }).then(function() {
               return actions.resolve();
             });
           }
-
-          // If the shipping address is in the US, just resolve the promise without updating the payment.
-          return actions.resolve();
-        },*/
+          else {
+            // If the shipping address is in the US, just resolve the promise without updating the payment.
+            return actions.resolve();
+          }
+        },
 
         // Triggered when the user successfully completes the PayPal checkout.
         onApprove: function (data, actions) {
