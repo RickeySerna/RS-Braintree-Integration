@@ -70,6 +70,7 @@ var nonce = document.querySelector('#payment-method-nonce');
 var PPPaymentData = document.querySelector('#pp-payment-data');
 var deviceDataString = document.querySelector('#pp-device-data');
 var PPFlowUsed = document.querySelector('#pp-flow-used');
+var originalAmount;
 console.log("Client token in PayPal: " + clientToken);
 
 function inputValidation() {
@@ -137,6 +138,10 @@ braintree.client.create({
           var inputChecker = inputValidation();
           console.log("Input verified value: " + inputChecker);
 
+          // When the button is clicked, we fill the global var we created above with the original amount entered on the form.
+          // This is so that we can reset the amount back to this in onShippingChange if need be.
+          originalAmount = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+
           // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
           if (inputChecker == false) {
             return false;
@@ -164,13 +169,13 @@ braintree.client.create({
           var internationalShippingCharge = 20.00;
           var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
           console.log("Data object: " + data.shipping_address.country_code);
+          console.log("Original amount entered: " + originalAmount);
 
           // This was previously throwing an error because my path to the country code was incorrect.
           if (data.shipping_address.country_code !== 'US') {
             // If the shipping address is not in the US, add the international shipping charge.
             amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
-            amountInForm = document.forms["paypal-form"]["amount"];
-            amountInForm.value+=internationalShippingCharge;
+            document.forms["paypal-form"]["amount"].value = amountFromForm;
 
             return paypalCheckoutInstance.updatePayment({
               amount: amountFromForm,
@@ -181,8 +186,17 @@ braintree.client.create({
             });
           }
           else {
-            // If the shipping address is in the US, just resolve the promise without updating the payment.
-            return actions.resolve();
+            // If the shipping address is in the US, we switch the amount in the form back to the original amount which we saved above.
+            document.forms["paypal-form"]["amount"].value = originalAmount;
+
+            // We also revert the amount back here so that the customer sees the amount in the PayPal checkout form.
+            return paypalCheckoutInstance.updatePayment({
+              amount: originalAmount,
+              currency: 'USD',
+              paymentId: data.paymentID,
+            }).then(function() {
+              return actions.resolve();
+            });
           }
         },
 
