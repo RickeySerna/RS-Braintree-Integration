@@ -159,7 +159,17 @@ braintree.client.create({
             currency: 'USD',
             intent: 'capture',
             enableShippingAddress: true,
-            shippingAddressEditable: true
+            shippingAddressEditable: true/*,
+            lineItems: [
+              {
+                quantity: "1",
+                unitAmount: amountFromForm.toString(),
+                name: "Testing",
+                kind: "debit",
+                unitTaxAmount: "0",
+                description: "Description of Product 1"
+              }
+            ]*/
           });
         },
 
