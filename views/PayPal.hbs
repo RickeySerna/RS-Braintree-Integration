@@ -151,7 +151,10 @@ braintree.client.create({
         createOrder: function () {
           // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
           var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-          console.log(amountFromForm);
+          var unitAmountValue = amountFromForm.toString();
+          console.log("Amount passed: " + amountFromForm);
+          console.log("Unit amount passed: " + unitAmountValue);
+          console.log("Unit amount type: " + (typeof unitAmountValue));
           
           return paypalCheckoutInstance.createPayment({
             flow: 'checkout',
@@ -159,17 +162,17 @@ braintree.client.create({
             currency: 'USD',
             intent: 'capture',
             enableShippingAddress: true,
-            shippingAddressEditable: true/*,
+            shippingAddressEditable: true,
             lineItems: [
               {
                 quantity: "1",
-                unitAmount: amountFromForm.toString(),
+                unitAmount: unitAmountValue,
                 name: "Testing",
-                kind: "debit",
-                unitTaxAmount: "0",
+                //kind: "debit",
+                //unitTaxAmount: "0",
                 description: "Description of Product 1"
               }
-            ]*/
+            ]
           });
         },
 
