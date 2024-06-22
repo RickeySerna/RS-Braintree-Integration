@@ -157,22 +157,14 @@ braintree.client.create({
           console.log("Unit amount type: " + (typeof unitAmountValue));
           
           return paypalCheckoutInstance.createPayment({
-            flow: 'checkout',
+            flow: "checkout",
             amount: amountFromForm,
-            currency: 'USD',
-            intent: 'capture',
+            currency: "USD",
+            intent: "capture",
+            displayName: "Gardensound Inc.",
             enableShippingAddress: true,
             shippingAddressEditable: true,
-            lineItems: [
-              {
-                quantity: "1",
-                unitAmount: unitAmountValue,
-                name: "Testing",
-                //kind: "debit",
-                //unitTaxAmount: "0",
-                description: "Description of Product 1"
-              }
-            ]
+            landingPageType: "login"
           });
         },
 
