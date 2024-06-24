@@ -4,7 +4,7 @@
 
 <body>
   <div id="paypalDiv" style="display:none;">
-    <form id="paypal-form" action="/paypal-transaction-with-nonce" method="post">
+    <form id="paypal-form" action="/paypal-transaction" method="post">
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
@@ -81,7 +81,7 @@ function inputValidation() {
   // Checking if the subscription checkbox is checked. If it's not, we direct the customer to the transaction route.
   if (subscriptionCheckboxBool == false) {
     console.log("nope, it's not checked");
-    document.forms["paypal-form"].action = "/paypal-transaction-with-nonce";
+    document.forms["paypal-form"].action = "/paypal-transaction";
   }
   // If it is checked, we direct the customer to the subscription route.
   else {
@@ -221,7 +221,7 @@ braintree.client.create({
 
             console.log("Form action in checkout flow: " + form.action);
             // The checkout flow does not work with subscriptions. Throwing an error if the user tries to create a sub with this flow.
-            if (form.action == "http://localhost:3000/paypal-transaction-with-nonce") {
+            if (form.action == "http://localhost:3000/paypal-transaction") {
               form.submit();
             }
             else {
@@ -424,7 +424,7 @@ braintree.client.create({
 
               console.log("Form action in checkout flow: " + form.action);
               // The checkout flow does not work with subscriptions. Throwing an error if the user tries to create a sub with this flow.
-              if (form.action == "http://localhost:3000/paypal-transaction-with-nonce") {
+              if (form.action == "http://localhost:3000/paypal-transaction") {
                 form.submit();
               }
               else {

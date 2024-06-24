@@ -982,7 +982,7 @@ app.get('/PayPal', (req, res) => {
   });
 });
 
-app.post('/paypal-transaction-with-nonce', (req, res, next) => {
+app.post('/paypal-transaction', (req, res, next) => {
   const PayPalNonce = req.body.PayPalNonce;
   // I wanted to remove this Number function here since we do it on the client, but some reason that breaks everything if a long decimal is added. Weird.
   const amountFromClient = Number(req.body.amount).toFixed(2);
@@ -1207,7 +1207,6 @@ app.post('/paypal-subscription', (req, res, next) => {
     firstName: PPPaymentData.details.firstName,
     lastName: PPPaymentData.details.lastName,
     email: PPPaymentData.details.email,
-    //phone: phone,
     paymentMethodNonce: PayPalNonce,
     deviceData: DeviceDataString
   }, (error, result) => {
@@ -1226,7 +1225,7 @@ app.post('/paypal-subscription', (req, res, next) => {
         options: {
           startImmediately: true,
           paypal: {
-            description: "Hello world!"
+            description: "Buyer beware, you're in for a scare... thanks for subscribing to Gardensound!"
           }
         }
         //deviceData: DeviceDataString
