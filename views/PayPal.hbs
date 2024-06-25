@@ -8,12 +8,12 @@
 
       <div class="container">
         <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
-        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please select the PayPal button below to complete your purchase.</p>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please select a PayPal button below to complete your purchase.</p>
       </div>
 
       <div class="form-row justify-content-md-center">
         <div class = "col-md-2 mb-3">
-          <label class = "PPlabelStyle" for="subscriptionCheck">Create a subscription?</label>
+          <label class = "PPlabelStyle" for="subscriptionCheck">Create a Subscription</label>
           <input class="form-control PPinputClass" type="checkbox" id="subscriptionCheck" name="subscriptionCreator">
         </div>
         <div class = "col-md-2 mb-3">
@@ -24,17 +24,17 @@
 
       <div class="form-row justify-content-md-center">
         <div class="paypal-container d-flex flex-column mb-3 mx-2">
-          <label class="PPlabelStyle mb-2">Checkout Flow</label>
+          <label class="PPlabelStyle mb-2">Checkout</label>
           <div id="paypal-button"></div>
         </div>
 
         <div class="paypal-container d-flex flex-column mb-3 mx-2">
-          <label class="PPlabelStyle mb-2">Vault Flow</label>
+          <label class="PPlabelStyle mb-2">Vault</label>
           <div id="paypal-button2"></div>
         </div>
 
         <div class="paypal-container d-flex flex-column mb-3 mx-2">
-          <label class="PPlabelStyle mb-2">Checkout with Vault Flow</label>
+          <label class="PPlabelStyle mb-2">Checkout with Vault</label>
           <div id="paypal-button3"></div>
         </div>
       </div>
@@ -80,12 +80,10 @@ function inputValidation() {
 
   // Checking if the subscription checkbox is checked. If it's not, we direct the customer to the transaction route.
   if (subscriptionCheckboxBool == false) {
-    console.log("nope, it's not checked");
     document.forms["paypal-form"].action = "/paypal-transaction";
   }
   // If it is checked, we direct the customer to the subscription route.
   else {
-    console.log("yep, it's checked")
     document.forms["paypal-form"].action = "/paypal-subscription";
   }
 
@@ -159,10 +157,7 @@ braintree.client.create({
         createOrder: function () {
           // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
           var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-          var unitAmountValue = amountFromForm.toString();
           console.log("Amount passed: " + amountFromForm);
-          console.log("Unit amount passed: " + unitAmountValue);
-          console.log("Unit amount type: " + (typeof unitAmountValue));
           
           return paypalCheckoutInstance.createPayment({
             flow: "checkout",
@@ -242,9 +237,6 @@ braintree.client.create({
         }
 
       }).render('#paypal-button').then(function () {
-        // The PayPal button will be rendered in an html element with the ID
-        // 'paypal-button'. This function will be called when the PayPal button
-        // is set up and ready to be used
       });
 
       // Creating the button for the vault flow.
@@ -333,9 +325,6 @@ braintree.client.create({
         }
 
       }).render('#paypal-button2').then(function () {
-        // The PayPal button will be rendered in an html element with the ID
-        // 'paypal-button'. This function will be called when the PayPal button
-        // is set up and ready to be used
       });
 
       // Creating the button for the checkout with vault flow.
@@ -349,7 +338,7 @@ braintree.client.create({
 
           // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
           if (inputChecker == false) {
-            return false; // This will prevent the button from opening the PayPal window.
+            return false;
           }
 
           // The checkout flow does not work with subscriptions. Throwing an error if the user tries to create a sub with this flow.
@@ -444,9 +433,6 @@ braintree.client.create({
         }
 
       }).render('#paypal-button3').then(function () {
-      // The PayPal button will be rendered in an html element with the ID
-      // 'paypal-button'. This function will be called when the PayPal button
-      // is set up and ready to be used
     });
   });
 
