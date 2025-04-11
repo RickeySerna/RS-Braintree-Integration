@@ -133,6 +133,7 @@ braintree.client.create({
         fundingSource: paypal.FUNDING.PAYPAL,
 
         onClick: function() {
+          console.log("We are in the checkout flow!");
           var inputChecker = inputValidation();
           console.log("Input verified value: " + inputChecker);
 
@@ -171,39 +172,39 @@ braintree.client.create({
           });
         },
 
-        // Triggered when the user changes their selected shipping address in the PayPal pop-up.
-        // The below code basically just checks if the country is outside of the US and adds a $20 shipping charge if so.
-        onShippingChange: function (data, actions) {
+        onShippingAddressChange: function (data, actions) {
           var internationalShippingCharge = 20.00;
           var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-          console.log("Data object: " + data.shipping_address.country_code);
-          console.log("Original amount entered: " + originalAmount);
+          var newAmount = (parseFloat(amountFromForm) + internationalShippingCharge).toFixed(2);
 
-          // This was previously throwing an error because my path to the country code was incorrect.
-          if (data.shipping_address.country_code !== 'US') {
-            // If the shipping address is not in the US, add the international shipping charge.
-            amountFromForm = (Number(amountFromForm) + internationalShippingCharge).toFixed(2);
-            document.forms["paypal-form"]["amount"].value = amountFromForm;
+          console.log("Entire data object: ", data);
+          console.log("Data object: " + data.shippingAddress.countryCode);
+          console.log("Original amount entered: " + amountFromForm);
+          console.log("data.paymentID: " + data.paymentID);
 
-            return paypalCheckoutInstance.updatePayment({
-              amount: amountFromForm,
-              currency: 'USD',
-              paymentId: data.paymentID,
-            }).then(function() {
-              return actions.resolve();
-            });
-          }
-          else {
-            // If the shipping address is in the US, we switch the amount in the form back to the original amount which we saved above.
-            document.forms["paypal-form"]["amount"].value = originalAmount;
-
-            // We also revert the amount back here so that the customer sees the amount in the PayPal checkout form.
-            return paypalCheckoutInstance.updatePayment({
-              amount: originalAmount,
-              currency: 'USD',
-              paymentId: data.paymentID,
-            }).then(function() {
-              return actions.resolve();
+          if (data.shippingAddress.countryCode !== "US") {
+            return new Promise(function(resolve, reject) {
+              paypalCheckoutInstance.updatePayment(
+                {
+                  paymentId: data.orderID,
+                  amount: newAmount,
+                  currency: "USD"
+                },
+                function(err, response) {
+                  if (err) {
+                    console.error('Error updating payment:', err);
+                    reject(err);
+                  }
+                  else {
+                    console.log('Payment updated successfully:', response);
+                    resolve(response);
+                  }
+                }
+              );
+            }).then(function(response) {
+              console.log('Payment update completed:', response);
+            }).catch(function(err) {
+              console.error('Payment update failed:', err);
             });
           }
         },

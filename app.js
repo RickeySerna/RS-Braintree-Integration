@@ -46,6 +46,7 @@ app.use('*', function (req, res, next) {
 
 app.get('/', (req, res) => {
   gateway.clientToken.generate({}, (err, response) => {
+    console.log(response)
     res.render('index', {
       clientToken: response.clientToken,
       title: 'BOO!'
@@ -1265,27 +1266,26 @@ app.get('/testing', (req, res) => {
     res.render('testing', {
       clientToken: response.clientToken,
       title: "Frankenstein Testing Area"
-	  });
+    });
   });
 });
 
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
 
-  gateway.transaction.sale({
-    amount: "2000.00",
-    paymentMethodNonce: "fake-paypal-one-time-nonce",
-    options: {
-      submitForSettlement: true
-    }
+  gateway.paymentMethod.create({
+    customerId: "84537824771",
+    paymentMethodNonce: 'fake-android-pay-mastercard-nonce'
   }, (err, result) => {
+    if (err) {
+      return res.status(500).json(err);
+    }
     if (result.success) {
       res.json(result);
     } else {
-      res.json(err);
+      res.status(400).json(result);
     }
   });
-
 });
 
 app.get('/Analytics', (req, res) => {
