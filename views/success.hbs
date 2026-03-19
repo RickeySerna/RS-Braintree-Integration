@@ -5,7 +5,10 @@
   <body>
 
     <script>
-      //console.log("The transaction response object: ", JSON.parse('{{{transactionResponse}}}'));
+      console.log("The transaction response object: ", {{{json transactionResponse}}});
+      {{#if cusResponseObject}}
+        console.log("The customer response object: ", {{{json cusResponseObject}}});
+      {{/if}}
     </script>
     <div>
       <div class="jumbotron jumbotron-fluid" style="background-color: rgba(156, 29, 29, 0);">
@@ -27,6 +30,422 @@
             {{/if}}.
           </p>
           <p class="lead subtitle" style="color: #E66C2C;">Be on the lookout for your package within 3-5 business days!</p>
+          
+          <!-- Transaction Details Section -->
+          <div class="card mt-4" style="background-color: rgba(230, 108, 44, 0.1); border: 2px solid #E66C2C;">
+            <div class="card-header" style="background-color: #E66C2C; color: white;">
+              <h3 class="mb-0">Transaction Details</h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <h5 style="color: #E66C2C;">Transaction ID:</h5>
+                  <p style="font-family: monospace; font-size: 1.1em;">
+                    {{#if transactionResponse.transaction.id}}
+                      {{transactionResponse.transaction.id}}
+                    {{else}}
+                      {{transactionResponse.id}}
+                    {{/if}}
+                  </p>
+                  {{#if merchantId}}
+                    <a href="https://sandbox.braintreegateway.com/merchants/{{merchantId}}/transactions/{{#if transactionResponse.transaction.id}}{{transactionResponse.transaction.id}}{{else}}{{transactionResponse.id}}{{/if}}" 
+                       target="_blank" 
+                       class="btn btn-sm mb-2"
+                       style="background-color: #E66C2C; color: white; border-color: #E66C2C;">
+                      View Transaction →
+                    </a>
+                  {{/if}}
+                </div>
+                
+                <div class="col-md-6">
+                  <h5 style="color: #E66C2C;">Status:</h5>
+                  <p>
+                    <span class="badge badge-success" style="font-size: 1.1em; padding: 10px 20px; text-transform: uppercase;">
+                      {{#if transactionResponse.transaction.status}}
+                        {{transactionResponse.transaction.status}}
+                      {{else}}
+                        {{transactionResponse.status}}
+                      {{/if}}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <h5 style="color: #E66C2C;">Amount:</h5>
+                  <p style="font-size: 1.8em; font-weight: bold; color: #28a745; margin-bottom: 0;">
+                    ${{#if transactionResponse.transaction.amount}}{{transactionResponse.transaction.amount}}{{else}}{{transactionResponse.amount}}{{/if}}
+                  </p>
+                </div>
+                
+                <div class="col-md-6">
+                  <h5 style="color: #E66C2C;">Payment Method:</h5>
+                  <p style="font-size: 1.1em; text-transform: capitalize;">
+                    {{#if transactionResponse.transaction.paymentInstrumentType}}
+                      {{transactionResponse.transaction.paymentInstrumentType}}
+                    {{else}}
+                      {{transactionResponse.paymentInstrumentType}}
+                    {{/if}}
+                  </p>
+                </div>
+              </div>
+
+              <div class="row mt-4">
+                <div class="col-md-6">
+                  <h5 style="color: #E66C2C;">Payment Details:</h5>
+                  {{#if transactionResponse.transaction.creditCard}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">{{transactionResponse.transaction.creditCard.cardType}}</strong> ending in 
+                      <strong style="color: #fff;">{{transactionResponse.transaction.creditCard.last4}}</strong>
+                      <br>
+                      <small>Expires: {{transactionResponse.transaction.creditCard.expirationMonth}}/{{transactionResponse.transaction.creditCard.expirationYear}}</small>
+                    </p>
+                  {{else if transactionResponse.creditCard}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">{{transactionResponse.creditCard.cardType}}</strong> ending in 
+                      <strong style="color: #fff;">{{transactionResponse.creditCard.last4}}</strong>
+                      <br>
+                      <small>Expires: {{transactionResponse.creditCard.expirationMonth}}/{{transactionResponse.creditCard.expirationYear}}</small>
+                    </p>
+                  {{else if transactionResponse.transaction.paypal}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">PayPal</strong><br>
+                      {{transactionResponse.transaction.paypal.payerEmail}}
+                    </p>
+                  {{else if transactionResponse.paypal}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">PayPal</strong><br>
+                      {{transactionResponse.paypal.payerEmail}}
+                    </p>
+                  {{else if transactionResponse.transaction.venmo}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">Venmo</strong><br>
+                      @{{transactionResponse.transaction.venmo.username}}
+                    </p>
+                  {{else if transactionResponse.venmo}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">Venmo</strong><br>
+                      @{{transactionResponse.venmo.username}}
+                    </p>
+                  {{else if transactionResponse.transaction.applePayCard}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">Apple Pay</strong><br>
+                      {{transactionResponse.transaction.applePayCard.cardType}} ****{{transactionResponse.transaction.applePayCard.last4}}
+                    </p>
+                  {{else if transactionResponse.applePayCard}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">Apple Pay</strong><br>
+                      {{transactionResponse.applePayCard.cardType}} ****{{transactionResponse.applePayCard.last4}}
+                    </p>
+                  {{else if transactionResponse.transaction.androidPayCard}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">Google Pay</strong><br>
+                      {{transactionResponse.transaction.androidPayCard.cardType}} ****{{transactionResponse.transaction.androidPayCard.last4}}
+                    </p>
+                  {{else if transactionResponse.androidPayCard}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      <strong style="color: #fff;">Google Pay</strong><br>
+                      {{transactionResponse.androidPayCard.cardType}} ****{{transactionResponse.androidPayCard.last4}}
+                    </p>
+                  {{else}}
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                      Payment method processed successfully
+                    </p>
+                  {{/if}}
+                </div>
+
+                <div class="col-md-6">
+                  <h5 style="color: #E66C2C;">Transaction Time:</h5>
+                  <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                    {{#if transactionResponse.transaction.createdAt}}
+                      {{transactionResponse.transaction.createdAt}}
+                    {{else}}
+                      {{transactionResponse.createdAt}}
+                    {{/if}}
+                  </p>
+                </div>
+              </div>
+
+              {{#if transactionResponse.transaction.processorResponseText}}
+                <div class="row mt-3">
+                  <div class="col-12">
+                    <h5 style="color: #E66C2C;">Gateway Response:</h5>
+                    <p style="background-color: #e66d2c45; padding: 15px; border-left: 4px solid #E66C2C; border-radius: 4px; color: #ff8e51;">
+                      <strong style="color: #fff;">{{transactionResponse.transaction.processorResponseText}}</strong>
+                      <br>
+                      <span style="color: #ff8e51;">Response Code: {{transactionResponse.transaction.processorResponseCode}}</span>
+                    </p>
+                  </div>
+                </div>
+              {{else if transactionResponse.processorResponseText}}
+                <div class="row mt-3">
+                  <div class="col-12">
+                    <h5 style="color: #E66C2C;">Gateway Response:</h5>
+                    <p style="background-color: #e66d2c45; padding: 15px; border-left: 4px solid #E66C2C; border-radius: 4px; color: #ff8e51;">
+                      <strong style="color: #fff;">{{transactionResponse.processorResponseText}}</strong>
+                      <br>
+                      <span style="color: #ff8e51;">Response Code: {{transactionResponse.processorResponseCode}}</span>
+                    </p>
+                  </div>
+                </div>
+              {{/if}}
+
+              <!-- Merchant Account Info -->
+              {{#if transactionResponse.transaction.merchantAccountId}}
+                <div class="row mt-4">
+                  <div class="col-12">
+                    <h5 style="color: #E66C2C;">Merchant Account ID:</h5>
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; font-family: monospace; color: #ff8e51;">
+                      {{transactionResponse.transaction.merchantAccountId}}
+                    </p>
+                  </div>
+                </div>
+              {{else if transactionResponse.merchantAccountId}}
+                <div class="row mt-4">
+                  <div class="col-12">
+                    <h5 style="color: #E66C2C;">Merchant Account ID:</h5>
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; font-family: monospace; color: #ff8e51;">
+                      {{transactionResponse.merchantAccountId}}
+                    </p>
+                  </div>
+                </div>
+              {{/if}}
+
+              <!-- AVS and CVV Results for Credit Cards -->
+              {{#if transactionResponse.transaction.creditCard}}
+                {{#if transactionResponse.transaction.creditCard.cardholderName}}
+                  <div class="row mt-4">
+                    <div class="col-md-6">
+                      <h5 style="color: #E66C2C;">AVS Result:</h5>
+                      <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        {{#if transactionResponse.transaction.avsPostalCodeResponseCode}}
+                          Postal: <strong style="color: #fff;">{{transactionResponse.transaction.avsPostalCodeResponseCode}}</strong><br>
+                        {{/if}}
+                        {{#if transactionResponse.transaction.avsStreetAddressResponseCode}}
+                          Street: <strong style="color: #fff;">{{transactionResponse.transaction.avsStreetAddressResponseCode}}</strong>
+                        {{/if}}
+                        {{#unless transactionResponse.transaction.avsPostalCodeResponseCode}}
+                          {{#unless transactionResponse.transaction.avsStreetAddressResponseCode}}
+                            Not checked
+                          {{/unless}}
+                        {{/unless}}
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <h5 style="color: #E66C2C;">CVV Result:</h5>
+                      <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        {{#if transactionResponse.transaction.cvvResponseCode}}
+                          <strong style="color: #fff;">{{transactionResponse.transaction.cvvResponseCode}}</strong>
+                        {{else}}
+                          Not checked
+                        {{/if}}
+                      </p>
+                    </div>
+                  </div>
+                {{/if}}
+              {{else if transactionResponse.creditCard}}
+                {{#if transactionResponse.creditCard.cardholderName}}
+                  <div class="row mt-4">
+                    <div class="col-md-6">
+                      <h5 style="color: #E66C2C;">AVS Result:</h5>
+                      <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        {{#if transactionResponse.avsPostalCodeResponseCode}}
+                          Postal: <strong style="color: #fff;">{{transactionResponse.avsPostalCodeResponseCode}}</strong><br>
+                        {{/if}}
+                        {{#if transactionResponse.avsStreetAddressResponseCode}}
+                          Street: <strong style="color: #fff;">{{transactionResponse.avsStreetAddressResponseCode}}</strong>
+                        {{/if}}
+                        {{#unless transactionResponse.avsPostalCodeResponseCode}}
+                          {{#unless transactionResponse.avsStreetAddressResponseCode}}
+                            Not checked
+                          {{/unless}}
+                        {{/unless}}
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <h5 style="color: #E66C2C;">CVV Result:</h5>
+                      <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        {{#if transactionResponse.cvvResponseCode}}
+                          <strong style="color: #fff;">{{transactionResponse.cvvResponseCode}}</strong>
+                        {{else}}
+                          Not checked
+                        {{/if}}
+                      </p>
+                    </div>
+                  </div>
+                {{/if}}
+              {{/if}}
+
+              <!-- Risk Data if available -->
+              {{#if transactionResponse.transaction.riskData}}
+                {{#if transactionResponse.transaction.riskData.decision}}
+                  <div class="row mt-4">
+                    <div class="col-12">
+                      <h5 style="color: #E66C2C;">Risk Evaluation:</h5>
+                      <p style="background-color: #e66d2c45; padding: 15px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        <strong style="color: #fff;">Decision:</strong> 
+                        {{#if (eq transactionResponse.transaction.riskData.decision "Not Evaluated")}}
+                          <span class="badge" style="background-color: #6c757d;">{{transactionResponse.transaction.riskData.decision}}</span>
+                        {{else if (eq transactionResponse.transaction.riskData.decision "Approve")}}
+                          <span class="badge" style="background-color: #28a745;">{{transactionResponse.transaction.riskData.decision}}</span>
+                        {{else if (eq transactionResponse.transaction.riskData.decision "Review")}}
+                          <span class="badge" style="background-color: #ffc107; color: #000;">{{transactionResponse.transaction.riskData.decision}}</span>
+                        {{else if (eq transactionResponse.transaction.riskData.decision "Decline")}}
+                          <span class="badge" style="background-color: #dc3545;">{{transactionResponse.transaction.riskData.decision}}</span>
+                        {{else}}
+                          <span class="badge" style="background-color: #881EE4;">{{transactionResponse.transaction.riskData.decision}}</span>
+                        {{/if}}
+                        {{#if transactionResponse.transaction.riskData.id}}
+                          <br><small>Risk ID: {{transactionResponse.transaction.riskData.id}}</small>
+                        {{/if}}
+                      </p>
+                    </div>
+                  </div>
+                {{/if}}
+              {{else if transactionResponse.riskData}}
+                {{#if transactionResponse.riskData.decision}}
+                  <div class="row mt-4">
+                    <div class="col-12">
+                      <h5 style="color: #E66C2C;">Risk Evaluation:</h5>
+                      <p style="background-color: #e66d2c45; padding: 15px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        <strong style="color: #fff;">Decision:</strong> 
+                        {{#if (eq transactionResponse.riskData.decision "Not Evaluated")}}
+                          <span class="badge" style="background-color: #6c757d;">{{transactionResponse.riskData.decision}}</span>
+                        {{else if (eq transactionResponse.riskData.decision "Approve")}}
+                          <span class="badge" style="background-color: #28a745;">{{transactionResponse.riskData.decision}}</span>
+                        {{else if (eq transactionResponse.riskData.decision "Review")}}
+                          <span class="badge" style="background-color: #ffc107; color: #000;">{{transactionResponse.riskData.decision}}</span>
+                        {{else if (eq transactionResponse.riskData.decision "Decline")}}
+                          <span class="badge" style="background-color: #dc3545;">{{transactionResponse.riskData.decision}}</span>
+                        {{else}}
+                          <span class="badge" style="background-color: #881EE4;">{{transactionResponse.riskData.decision}}</span>
+                        {{/if}}
+                        {{#if transactionResponse.riskData.id}}
+                          <br><small>Risk ID: {{transactionResponse.riskData.id}}</small>
+                        {{/if}}
+                      </p>
+                    </div>
+                  </div>
+                {{/if}}
+              {{/if}}
+
+              <!-- Customer Info if available -->
+              {{#if cusResponseObject}}
+                <div class="row mt-4">
+                  <div class="col-12">
+                    <h5 style="color: #E66C2C;">Customer ID:</h5>
+                    <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; font-family: monospace; color: #ff8e51;">
+                      {{cusResponseObject.customer.id}}
+                      {{#if merchantId}}
+                        <a href="https://sandbox.braintreegateway.com/merchants/{{merchantId}}/customers/{{cusResponseObject.customer.id}}" 
+                           target="_blank" 
+                           class="btn btn-sm ml-2"
+                           style="background-color: #E66C2C; color: white; border-color: #E66C2C;">
+                          View Customer →
+                        </a>
+                      {{/if}}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Payment Method Token if available -->
+                {{#if cusResponseObject.customer.paymentMethods}}
+                  {{#if cusResponseObject.customer.paymentMethods.[0]}}
+                    {{#if cusResponseObject.customer.paymentMethods.[0].token}}
+                      <div class="row mt-3">
+                        <div class="col-12">
+                          <h5 style="color: #E66C2C;">Payment Method Token:</h5>
+                          <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; font-family: monospace; color: #ff8e51;">
+                            {{cusResponseObject.customer.paymentMethods.[0].token}}
+                            {{#if merchantId}}
+                              <a href="https://sandbox.braintreegateway.com/merchants/{{merchantId}}/payment_methods/any/{{cusResponseObject.customer.paymentMethods.[0].token}}" 
+                                 target="_blank" 
+                                 class="btn btn-sm ml-2"
+                                 style="background-color: #881EE4; color: white; border-color: #881EE4;">
+                                View Payment Method →
+                              </a>
+                            {{/if}}
+                          </p>
+                        </div>
+                      </div>
+                    {{/if}}
+                  {{/if}}
+                {{/if}}
+
+                <!-- Subscription ID if available -->
+                {{#if cusResponseObject.customer.paymentMethods}}
+                  {{#if cusResponseObject.customer.paymentMethods.[0]}}
+                    {{#if cusResponseObject.customer.paymentMethods.[0].subscriptions}}
+                      {{#if cusResponseObject.customer.paymentMethods.[0].subscriptions.[0]}}
+                        {{#if cusResponseObject.customer.paymentMethods.[0].subscriptions.[0].id}}
+                          <div class="row mt-3">
+                            <div class="col-12">
+                              <h5 style="color: #E66C2C;">Subscription ID:</h5>
+                              <p style="background-color: #e66d2c45; padding: 12px; border-radius: 4px; border: 1px solid #E66C2C; font-family: monospace; color: #ff8e51;">
+                                {{cusResponseObject.customer.paymentMethods.[0].subscriptions.[0].id}}
+                                {{#if merchantId}}
+                                  <a href="https://sandbox.braintreegateway.com/merchants/{{merchantId}}/subscriptions/{{cusResponseObject.customer.paymentMethods.[0].subscriptions.[0].id}}" 
+                                     target="_blank" 
+                                     class="btn btn-sm ml-2"
+                                     style="background-color: #881EE4; color: white; border-color: #881EE4;">
+                                    View Subscription →
+                                  </a>
+                                {{/if}}
+                              </p>
+                            </div>
+                          </div>
+                        {{/if}}
+                      {{/if}}
+                    {{/if}}
+                  {{/if}}
+                {{/if}}
+              {{/if}}
+
+              <!-- 3D Secure Info if available -->
+              {{#if transactionResponse.transaction.threeDSecureInfo}}
+                {{#if transactionResponse.transaction.threeDSecureInfo.status}}
+                  <div class="row mt-4">
+                    <div class="col-12">
+                      <h5 style="color: #E66C2C;">3D Secure Authentication:</h5>
+                      <p style="background-color: #e66d2c45; padding: 15px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        <strong style="color: #fff;">Status:</strong> <span class="badge badge-info" style="background-color: #881EE4;">{{transactionResponse.transaction.threeDSecureInfo.status}}</span>
+                        {{#if transactionResponse.transaction.threeDSecureInfo.liability_shifted}}
+                          <br><strong style="color: #fff;">Liability Shifted:</strong> <span class="badge badge-success" style="background-color: #28a745;">Yes</span>
+                        {{/if}}
+                      </p>
+                    </div>
+                  </div>
+                {{/if}}
+              {{else if transactionResponse.threeDSecureInfo}}
+                {{#if transactionResponse.threeDSecureInfo.status}}
+                  <div class="row mt-4">
+                    <div class="col-12">
+                      <h5 style="color: #E66C2C;">3D Secure Authentication:</h5>
+                      <p style="background-color: #e66d2c45; padding: 15px; border-radius: 4px; border: 1px solid #E66C2C; color: #ff8e51;">
+                        <strong style="color: #fff;">Status:</strong> <span class="badge badge-info" style="background-color: #881EE4;">{{transactionResponse.threeDSecureInfo.status}}</span>
+                        {{#if transactionResponse.threeDSecureInfo.liability_shifted}}
+                          <br><strong style="color: #fff;">Liability Shifted:</strong> <span class="badge badge-success" style="background-color: #28a745;">Yes</span>
+                        {{/if}}
+                      </p>
+                    </div>
+                  </div>
+                {{/if}}
+              {{/if}}
+
+            </div>
+          </div>
+
+          <!-- Quick Action Links -->
+          <div class="mt-4 text-center">
+            <a href="/" class="btn btn-lg" style="background-color: #E66C2C; color: white; margin: 5px;">
+              Create Another Transaction
+            </a>
+            <a href="/recent-transactions" class="btn btn-lg btn-outline-secondary" style="margin: 5px;">
+              View All Transactions
+            </a>
+          </div>
+
         </div>
         <div class = "pumpkinDanceStyle"></div>
       </div>

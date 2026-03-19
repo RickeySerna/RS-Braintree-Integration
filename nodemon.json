@@ -1,0 +1,10 @@
+{
+  "verbose": true,
+  "watch": ["bin", "routes", "views", "app.js", "socketapi.js"],
+  "ext": "js,json,hbs",
+  "ignore": ["node_modules", "public"],
+  "events": {
+    "restart": "echo '\n🔄 Changes detected - Restarting server...\n'",
+    "start": "echo '\n✅ Server started successfully\n'"
+  }
+}

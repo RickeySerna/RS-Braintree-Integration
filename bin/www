@@ -12,6 +12,10 @@ var socketapi = require('../socketapi');
 var io = socketapi.io;
 var chalk = require('chalk');
 
+console.log(chalk.cyan('════════════════════════════════════════'));
+console.log(chalk.cyan('  Server Starting...'));
+console.log(chalk.cyan('════════════════════════════════════════'));
+
 // Creating variables for the HTTPS connection.
 const https = require('https');
 const fs = require('fs');

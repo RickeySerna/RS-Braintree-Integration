@@ -1,85 +1,94 @@
 <!DOCTYPE html>
+
 <head>
 </head>
 
 <body>
-  <form action="/transaction-with-token" id="hosted-fields-form" method="post"  name="checkoutForm">
-  <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
-    <div class="container">
-      <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
-      <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Enter your information below to complete payment.</p>
+  <form action="/transaction-with-token" id="hosted-fields-form" method="post" name="checkoutForm">
+    <div class="jumbotron jumbotron-fluid" style="background-color: rgba(255, 255, 255, 0);">
+      <div class="container">
+        <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Enter your information below to
+          complete payment.</p>
+      </div>
     </div>
-  </div>
 
-  <h5>Personal Information:</h5>
+    <h5>Personal Information:</h5>
     <div class="form-row">
       <div class="col-md-2 mb-3">
-        <label class = "labelStyle" for="firstName">First Name</label>
+        <label class="labelStyle" for="firstName">First Name</label>
         <input class="form-control inputClass" name="firstName" id="first-name" placeholder="First" required>
       </div>
 
       <div class="col-md-2 mb-3">
-        <label class = "labelStyle" for="lastName">Last Name</label>
+        <label class="labelStyle" for="lastName">Last Name</label>
         <input class="form-control inputClass" name="lastName" id="last-name" placeholder="Last" required>
       </div>
 
       <div class="col-md-4 mb-3">
-        <label class = "labelStyle" for="emailAddress">Email</label>
+        <label class="labelStyle" for="emailAddress">Email</label>
         <input class="form-control inputClass" name="email" id="email-address" placeholder="@.com">
       </div>
 
       <div class="col-md-4 mb-3">
-        <label class = "labelStyle" for="phoneNumber">Phone Number</label>
+        <label class="labelStyle" for="phoneNumber">Phone Number</label>
         <input class="form-control inputClass" name="phoneNumber" id="phone-number" placeholder="(555) 555-5555">
       </div>
     </div>
 
-    <h5 class = "h5Padding">Card Information:</h5>
-    <div class = "form-row">
-      <div class = "col-md-2 mb-3">
-        <label class = "labelStyle" for="Amount">Amount</label>
+    <h5 class="h5Padding">Card Information:</h5>
+    <div class="form-row">
+      <div class="col-md-2 mb-3">
+        <label class="labelStyle" for="Amount">Amount</label>
         <input class="form-control inputClass" name="amount" id="amount" placeholder="99.99" required>
       </div>
-      <div class = "col mb-3">
-        <label class = "labelStyle" for="card-number">Card Number</label>
+      <div class="col mb-3">
+        <label class="labelStyle" for="card-number">Card Number</label>
         <div class="form-control inputClass" id="card-number"></div>
       </div>
     </div>
-      
+
     <div class="form-row">
-      <div class = "col-md-1 mb-3">
-        <label class = "labelStyle" for="saveCardCheck">Save your card for future use?</label>
+      <div class="col-md-1 mb-3">
+        <label class="labelStyle" for="saveCardCheck">Save your card for future use?</label>
         <input class="form-control inputClass" type="checkbox" id="saveCardCheck" name="SaveCard" value="Save">
       </div>
-      <div class = "col-md-1 mb-3">
-        <label class = "labelStyle" for="subscriptionCheck">Create a subscription?</label>
+      <div class="col-md-1 mb-3">
+        <label class="labelStyle" for="subscriptionCheck">Create a subscription?</label>
         <input class="form-control inputClass" type="checkbox" id="subscriptionCheck" name="subscriptionCreator">
       </div>
-      <div class = "col-md-5 mb-3">
-        <label class = "labelStyle" for="cvv">CVV</label>
+      <div class="col-md-5 mb-3">
+        <label class="labelStyle" for="cvv">CVV</label>
         <div class="form-control inputClass" id="cvv"></div>
       </div>
-      <div class = "col-md-5 mb-3">
-        <label class = "labelStyle" for="expiration-date">Expiration Date</label>
+      <div class="col-md-5 mb-3">
+        <label class="labelStyle" for="expiration-date">Expiration Date</label>
         <div class="form-control inputClass" id="expiration-date"></div>
       </div>
     </div>
 
     <div>
-      <input id ='payment-method-nonce' name = 'PaymentMethodNonce' type ='hidden' />
+      <input id='payment-method-nonce' name='PaymentMethodNonce' type='hidden' />
     </div>
 
     <div>
-      <input id ='device-data-string' name = 'DeviceDataString' type ='hidden' />
+      <input id='device-data-string' name='DeviceDataString' type='hidden' />
     </div>
-    
-    <div class = "submitButton">
-        <button id="submitButton" class="btn btn-outline-primary buttonStyle" type="submit" disabled>Pay</button>
+
+    <div class="submitButton">
+      <button id="submitButton" class="btn btn-outline-primary buttonStyle" type="submit" disabled>Pay</button>
+    </div>
+
+    <!-- Debug div for displaying internal hosted fields info -->
+    <div id="debug-info"
+      style="margin-top: 30px; padding: 15px; background: #f0f0f0; border: 2px solid #333; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 400px; overflow-y: auto;">
+      <h4 style="margin-top: 0; font-family: Arial;">🔍 Debug Info from Hosted Fields</h4>
+      <div id="debug-content"></div>
     </div>
 
   </form>
 
-  
+
 </body>
 
 {{!-- <div id="checkout-message" name="checkoutMessage"></div> --}}
@@ -96,6 +105,53 @@
 
   console.log("Client token: " + clientToken);
 
+  // Get the debug div for displaying iframe data
+  var debugDiv = document.getElementById('debug-content');
+
+  function addDebugLine(text, style) {
+    var line = document.createElement('div');
+    line.textContent = text;
+    line.style.marginBottom = '5px';
+    line.style.borderBottom = '1px solid #ccc';
+    line.style.paddingBottom = '5px';
+    if (style) {
+      line.style.cssText += style;
+    }
+    debugDiv.appendChild(line);
+  }
+
+  // Listen for postMessage debug events from iframes
+  window.addEventListener('message', function (event) {
+    if (event.data && event.data.type === 'hostedFields:debug') {
+      addDebugLine(event.data.message, 'color: #0066cc;');
+    }
+  });
+
+  // Check if iframes are being created after a short delay
+  setTimeout(function () {
+    var iframes = document.querySelectorAll('iframe[name^="braintree-"]');
+    console.log("Number of Braintree iframes found:", iframes.length);
+    if (iframes.length > 0) {
+      console.log("First iframe src:", iframes[0].src);
+
+      // Try to access iframe content to check for errors
+      try {
+        var iframeDoc = iframes[0].contentDocument || iframes[0].contentWindow.document;
+        if (iframeDoc) {
+          console.log("Iframe document accessible");
+          console.log("Iframe has braintree object:", typeof iframeDoc.defaultView.braintree);
+        }
+      } catch (e) {
+        console.log("Cannot access iframe (CORS):", e.message);
+      }
+
+      addDebugLine("⚠️ Found " + iframes.length + " iframe(s) but no messages received from them", "color: orange; font-weight: bold;");
+      addDebugLine("Check browser console for iframe src and details", "color: orange;");
+    } else {
+      addDebugLine("❌ No Braintree iframes found on page!", "color: red; font-weight: bold;");
+    }
+  }, 3000);
+
   // Creating a form validation to catch any bad input
   function inputValidation() {
     let numberInputted = document.forms["checkoutForm"]["amount"].value;
@@ -106,7 +162,7 @@
     // Found this email regex on Stack Overflow. Seems to work well!
     let reg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/;
 
-    console.log("Checkbox value: " + saveCardCheckboxBool); 
+    console.log("Checkbox value: " + saveCardCheckboxBool);
     console.log("Email value: " + emailInputted);
 
     // Giving the customer the option to save their card or not. If checked, the form is sent to the usual /transaction location. If not, changing the destination of the form to a POST that just uses the nonce in a sale call directly.
@@ -172,6 +228,12 @@
       return;
     }
 
+    // Get gateway configuration
+    var config = clientInstance.getConfiguration();
+    var creditCards = config.gatewayConfiguration.creditCards;
+
+    console.log("Gateway supported cards:", creditCards.supportedCardTypes);
+
     braintree.dataCollector.create({
       client: clientInstance
     }, function (err, dataCollectorInstance) {
@@ -209,7 +271,14 @@
       fields: {
         number: {
           container: '#card-number',
-          placeholder: '4111 1111 1111 1111'
+          placeholder: '4111 1111 1111 1111',
+          /*supportedCardBrands: {
+            visa: false,
+            americanexpress: false,
+            discover: false,
+            jcb: false,
+            mastercard: false,
+          }*/
         },
         cvv: {
           container: '#cvv',
@@ -225,6 +294,9 @@
         console.error(hostedFieldsErr);
         return;
       }
+
+      // Try to inspect the hosted fields instance
+      console.log("Hosted Fields instance:", instance);
 
       // Once the fields are initialized enable the submit button
       button.removeAttribute("disabled");
@@ -263,33 +335,33 @@
       }, false);
     });
   });
-/*
-        $.ajax({
-          type: 'POST',
-          url: '/checkout',
-          data: {'paymentMethodNonce': payload.nonce}
-        }).done(function(result) {
-          // Since the following code will overwrite the contents of
-          // your page with a success or error message, first teardown
-          // the Hosted Fields form to remove any extra event listeners
-          // and iframes that the Braintree SDK added to your page
-          instance.teardown(function (teardownErr) {
-            if (teardownErr) {
-              console.error('Could not tear down the Hosted Fields form!');
+  /*
+          $.ajax({
+            type: 'POST',
+            url: '/checkout',
+            data: {'paymentMethodNonce': payload.nonce}
+          }).done(function(result) {
+            // Since the following code will overwrite the contents of
+            // your page with a success or error message, first teardown
+            // the Hosted Fields form to remove any extra event listeners
+            // and iframes that the Braintree SDK added to your page
+            instance.teardown(function (teardownErr) {
+              if (teardownErr) {
+                console.error('Could not tear down the Hosted Fields form!');
+              } else {
+                console.info('Hosted Fields form has been torn down!');
+                // Remove the 'Submit payment' button
+                $('#hosted-fields-form').remove();
+              }
+            });
+
+            if (result.success) {
+              $('#checkout-message').html('<h1>Success!</h1><p>Your payment was successful.</p><p>Refresh to make another transaction.</p>');
             } else {
-              console.info('Hosted Fields form has been torn down!');
-              // Remove the 'Submit payment' button
-              $('#hosted-fields-form').remove();
+              $('#checkout-message').html('<h1>Error</h1><p>Check your console.</p>');
             }
           });
-
-          if (result.success) {
-            $('#checkout-message').html('<h1>Success!</h1><p>Your payment was successful.</p><p>Refresh to make another transaction.</p>');
-          } else {
-            $('#checkout-message').html('<h1>Error</h1><p>Check your console.</p>');
-          }
         });
-      });
-    }, false);
-  }); */
+      }, false);
+    }); */
 </script>

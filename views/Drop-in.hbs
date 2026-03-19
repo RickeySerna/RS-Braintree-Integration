@@ -1,0 +1,249 @@
+<head></head>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+  <div class="container">
+    <div class="row mt-5">
+      <div class="col-md-8 offset-md-2">
+        <h1 class="display-4 text-center" style="color: #E66C2C;">Drop-in UI Payment</h1>
+        <p class="lead text-center" style="color: #E66C2C;">Complete your purchase using our secure Drop-in payment form</p>
+        
+        <div class="card mt-4">
+          <div class="card-body">
+            <form id="drop-in-form" action="/dropin-transaction" method="post">
+              
+              <div class="form-group">
+                <label for="amount">Amount</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">$</span>
+                  </div>
+                  <input type="text" class="form-control" id="amount" name="amount" placeholder="10.00" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Payment Method</label>
+                <div id="dropin-container"></div>
+              </div>
+
+              <div class="text-center mt-4">
+                <button id="submit-button" type="submit" class="btn btn-primary btn-lg" style="background-color: #E66C2C; border-color: #E66C2C;">
+                  <span id="button-text">Pay Now</span>
+                  <span id="button-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
+              </div>
+
+              <!-- Hidden input for the nonce -->
+              <input type="hidden" id="payment-method-nonce" name="payment_method_nonce">
+              
+              <!-- Hidden input for device data -->
+              <input type="hidden" id="device-data" name="device_data">
+
+            </form>
+          </div>
+        </div>
+
+        <div class="alert alert-info mt-3" role="alert">
+          <strong>Note:</strong> This page must be accessed via HTTPS for Apple Pay to work. Visit: <a href="https://localhost:8000/Drop-in">https://localhost:8000/Drop-in</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</body>
+
+<script src="https://js.braintreegateway.com/web/dropin/1.43.0/js/dropin.min.js"></script>
+
+<script>
+var clientToken = '{{{clientToken}}}';
+var form = document.querySelector('#drop-in-form');
+var submitButton = document.querySelector('#submit-button');
+var buttonText = document.querySelector('#button-text');
+var buttonSpinner = document.querySelector('#button-spinner');
+var deviceDataInput = document.querySelector('#device-data');
+var nonceInput = document.querySelector('#payment-method-nonce');
+
+console.log("Client token in Drop-in: " + clientToken);
+
+// Check if braintree and dropin are loaded
+if (typeof braintree === 'undefined') {
+  console.error('Braintree client library not loaded');
+  alert('Payment system failed to load. Please refresh the page.');
+}
+
+if (typeof braintree !== 'undefined' && typeof braintree.dropin === 'undefined') {
+  console.error('Braintree Drop-in library not loaded');
+  alert('Payment form failed to load. Please refresh the page.');
+}
+
+// Input validation function
+function inputValidation() {
+  let amountInputted = document.getElementById('amount').value;
+
+  if (isNaN(amountInputted) || amountInputted == "") {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a valid number.");
+    return false;
+  }
+  
+  if (((Number(amountInputted) * -1) > 0) || (Number(amountInputted) == 0)) {
+    console.log("Amount field value: " + amountInputted);
+    alert("Please enter a positive number.");
+    return false;
+  }
+  
+  return true;
+}
+
+// Get the amount for Apple Pay
+var amountInput = document.getElementById('amount');
+var currentAmount = amountInput.value || '1.00';
+
+// Create Drop-in UI with Apple Pay configuration
+braintree.dropin.create({
+  authorization: clientToken,
+  container: '#dropin-container',
+  locale: 'en_US',
+  dataCollector: {
+    kount: true
+  },
+    applePay: {
+      displayName: "AttractWell",
+      paymentRequest: {
+        countryCode: 'US',
+        currencyCode: 'USD',
+        merchantCapabilities: ['supports3DS'],
+        supportedNetworks: ['visa', 'masterCard', 'amex', 'discover'],
+        total: {
+          label: "AttractWell",
+          amount: currentAmount
+        },
+        requiredBillingContactFields: ["postalAddress"]
+      }
+    },
+    card: {
+      cardholderName: {
+        required: true
+      },
+      overrides: {
+        fields: {
+          cvv: {
+            placeholder: 'XXX'
+          }
+        }
+      }
+    },
+    paypal: {
+      flow: 'vault',
+      buttonStyle: {
+        color: 'blue',
+        shape: 'rect',
+        size: 'medium'
+      }
+    },
+    venmo: {
+      allowDesktop: true,
+      allowDesktopWebLogin: true
+    },
+    googlePay: {
+      merchantId: 'merchant-id-from-google',
+      googlePayVersion: 2,
+      transactionInfo: {
+        totalPriceStatus: 'FINAL',
+        totalPrice: currentAmount,
+        currencyCode: 'USD'
+      },
+      allowedPaymentMethods: [{
+        type: 'CARD',
+        parameters: {
+          billingAddressRequired: true,
+          billingAddressParameters: {
+            format: 'FULL'
+          }
+        }
+      }]
+    }
+  }, function (createErr, dropinInstance) {
+    if (createErr) {
+      console.error('Error creating Drop-in:', createErr);
+      alert('Error loading payment form. Please refresh the page.');
+      return;
+    }
+
+    console.log('Drop-in UI created successfully');
+
+    // Handle form submission
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      // Validate input
+      if (!inputValidation()) {
+        return;
+      }
+
+      // Disable button and show spinner
+      submitButton.disabled = true;
+      buttonText.classList.add('d-none');
+      buttonSpinner.classList.remove('d-none');
+
+      // Request payment method from Drop-in
+      dropinInstance.requestPaymentMethod(function (requestPaymentMethodErr, payload) {
+        if (requestPaymentMethodErr) {
+          console.error('Error requesting payment method:', requestPaymentMethodErr);
+          
+          // Re-enable button
+          submitButton.disabled = false;
+          buttonText.classList.remove('d-none');
+          buttonSpinner.classList.add('d-none');
+          
+          if (requestPaymentMethodErr.code !== 'DROPIN_CUSTOMER_CANCELED') {
+            alert('Error processing payment. Please try again.');
+          }
+          return;
+        }
+
+        // Payment method nonce obtained successfully
+        console.log('Payment method nonce:', payload.nonce);
+        console.log('Payment method type:', payload.type);
+        console.log('Full payload:', payload);
+
+        // Set the nonce in hidden input
+        nonceInput.value = payload.nonce;
+        
+        // Set device data if available
+        if (payload.deviceData) {
+          deviceDataInput.value = payload.deviceData;
+        }
+
+        // Submit the form
+        form.submit();
+      });
+    });
+  });
+
+</script>
+
+<style>
+  body {
+    background-color: #f8f9fa;
+  }
+  
+  .card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  #dropin-container {
+    min-height: 200px;
+  }
+  
+  .braintree-heading {
+    display: none;
+  }
+  
+  .btn-primary:hover {
+    background-color: #d55a1f !important;
+    border-color: #d55a1f !important;
+  }
+</style>

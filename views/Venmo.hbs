@@ -1,0 +1,165 @@
+<head></head>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css"
+  integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+  <div id="venmoDiv" style="display:none;">
+    <form id="venmo-form" action="/venmo-transaction-with-nonce" method="post">
+
+      <div class="container">
+        <h1 class="display-4" style="color: #E66C2C;">TESTBABYThanks for choosing our business today!</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please pay with Venmo below!</p>
+      </div>
+
+      <div class="form-row justify-content-md-center">
+        <div class="col-md-2 mb-3">
+          <label class="labelStyle" for="Amount">Amount</label>
+          <input class="form-control inputClass" name="amount" id="amount" placeholder="99.99" required>
+        </div>
+      </div>
+
+      <div style="text-align:center">
+        <p class="lead subtitle" style="color: #E66C2C;">Press the Venmo button below to complete payment!</p>
+        <div id="venmo-button"></div>
+      </div>
+
+      <!-- Hidden input for the nonce. -->
+      <div>
+        <input type="hidden" id='payment-method-nonce' name="VenmoNonce">
+      </div>
+
+      <!-- Hidden input for the Venmo payment data object. -->
+      <div>
+        <input id='venmo-payment-data' name='VenmoPaymentData' type='hidden' />
+      </div>
+
+      <!-- Hidden input for the device data string. -->
+      <div>
+        <input id='venmo-device-data' name='VenmoDeviceData' type='hidden' />
+      </div>
+
+    </form>
+  </div>
+
+</body>
+
+<script>
+  var clientToken = '{{{clientToken}}}';
+  var form = document.querySelector('#venmo-form');
+  var nonce = document.querySelector('#payment-method-nonce');
+  var venmoPaymentData = document.querySelector('#venmo-payment-data');
+  var deviceDataString = document.querySelector('#venmo-device-data');
+  console.log("Client token in Venmo: " + clientToken);
+
+  function inputValidation() {
+    let amountInputted = document.forms["venmo-form"]["amount"].value;
+
+    // Making sure the input is actually a number. The second condition is somewhat redundant because the field is required, but just in case.
+    if (isNaN(amountInputted) || amountInputted == "") {
+      console.log("Amount field value: " + amountInputted);
+      alert("Please enter a number.");
+      return false;
+    }
+    // Making sure the number is positive and not 0.
+    else if (((Number(amountInputted) * -1) > 0) || (Number(amountInputted) * Number(amountInputted) == 0)) {
+      console.log("Amount field value: " + amountInputted);
+      alert("Please enter a positive number.");
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+
+  braintree.client.create({
+    authorization: clientToken
+  }, function (clientErr, clientInstance) {
+    if (clientErr) {
+      console.error('Error creating client:', clientErr);
+      return;
+    }
+
+    // Create Venmo instance
+    braintree.venmo.create({
+      client: clientInstance,
+      allowDesktop: true,
+      allowDesktopWebLogin: true,
+      mobileWebFallBack: true,
+      paymentMethodUsage: "single_use"
+    }, function (venmoErr, venmoInstance) {
+      if (venmoErr) {
+        console.error('Error creating venmoInstance:', venmoErr);
+        console.error('Error code:', venmoErr.code);
+        console.error('Error message:', venmoErr.message);
+        return;
+      }
+
+      console.log("Venmo instance created successfully!");
+
+      // Check if Venmo is supported
+      if (!venmoInstance.isBrowserSupported()) {
+        console.log('Browser does not support Venmo');
+        document.getElementById('venmoDiv').innerHTML = '<p style="color: red;">Venmo is not supported in this browser. Please use a mobile device or the Venmo app.</p>';
+        return;
+      }
+
+      console.log('Venmo is supported!');
+      document.getElementById("venmoDiv").style.display = "inline";
+
+      var venmoButton = document.getElementById('venmo-button');
+      venmoButton.innerHTML = '<button type="button" id="venmo-pay-button" style="background-color: #3D95CE; color: white; padding: 15px 32px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">Pay with Venmo</button>';
+      var button = document.getElementById('venmo-pay-button');
+
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+
+        var inputChecker = inputValidation();
+        console.log("Input verified value: " + inputChecker);
+        if (inputChecker === false) {
+          return;
+        }
+
+        button.setAttribute('disabled', 'disabled');
+
+        venmoInstance.tokenize({ processResultsDelay: 500 }).then(function (payload) {
+          console.log("Venmo nonce: " + payload.nonce);
+          console.log("Venmo payload: ", payload);
+          nonce.value = payload.nonce;
+          venmoPaymentData.value = JSON.stringify(payload);
+          form.submit();
+        }).catch(function (tokenizeErr) {
+          switch (tokenizeErr.code) {
+            case 'VENMO_APP_CANCELED':
+              console.log('User canceled Venmo app authorization');
+              alert('Venmo authorization was canceled');
+              break;
+            case 'VENMO_CANCELED':
+              console.log('User canceled Venmo flow');
+              alert('Venmo payment was canceled');
+              break;
+            default:
+              console.error('Error tokenizing Venmo:', tokenizeErr);
+              alert('Error processing Venmo payment. Please try again.');
+          }
+        }).then(function () {
+          button.removeAttribute('disabled');
+        });
+      });
+    });
+
+    // Creating the data collector instance to pass device data into Venmo txns.
+    braintree.dataCollector.create({
+      client: clientInstance
+    }, function (err, dataCollectorInstance) {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      var deviceData = dataCollectorInstance.deviceData;
+      console.log("Device data: ", deviceData);
+      deviceDataString.value = deviceData;
+    });
+  });
+
+</script>

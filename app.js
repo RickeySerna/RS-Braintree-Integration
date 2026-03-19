@@ -24,11 +24,21 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+// Register Handlebars helpers
+const hbs = require('hbs');
+hbs.registerHelper('eq', function(a, b) {
+  return a === b;
+});
+hbs.registerHelper('json', function(context) {
+  return JSON.stringify(context, null, 2);
+});
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/braintree-js', express.static('/Users/rserna/Documents/bt/braintree.js/dist/hosted/web'));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
@@ -45,7 +55,7 @@ app.use('*', function (req, res, next) {
 });
 
 app.get('/', (req, res) => {
-  gateway.clientToken.generate({}, (err, response) => {
+  gateway.clientToken.generate({ merchantAccountId: "gardensoundAUS2" }, (err, response) => {
     console.log(response)
     res.render('index', {
       clientToken: response.clientToken,
@@ -106,7 +116,7 @@ app.post('/transaction-with-token', (req, res, next) => {
 
         if (result.success == true) {
           console.log("Successful transaction status: " + result.transaction.status);
-          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "It's alive! IT'S ALIIIIIVE!!"});
+          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "It's alive! IT'S ALIIIIIVE!!"});
         }
         else {
           if (result.transaction.status == "processor_declined") {
@@ -158,7 +168,7 @@ app.post('/transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: "They're coming to get you, Barbara."});
+      res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "They're coming to get you, Barbara."});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
@@ -219,7 +229,7 @@ app.post('/subscription', (req, res, next) => {
         if (result.success == true) {
           console.log("Successful transaction status: " + result.subscription.transactions[0].status);
           console.log("Transaction ID: ", result.subscription.transactions[0].id);
-          res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "It's Halloween. Everyone's entitled to one good scare."});
+          res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "It's Halloween. Everyone's entitled to one good scare."});
         }
         // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
         else {
@@ -310,7 +320,7 @@ app.post('/3DS-transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: "Be afraid. Be very afraid."});
+      res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "Be afraid. Be very afraid."});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
@@ -339,7 +349,7 @@ app.post('/3DS-transaction-with-token', (req, res, next) => {
   const postCode = req.body.postalCode;
   const country = req.body.countryCode;
   const DeviceDataString = req.body.DeviceDataString;
-  
+
 
   console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, 3DS token checkout: " + DeviceDataString);
@@ -445,7 +455,7 @@ app.post("/3DS-subscription", (req, res, next) => {
   const postCode = req.body.postalCode;
   const country = req.body.countryCode;
   const DeviceDataString = req.body.DeviceDataString;
-  
+
 
   console.log("Nonce in the server, 3DS token checkout: " + PaymentMethodNonce);
   console.log("Device data string in server, 3DS token checkout: " + DeviceDataString);
@@ -516,11 +526,11 @@ app.post("/3DS-subscription", (req, res, next) => {
             if (error) {
               console.error(error);
             }
-          
+
             if (result.success == true) {
               console.log("Successful transaction status: " + result.subscription.transactions[0].status);
               console.log("Transaction ID: ", result.subscription.transactions[0].id);
-              res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "I realized that what was living behind that boy's eyes was purely and simply evil."});
+              res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "I realized that what was living behind that boy's eyes was purely and simply evil."});
             }
             // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
             else {
@@ -647,7 +657,7 @@ app.post('/apple-pay-transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: "Do you like scary movies?"});
+      res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "Do you like scary movies?"});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
@@ -723,7 +733,7 @@ app.post('/apple-pay-transaction-with-token', (req, res, next) => {
         console.log("Transaction status: " + result.transaction.status);
         if (result.success == true) {
           console.log("Successful transaction status: " + result.transaction.status);
-          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "Here's Johnny!"});
+          res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "Here's Johnny!"});
         } else {
           if (result.transaction.status == "processor_declined") {
             console.log("Declined transaction status: " + result.transaction.status);
@@ -750,6 +760,104 @@ app.get('/GooglePay', (req, res) => {
   });
 });
 
+app.get('/Venmo', (req, res) => {
+  gateway.clientToken.generate({}, (err, response) => {
+    res.render('Venmo', {
+      clientToken: response.clientToken,
+      title: 'Venmo'
+	  });
+  });
+});
+
+app.get('/Drop-in', (req, res) => {
+  gateway.clientToken.generate({}, (err, response) => {
+    res.render('Drop-in', {
+      clientToken: response.clientToken,
+      title: 'Drop-in UI'
+	  });
+  });
+});
+
+app.post('/dropin-transaction', (req, res, next) => {
+  const paymentMethodNonce = req.body.payment_method_nonce;
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  const deviceData = req.body.device_data;
+
+  console.log("Amount from Drop-in client: " + amountFromClient);
+  console.log("Drop-in nonce in the server: " + paymentMethodNonce);
+  console.log("Device data: " + deviceData);
+
+  // Create transaction
+  gateway.transaction.sale({
+    amount: amountFromClient,
+    paymentMethodNonce: paymentMethodNonce,
+    options: {
+      submitForSettlement: true
+    },
+    deviceData: deviceData
+  }, (error, result) => {
+    if (error) {
+      console.error("Transaction error: ", error);
+      res.render('failed', {transactionResponse: {error: error}, title: "Death by stereo!"});
+      return;
+    }
+
+    console.log("Transaction ID: " + result.transaction.id);
+
+    if (result.success) {
+      console.log("Successful transaction status: " + result.transaction.status);
+      res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "Come in, dispatch. Send. More. Paramedics."});
+    } else {
+      if (result.transaction.status == "processor_declined") {
+        console.log("Declined transaction status: " + result.transaction.status);
+        res.render('processordeclined', {transactionResponse: result, title: "Death by stereo!"});
+      } else {
+        console.log("Failed transaction status: " + result.transaction.status);
+        res.render('failed', {transactionResponse: result, title: "Death by stereo!"});
+      }
+    }
+  });
+});
+
+app.post('/venmo-transaction-with-nonce', (req, res, next) => {
+  const VenmoPaymentMethodNonce = req.body.VenmoNonce;
+  const amountFromClient = Number(req.body.amount).toFixed(2);
+  const DeviceDataString = req.body.VenmoDeviceData;
+  const VenmoPaymentData = JSON.parse(req.body.VenmoPaymentData);
+
+  console.log("Amount from Venmo client: " + amountFromClient);
+  console.log("Venmo nonce in the server: " + VenmoPaymentMethodNonce);
+  console.log("Venmo payment data: ", VenmoPaymentData);
+
+  const thisVenmoTransaction = gateway.transaction.sale({
+    amount: amountFromClient,
+    paymentMethodNonce: VenmoPaymentMethodNonce,
+    options: {
+      submitForSettlement: true
+    },
+    deviceData: DeviceDataString
+  }, (error, result) => {
+    if (error) {
+      console.error(error);
+      res.render('failed', {transactionResponse: {error: error}, title: "ch ch ch, ah ah ah..."});
+      return;
+    }
+    console.log("Transaction ID: " + result.transaction.id);
+    if (result.success) {
+      console.log("Successful transaction status: " + result.transaction.status);
+      res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "ch ch ch, ah ah ah..."});
+    } else {
+      if (result.transaction.status == "processor_declined") {
+        console.log("Declined transaction status: " + result.transaction.status);
+        res.render('processordeclined', {transactionResponse: result, title: "I can't, Billy. You already cut me too deep!"});
+      } else {
+        console.log("Failed transaction status: " + result.transaction.status);
+        res.render('failed', {transactionResponse: result, title: "I can't, Billy. You already cut me too deep!"});
+      }
+    }
+  });
+});
+
 app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
   const GPPaymentMethodNonce = req.body.GPPaymentMethodNonce;
   const amountFromClient = Number(req.body.amount).toFixed(2);
@@ -761,6 +869,8 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
   console.log("GP nonce in the server, nonce checkout: " + GPPaymentMethodNonce);
   // Making sure that the object was properly decoded.
   console.log("Address from payment data in server: " + GPPaymentData.paymentMethodData.info.billingAddress.address1);
+  console.log("Full GPPaymentData object in server: ", GPPaymentData);
+  console.log("GPPaymentData billingAddress object in server: ", GPPaymentData.paymentMethodData.info.billingAddress);
 
   const thisGooglePayTransaction = gateway.transaction.sale({
     amount: amountFromClient,
@@ -804,7 +914,7 @@ app.post('/google-pay-transaction-with-nonce', (req, res, next) => {
     console.log("Transaction ID: " + result.transaction.id);
     if (result.success) {
       console.log("Successful transaction status: " + result.transaction.status);
-      res.render('success', {transactionResponse: result, title: "Come in, dispatch. Send. More. Paramedics."});
+      res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "Come in dispatch. Send. More. Paramedics."});
     } else {
       if (result.transaction.status == "processor_declined") {
         console.log("Declined transaction status: " + result.transaction.status);
@@ -875,19 +985,19 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
             const BINGeneratedFromToken = response.paymentMethodNonce.details.bin;
             console.log("Nonce generated from token: " + nonceGeneratedFromToken);
             console.log("BIN generated from token: " + BINGeneratedFromToken);
-  
+
             // Using a function I defined in socketapi.js to send the nonce to 3D-Secure.hbs.
             // 3D-Secure.hbs has a socket open a listening for the event sendNonce() uses.
             // It'll receive the nonce, pass it into verifyCard(), then pass back the resulting 3DS-enriched nonce.
             console.log("Sending new nonce to client");
             io.sendNonce(nonceGeneratedFromToken, BINGeneratedFromToken);
-  
+
             // This is where we're receiving the new 3DS-enriched nonce from 3D-Secure.hbs.
             // returnNonce() returns a variable. That variable is a Promise which includes a socket to receive the nonce back from the client.
             // We use async/await here to allow the Promise to resolve and thus allow the nonce to actually populate the variable before it's returned here.
             let new3DSenrichedNonceFromClient = await io.returnNonce();
             console.log("Nonce from the second verifyCard() call, received from the client via a socket: " + new3DSenrichedNonceFromClient);
-  
+
             // Now we've got the nonce, let's create the transaction!
             gateway.transaction.sale({
               amount: amountFromClient,
@@ -911,7 +1021,7 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
               console.log("Transaction status: " + result.transaction.status);
               if (result.success == true) {
                 console.log("Successful transaction status: " + result.transaction.status);
-                res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "You've got red on you."});
+                res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "You've got red on you."});
               } else {
                 if (result.transaction.status == "processor_declined") {
                   console.log("Declined transaction status: " + result.transaction.status);
@@ -955,7 +1065,7 @@ app.post('/google-pay-transaction-with-token', (req, res, next) => {
           console.log("Transaction status: " + result.transaction.status);
           if (result.success == true) {
             console.log("Successful transaction status: " + result.transaction.status);
-            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "You've got red on you."});
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "You've got red on you."});
           } else {
             if (result.transaction.status == "processor_declined") {
               console.log("Declined transaction status: " + result.transaction.status);
@@ -1042,7 +1152,7 @@ app.post('/paypal-transaction', (req, res, next) => {
 
       if (result.success) {
         console.log("Successful transaction status: " + result.transaction.status);
-        res.render('success', {transactionResponse: result, title: "There is only one."});
+        res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "There is only one."});
       } else {
         if (result.transaction.status == "processor_declined") {
           console.log("Declined transaction status: " + result.transaction.status);
@@ -1107,10 +1217,10 @@ app.post('/paypal-transaction', (req, res, next) => {
           }
 
           console.log("Transaction ID: " + result.transaction.id);
-  
+
           if (result.success == true) {
             console.log("Successful transaction status: " + result.transaction.status);
-            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, title: "You're gonna need a bigger boat."});
+            res.render('success', {transactionResponse: result, cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "You're gonna need a bigger boat."});
           }
           else {
             if (result.transaction.status == "processor_declined") {
@@ -1178,7 +1288,7 @@ app.post('/paypal-transaction', (req, res, next) => {
 
       if (result.success) {
         console.log("Successful transaction status: " + result.transaction.status);
-        res.render('success', {transactionResponse: result, title: "We have such sights to show you!"});
+        res.render('success', {transactionResponse: result, merchantId: process.env.MERCHANT_ID, title: "We have such sights to show you!"});
       } else {
         if (result.transaction.status == "processor_declined") {
           console.log("Declined transaction status: " + result.transaction.status);
@@ -1238,7 +1348,7 @@ app.post('/paypal-subscription', (req, res, next) => {
         if (result.success == true) {
           console.log("Successful transaction status: " + result.subscription.transactions[0].status);
           console.log("Transaction ID: ", result.subscription.transactions[0].id);
-          res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, title: "What an excellent day for an exorcism."});
+          res.render('success', {transactionResponse: result.subscription.transactions[0], cusResponseObject: cusResponseObject, merchantId: process.env.MERCHANT_ID, title: "What an excellent day for an exorcism."});
         }
         // In the case of a decline or failure, the info is embedded almost exactly the same as with a transaction. So we just pass it as normal, no need to change the code in the result pages.
         else {
@@ -1272,20 +1382,17 @@ app.get('/testing', (req, res) => {
 
 app.post('/testing-result', (req, res, next) => {
   const DeviceDataString = req.body.DeviceDataString;
-
-  gateway.paymentMethod.create({
-    customerId: "84537824771",
-    paymentMethodNonce: 'fake-android-pay-mastercard-nonce'
-  }, (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
+  gateway.transaction.cloneTransaction(
+    "0hqvxfg7",
+    {
+        options: {
+            submitForSettlement: true
+        }
+    },
+    (err, result) => {
+      console.log("Result of clone transaction: ", result);
     }
-    if (result.success) {
-      res.json(result);
-    } else {
-      res.status(400).json(result);
-    }
-  });
+  );
 });
 
 app.get('/Analytics', (req, res) => {
@@ -1372,10 +1479,10 @@ app.get('/transactionDataForAnalytics', (req, res) => {
   let adjustedEndDate = new Date(`${endDate}T23:59:59Z`);
 
   // Now we add the time offset to the dates.
-  // So now, let's say the offset is 6 hours like above, transactions will be pulled starting from 6 AM UTC on XXX date which is 12 AM CST. 
+  // So now, let's say the offset is 6 hours like above, transactions will be pulled starting from 6 AM UTC on XXX date which is 12 AM CST.
   adjustedStartDate.setHours(adjustedStartDate.getHours() + timezoneOffset);
   adjustedEndDate.setHours(adjustedEndDate.getHours() + timezoneOffset);
-  
+
   // Now using toISOString() to turn these back into the YYYY-MM-DD format that the API call likes.
   adjustedStartDate = adjustedStartDate.toISOString();
   adjustedEndDate = adjustedEndDate.toISOString();
