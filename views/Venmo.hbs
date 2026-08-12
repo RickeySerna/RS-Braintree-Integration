@@ -80,18 +80,24 @@
       return;
     }
 
-    // Create Venmo instance
     braintree.venmo.create({
       client: clientInstance,
       allowDesktop: true,
-      allowDesktopWebLogin: true,
+      //allowDesktopWebLogin: true,
       mobileWebFallBack: true,
-      paymentMethodUsage: "single_use"
+      paymentMethodUsage: "multi_use",
+      totalAmount: "10.00",
+      requireManualReturn: false
     }, function (venmoErr, venmoInstance) {
       if (venmoErr) {
         console.error('Error creating venmoInstance:', venmoErr);
         console.error('Error code:', venmoErr.code);
         console.error('Error message:', venmoErr.message);
+        document.getElementById('venmoDiv').style.display = 'inline';
+        document.getElementById('venmoDiv').innerHTML =
+          '<p style="color: red; padding: 1rem;">Venmo create failed' +
+          (venmoErr.code ? ' (' + venmoErr.code + ')' : '') +
+          ': ' + (venmoErr.message || '') + '</p>';
         return;
       }
 
@@ -122,6 +128,7 @@
 
         button.setAttribute('disabled', 'disabled');
 
+        console.log("About to tokenize");
         venmoInstance.tokenize({ processResultsDelay: 500 }).then(function (payload) {
           console.log("Venmo nonce: " + payload.nonce);
           console.log("Venmo payload: ", payload);

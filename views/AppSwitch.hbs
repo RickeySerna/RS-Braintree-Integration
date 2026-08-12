@@ -1,0 +1,608 @@
+<head></head>
+
+<body>
+  <div class="container-fluid" style="padding: 20px;">
+
+    <div class="row">
+      <!-- LEFT COLUMN: Controls -->
+      <div class="col-md-5">
+        <h1 class="display-4" style="color: #E66C2C;">Venmo App Switch Test Suite</h1>
+        <p class="lead subtitle" style="color: #E66C2C;">Troubleshooting tool for Venmo App Switch behavior. Every step is logged below.</p>
+
+        <hr style="border-color: #E66C2C;">
+
+        <!-- Device / Environment Info -->
+        <div id="env-info" style="background: #1a1a2e; color: #0f0; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 11px; margin-bottom: 15px;">
+          <strong style="color: #E66C2C; font-size: 13px;">Environment</strong><br>
+          <span id="env-ua"></span><br>
+          <span id="env-platform"></span><br>
+          <span id="env-url"></span><br>
+          <span id="env-referrer"></span><br>
+          <span id="env-hash"></span><br>
+          <span id="env-search"></span>
+        </div>
+
+        <!-- Configuration Toggles -->
+        <div style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+          <h5 style="color: #E66C2C; margin-bottom: 12px;">venmo.create() Configuration</h5>
+
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="cfg-allowDesktop" checked>
+            <label class="form-check-label labelStyle" for="cfg-allowDesktop">allowDesktop</label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="cfg-allowDesktopWebLogin" checked>
+            <label class="form-check-label labelStyle" for="cfg-allowDesktopWebLogin">allowDesktopWebLogin</label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="cfg-mobileWebFallBack" checked>
+            <label class="form-check-label labelStyle" for="cfg-mobileWebFallBack">mobileWebFallBack</label>
+          </div>
+
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="cfg-requireManualReturn">
+            <label class="form-check-label labelStyle" for="cfg-requireManualReturn">requireManualReturn</label>
+          </div>
+
+          <div class="form-group mt-3 mb-2">
+            <label class="labelStyle" for="cfg-paymentMethodUsage">paymentMethodUsage</label>
+            <select class="form-control form-control-sm" id="cfg-paymentMethodUsage" style="max-width: 200px;">
+              <option value="multi_use">multi_use</option>
+              <option value="single_use">single_use</option>
+            </select>
+          </div>
+
+          <div class="form-group mb-2">
+            <label class="labelStyle" for="cfg-processResultsDelay">processResultsDelay (ms)</label>
+            <input class="form-control form-control-sm" type="number" id="cfg-processResultsDelay" value="500" style="max-width: 200px;">
+          </div>
+        </div>
+
+        <!-- Amount + Action Buttons -->
+        <div style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+          <h5 style="color: #E66C2C; margin-bottom: 12px;">Actions</h5>
+          <div class="form-group mb-3">
+            <label class="labelStyle" for="amount">Amount</label>
+            <input class="form-control inputClass" id="amount" placeholder="10.00" value="10.00" style="max-width: 200px;">
+          </div>
+          <button id="btn-initialize" class="btn btn-warning btn-sm mr-2" onclick="initializeVenmo()">1. Initialize Venmo</button>
+          <button id="btn-tokenize" class="btn btn-info btn-sm mr-2" onclick="triggerTokenize()" disabled>2. Tokenize (App Switch)</button>
+          <button id="btn-check-return" class="btn btn-success btn-sm mr-2" onclick="checkForReturn()">Check for Return</button>
+          <button id="btn-submit" class="btn btn-primary btn-sm" onclick="submitTransaction()" disabled>3. Submit Transaction</button>
+          <hr style="border-color: #555;">
+          <button class="btn btn-outline-danger btn-sm mr-2" onclick="clearLog()">Clear Log</button>
+          <button class="btn btn-outline-light btn-sm" onclick="copyLog()">Copy Log to Clipboard</button>
+        </div>
+
+        <!-- Hidden form for transaction submission -->
+        <form id="appswitch-form" action="/venmo-transaction-with-nonce" method="post" style="display:none;">
+          <input type="hidden" id="form-nonce" name="VenmoNonce">
+          <input type="hidden" id="form-amount" name="amount">
+          <input type="hidden" id="form-payment-data" name="VenmoPaymentData">
+          <input type="hidden" id="form-device-data" name="VenmoDeviceData">
+        </form>
+      </div>
+
+      <!-- RIGHT COLUMN: Log Panel -->
+      <div class="col-md-7">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h4 style="color: #E66C2C; margin: 0;">Live Log</h4>
+          <span id="log-count" style="color: #888; font-size: 12px;">0 entries</span>
+        </div>
+        <div id="log-panel" style="background: #0d0d0d; color: #0f0; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 11px; height: 75vh; overflow-y: auto; border: 2px solid #333; white-space: pre-wrap; word-wrap: break-word;">
+<span style="color: #E66C2C;">══════════════════════════════════════════════
+  VENMO APP SWITCH TEST SUITE - LOG START
+══════════════════════════════════════════════</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script>
+  var clientToken = '{{{clientToken}}}';
+  var clientInstance = null;
+  var venmoInstance = null;
+  var dataCollectorInstance = null;
+  var storedPayload = null;
+  var logEntryCount = 0;
+  var initTimestamp = Date.now();
+
+  // ═══════════════════════════════════════════
+  // LOGGING ENGINE
+  // ═══════════════════════════════════════════
+
+  function getTimestamp() {
+    var now = new Date();
+    var elapsed = ((Date.now() - initTimestamp) / 1000).toFixed(3);
+    return '[' + now.toLocaleTimeString('en-US', { hour12: false }) + '.' + String(now.getMilliseconds()).padStart(3, '0') + ' | +' + elapsed + 's]';
+  }
+
+  function log(message, level) {
+    level = level || 'info';
+    var panel = document.getElementById('log-panel');
+    var entry = document.createElement('div');
+    entry.style.marginBottom = '2px';
+    entry.style.borderBottom = '1px solid #1a1a1a';
+    entry.style.paddingBottom = '2px';
+
+    var colors = {
+      info: '#0f0',
+      warn: '#ffcc00',
+      error: '#ff4444',
+      success: '#00ff88',
+      data: '#00bfff',
+      step: '#E66C2C',
+      dim: '#666'
+    };
+
+    var prefixes = {
+      info: 'INFO ',
+      warn: 'WARN ',
+      error: 'ERROR',
+      success: ' OK  ',
+      data: 'DATA ',
+      step: 'STEP ',
+      dim: '     '
+    };
+
+    entry.style.color = colors[level] || colors.info;
+    entry.textContent = getTimestamp() + ' ' + prefixes[level] + ' | ' + message;
+
+    panel.appendChild(entry);
+    panel.scrollTop = panel.scrollHeight;
+
+    logEntryCount++;
+    document.getElementById('log-count').textContent = logEntryCount + ' entries';
+
+    console.log('[AppSwitch ' + level.toUpperCase() + '] ' + message);
+  }
+
+  function logObject(label, obj) {
+    log(label, 'data');
+    try {
+      var formatted = JSON.stringify(obj, null, 2);
+      var lines = formatted.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        log('  ' + lines[i], 'dim');
+      }
+    } catch (e) {
+      log('  [Could not stringify: ' + e.message + ']', 'error');
+    }
+  }
+
+  function logSeparator(title) {
+    log('', 'dim');
+    log('─── ' + title + ' ───────────────────────────────', 'step');
+  }
+
+  function clearLog() {
+    var panel = document.getElementById('log-panel');
+    panel.innerHTML = '<span style="color: #E66C2C;">══════════════════════════════════════════════\n  LOG CLEARED\n══════════════════════════════════════════════</span>';
+    logEntryCount = 0;
+    document.getElementById('log-count').textContent = '0 entries';
+    initTimestamp = Date.now();
+    log('Log cleared. Timer reset.', 'info');
+  }
+
+  function copyLog() {
+    var panel = document.getElementById('log-panel');
+    var text = panel.innerText;
+    navigator.clipboard.writeText(text).then(function() {
+      log('Log copied to clipboard!', 'success');
+    }).catch(function(err) {
+      log('Failed to copy log: ' + err, 'error');
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // ENVIRONMENT DETECTION
+  // ═══════════════════════════════════════════
+
+  function detectEnvironment() {
+    logSeparator('ENVIRONMENT DETECTION');
+
+    var ua = navigator.userAgent;
+    document.getElementById('env-ua').textContent = 'UA: ' + ua;
+    document.getElementById('env-platform').textContent = 'Platform: ' + navigator.platform + ' | Touch: ' + ('ontouchstart' in window) + ' | MaxTouch: ' + navigator.maxTouchPoints;
+    document.getElementById('env-url').textContent = 'URL: ' + window.location.href;
+    document.getElementById('env-referrer').textContent = 'Referrer: ' + (document.referrer || '(none)');
+    document.getElementById('env-hash').textContent = 'Hash: ' + (window.location.hash || '(none)');
+    document.getElementById('env-search').textContent = 'Search: ' + (window.location.search || '(none)');
+
+    log('User Agent: ' + ua, 'info');
+    log('Platform: ' + navigator.platform, 'info');
+    log('Touch support: ' + ('ontouchstart' in window) + ', maxTouchPoints: ' + navigator.maxTouchPoints, 'info');
+    log('Current URL: ' + window.location.href, 'info');
+    log('Protocol: ' + window.location.protocol, 'info');
+    log('Hash: ' + (window.location.hash || '(none)'), 'info');
+    log('Search params: ' + (window.location.search || '(none)'), 'info');
+    log('Referrer: ' + (document.referrer || '(none)'), 'info');
+    log('Screen: ' + screen.width + 'x' + screen.height + ', devicePixelRatio: ' + window.devicePixelRatio, 'info');
+    log('Viewport: ' + window.innerWidth + 'x' + window.innerHeight, 'info');
+    log('Cookies enabled: ' + navigator.cookieEnabled, 'info');
+    log('Online: ' + navigator.onLine, 'info');
+
+    var isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+    var isVenmoApp = /Venmo/i.test(ua);
+    var isSafari = /Safari/i.test(ua) && !/Chrome/i.test(ua);
+    log('Detected mobile: ' + isMobile, isMobile ? 'warn' : 'info');
+    log('Detected Venmo in-app browser: ' + isVenmoApp, isVenmoApp ? 'warn' : 'info');
+    log('Detected Safari: ' + isSafari, 'info');
+
+    log('Client token present: ' + (clientToken ? 'YES (' + clientToken.substring(0, 20) + '...)' : 'NO'), clientToken ? 'success' : 'error');
+  }
+
+  // ═══════════════════════════════════════════
+  // CHECK FOR RETURN FROM APP SWITCH
+  // ═══════════════════════════════════════════
+
+  function checkForReturn() {
+    logSeparator('CHECKING FOR APP SWITCH RETURN');
+
+    var hash = window.location.hash;
+    var search = window.location.search;
+    var href = window.location.href;
+
+    log('Return URL: ' + href, 'data');
+    log('Hash fragment: ' + (hash || '(empty)'), hash ? 'warn' : 'info');
+    log('Query string: ' + (search || '(empty)'), search ? 'warn' : 'info');
+
+    if (hash) {
+      log('Hash contains data - possible App Switch return!', 'warn');
+      try {
+        var hashParams = new URLSearchParams(hash.substring(1));
+        hashParams.forEach(function(value, key) {
+          log('  Hash param: ' + key + ' = ' + value, 'data');
+        });
+      } catch(e) {
+        log('  Could not parse hash as URLSearchParams: ' + e.message, 'error');
+        log('  Raw hash: ' + hash, 'data');
+      }
+    }
+
+    if (search) {
+      log('Query string contains data - possible redirect return!', 'warn');
+      var searchParams = new URLSearchParams(search);
+      searchParams.forEach(function(value, key) {
+        log('  Query param: ' + key + ' = ' + value, 'data');
+      });
+    }
+
+    if (!hash && !search) {
+      log('No return data detected in URL - this is a fresh page load', 'info');
+    }
+
+    if (venmoInstance && typeof venmoInstance.hasTokenizationResult === 'function') {
+      var hasResult = venmoInstance.hasTokenizationResult();
+      log('venmoInstance.hasTokenizationResult(): ' + hasResult, hasResult ? 'success' : 'info');
+    } else {
+      log('venmoInstance not initialized yet - cannot check hasTokenizationResult()', 'warn');
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // GATHER CURRENT CONFIG FROM UI
+  // ═══════════════════════════════════════════
+
+  function getConfig() {
+    return {
+      allowDesktop: document.getElementById('cfg-allowDesktop').checked,
+      allowDesktopWebLogin: document.getElementById('cfg-allowDesktopWebLogin').checked,
+      mobileWebFallBack: document.getElementById('cfg-mobileWebFallBack').checked,
+      requireManualReturn: document.getElementById('cfg-requireManualReturn').checked,
+      paymentMethodUsage: document.getElementById('cfg-paymentMethodUsage').value,
+      processResultsDelay: parseInt(document.getElementById('cfg-processResultsDelay').value) || 500
+    };
+  }
+
+  // ═══════════════════════════════════════════
+  // STEP 1: INITIALIZE VENMO
+  // ═══════════════════════════════════════════
+
+  function initializeVenmo() {
+    var config = getConfig();
+
+    logSeparator('STEP 1: INITIALIZING VENMO SDK');
+    log('App Switch initiating...', 'step');
+    logObject('Configuration from UI:', config);
+
+    document.getElementById('btn-initialize').disabled = true;
+    document.getElementById('btn-initialize').textContent = 'Initializing...';
+
+    log('Creating braintree.client instance...', 'info');
+    var clientCreateStart = Date.now();
+
+    braintree.client.create({
+      authorization: clientToken
+    }, function (clientErr, instance) {
+      var clientCreateMs = Date.now() - clientCreateStart;
+      if (clientErr) {
+        log('braintree.client.create() FAILED after ' + clientCreateMs + 'ms', 'error');
+        logObject('Client creation error:', clientErr);
+        document.getElementById('btn-initialize').disabled = false;
+        document.getElementById('btn-initialize').textContent = '1. Initialize Venmo (Retry)';
+        return;
+      }
+
+      clientInstance = instance;
+      log('braintree.client.create() succeeded in ' + clientCreateMs + 'ms', 'success');
+
+      var gatewayConfig = instance.getConfiguration();
+      log('Gateway configuration retrieved', 'info');
+      log('Environment: ' + gatewayConfig.gatewayConfiguration.environment, 'data');
+      log('Merchant ID: ' + gatewayConfig.gatewayConfiguration.merchantId, 'data');
+      log('Analytics URL: ' + gatewayConfig.gatewayConfiguration.analytics.url, 'data');
+
+      if (gatewayConfig.gatewayConfiguration.payWithVenmo) {
+        logObject('payWithVenmo gateway config:', gatewayConfig.gatewayConfiguration.payWithVenmo);
+      } else {
+        log('No payWithVenmo config found in gateway configuration!', 'warn');
+      }
+
+      log('Creating braintree.dataCollector instance...', 'info');
+      braintree.dataCollector.create({
+        client: clientInstance
+      }, function (dcErr, dcInstance) {
+        if (dcErr) {
+          log('dataCollector.create() failed: ' + dcErr.message, 'error');
+        } else {
+          dataCollectorInstance = dcInstance;
+          log('dataCollector.create() succeeded', 'success');
+          log('Device data collected (' + dcInstance.deviceData.length + ' chars)', 'data');
+        }
+      });
+
+      logSeparator('CREATING VENMO INSTANCE');
+
+      var venmoConfig = {
+        client: clientInstance,
+        allowDesktop: config.allowDesktop,
+        allowDesktopWebLogin: config.allowDesktopWebLogin,
+        mobileWebFallBack: config.mobileWebFallBack,
+        paymentMethodUsage: config.paymentMethodUsage,
+        requireManualReturn: config.requireManualReturn
+      };
+
+      log('Calling braintree.venmo.create() with config...', 'info');
+      logObject('venmo.create() config (minus client):', {
+        allowDesktop: venmoConfig.allowDesktop,
+        allowDesktopWebLogin: venmoConfig.allowDesktopWebLogin,
+        mobileWebFallBack: venmoConfig.mobileWebFallBack,
+        paymentMethodUsage: venmoConfig.paymentMethodUsage,
+        requireManualReturn: venmoConfig.requireManualReturn
+      });
+
+      var venmoCreateStart = Date.now();
+
+      braintree.venmo.create(venmoConfig, function (venmoErr, vInstance) {
+        var venmoCreateMs = Date.now() - venmoCreateStart;
+
+        if (venmoErr) {
+          log('braintree.venmo.create() FAILED after ' + venmoCreateMs + 'ms', 'error');
+          log('Error code: ' + venmoErr.code, 'error');
+          log('Error type: ' + venmoErr.type, 'error');
+          log('Error message: ' + venmoErr.message, 'error');
+          logObject('Full venmo error object:', venmoErr);
+          document.getElementById('btn-initialize').disabled = false;
+          document.getElementById('btn-initialize').textContent = '1. Initialize Venmo (Retry)';
+          return;
+        }
+
+        venmoInstance = vInstance;
+        log('braintree.venmo.create() succeeded in ' + venmoCreateMs + 'ms', 'success');
+
+        var browserSupported = venmoInstance.isBrowserSupported();
+        log('venmoInstance.isBrowserSupported(): ' + browserSupported, browserSupported ? 'success' : 'error');
+
+        if (typeof venmoInstance.hasTokenizationResult === 'function') {
+          var hasResult = venmoInstance.hasTokenizationResult();
+          log('venmoInstance.hasTokenizationResult(): ' + hasResult, hasResult ? 'warn' : 'info');
+          if (hasResult) {
+            log('DETECTED: Returning from App Switch! Tokenization result is pending.', 'warn');
+            log('Call tokenize() to retrieve the result.', 'warn');
+          }
+        }
+
+        logSeparator('INITIALIZATION COMPLETE');
+        log('Venmo SDK is ready. You can now trigger tokenize (App Switch).', 'success');
+
+        document.getElementById('btn-initialize').textContent = '1. Initialized!';
+        document.getElementById('btn-initialize').classList.remove('btn-warning');
+        document.getElementById('btn-initialize').classList.add('btn-outline-success');
+        document.getElementById('btn-tokenize').disabled = false;
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // STEP 2: TOKENIZE (TRIGGERS APP SWITCH)
+  // ═══════════════════════════════════════════
+
+  function triggerTokenize() {
+    if (!venmoInstance) {
+      log('Cannot tokenize - venmoInstance is null!', 'error');
+      return;
+    }
+
+    var config = getConfig();
+
+    logSeparator('STEP 2: TOKENIZE - TRIGGERING APP SWITCH');
+    log('App Switch initiating...', 'step');
+    log('processResultsDelay: ' + config.processResultsDelay + 'ms', 'info');
+    log('Return URL: ' + window.location.href, 'data');
+    log('Jumping now...', 'step');
+
+    var tokenizeStart = Date.now();
+    log('Calling venmoInstance.tokenize() at ' + new Date().toISOString(), 'info');
+
+    document.getElementById('btn-tokenize').disabled = true;
+    document.getElementById('btn-tokenize').textContent = 'Waiting for App Switch return...';
+
+    venmoInstance.tokenize({
+      processResultsDelay: config.processResultsDelay
+    }).then(function (payload) {
+      var tokenizeMs = Date.now() - tokenizeStart;
+
+      logSeparator('APP SWITCH RETURNED - TOKENIZE SUCCESS');
+      log('tokenize() resolved in ' + tokenizeMs + 'ms', 'success');
+      log('Return URL: ' + window.location.href, 'data');
+
+      log('Data on jump back:', 'step');
+      log('  Nonce: ' + payload.nonce, 'data');
+      log('  Type: ' + payload.type, 'data');
+      log('  Username: ' + (payload.details && payload.details.username ? payload.details.username : '(not provided)'), 'data');
+      log('  PayerInfo present: ' + !!(payload.details && payload.details.payerInfo), 'data');
+
+      logObject('Full tokenize payload:', payload);
+
+      storedPayload = payload;
+
+      document.getElementById('btn-tokenize').textContent = '2. Tokenized!';
+      document.getElementById('btn-tokenize').classList.remove('btn-info');
+      document.getElementById('btn-tokenize').classList.add('btn-outline-success');
+      document.getElementById('btn-submit').disabled = false;
+
+      log('Payload stored. Ready to submit transaction.', 'success');
+
+    }).catch(function (tokenizeErr) {
+      var tokenizeMs = Date.now() - tokenizeStart;
+
+      logSeparator('APP SWITCH RETURNED - TOKENIZE ERROR');
+      log('tokenize() rejected after ' + tokenizeMs + 'ms', 'error');
+      log('Return URL: ' + window.location.href, 'data');
+
+      log('Error code: ' + tokenizeErr.code, 'error');
+      log('Error type: ' + tokenizeErr.type, 'error');
+      log('Error message: ' + tokenizeErr.message, 'error');
+
+      logObject('Full tokenize error:', tokenizeErr);
+
+      switch (tokenizeErr.code) {
+        case 'VENMO_APP_CANCELED':
+          log('User canceled in the Venmo app', 'warn');
+          break;
+        case 'VENMO_CANCELED':
+          log('User canceled the Venmo flow (closed popup/tab)', 'warn');
+          break;
+        case 'VENMO_POPUP_CLOSED':
+          log('Venmo popup was closed', 'warn');
+          break;
+        case 'VENMO_DESKTOP_CANCELED':
+          log('Desktop Venmo flow was canceled', 'warn');
+          break;
+        case 'VENMO_TOKENIZATION_ERROR':
+          log('Tokenization error from Venmo', 'error');
+          break;
+        default:
+          log('Unhandled error code: ' + tokenizeErr.code, 'error');
+      }
+
+      document.getElementById('btn-tokenize').disabled = false;
+      document.getElementById('btn-tokenize').textContent = '2. Tokenize (Retry)';
+      document.getElementById('btn-tokenize').classList.remove('btn-outline-success');
+      document.getElementById('btn-tokenize').classList.add('btn-info');
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // STEP 3: SUBMIT TRANSACTION
+  // ═══════════════════════════════════════════
+
+  function submitTransaction() {
+    if (!storedPayload) {
+      log('Cannot submit - no payload stored!', 'error');
+      return;
+    }
+
+    logSeparator('STEP 3: SUBMITTING TRANSACTION');
+
+    var amount = document.getElementById('amount').value || '10.00';
+
+    log('Nonce: ' + storedPayload.nonce, 'data');
+    log('Amount: ' + amount, 'data');
+    log('Device data present: ' + !!(dataCollectorInstance && dataCollectorInstance.deviceData), 'info');
+
+    document.getElementById('form-nonce').value = storedPayload.nonce;
+    document.getElementById('form-amount').value = amount;
+    document.getElementById('form-payment-data').value = JSON.stringify(storedPayload);
+    document.getElementById('form-device-data').value = dataCollectorInstance ? dataCollectorInstance.deviceData : '';
+
+    logObject('Data being submitted to server:', {
+      VenmoNonce: storedPayload.nonce,
+      amount: amount,
+      VenmoPaymentData: '(full payload)',
+      VenmoDeviceData: dataCollectorInstance ? '(' + dataCollectorInstance.deviceData.length + ' chars)' : '(none)'
+    });
+
+    log('Submitting form to /venmo-transaction-with-nonce ...', 'step');
+
+    document.getElementById('btn-submit').disabled = true;
+    document.getElementById('btn-submit').textContent = 'Submitting...';
+
+    document.getElementById('appswitch-form').submit();
+  }
+
+  // ═══════════════════════════════════════════
+  // URL & VISIBILITY MONITORING
+  // ═══════════════════════════════════════════
+
+  window.addEventListener('hashchange', function(e) {
+    log('hashchange event fired!', 'warn');
+    log('  Old URL: ' + e.oldURL, 'data');
+    log('  New URL: ' + e.newURL, 'data');
+    log('  New hash: ' + window.location.hash, 'data');
+  });
+
+  window.addEventListener('popstate', function(e) {
+    log('popstate event fired!', 'warn');
+    log('  State: ' + JSON.stringify(e.state), 'data');
+    log('  Current URL: ' + window.location.href, 'data');
+  });
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      log('Page became VISIBLE (returned to this tab/app)', 'warn');
+      log('  Current URL: ' + window.location.href, 'data');
+      log('  Hash: ' + (window.location.hash || '(none)'), 'data');
+      log('  Search: ' + (window.location.search || '(none)'), 'data');
+    } else {
+      log('Page became HIDDEN (user left this tab/app)', 'warn');
+    }
+  });
+
+  window.addEventListener('focus', function() {
+    log('Window received focus', 'info');
+  });
+
+  window.addEventListener('blur', function() {
+    log('Window lost focus (possible app switch out)', 'warn');
+  });
+
+  window.addEventListener('pageshow', function(e) {
+    log('pageshow event - persisted (from bfcache): ' + e.persisted, e.persisted ? 'warn' : 'info');
+    if (e.persisted) {
+      log('Page was restored from back/forward cache!', 'warn');
+      log('Return URL: ' + window.location.href, 'data');
+    }
+  });
+
+  window.addEventListener('message', function(e) {
+    if (e.data && typeof e.data === 'string' && e.data.length < 500) {
+      log('window.postMessage received: ' + e.data, 'data');
+    } else if (e.data && typeof e.data === 'object') {
+      log('window.postMessage received (object): ' + JSON.stringify(e.data).substring(0, 200), 'data');
+    }
+  });
+
+  // ═══════════════════════════════════════════
+  // BOOT
+  // ═══════════════════════════════════════════
+
+  detectEnvironment();
+  checkForReturn();
+  log('Page fully loaded. Ready to initialize Venmo.', 'success');
+  log('Click "1. Initialize Venmo" to begin.', 'info');
+</script>

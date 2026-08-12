@@ -13,6 +13,8 @@
       </div>
     </div>
 
+    <paypal-button></paypal-button>
+
     <h5>Personal Information:</h5>
     <div class="form-row">
       <div class="col-md-2 mb-3">
@@ -95,7 +97,11 @@
 
 {{!-- <span hidden id="client-token">{{clientToken}}</span> --}}
 
-<script>
+<script type="module">
+  /*import client from '@braintree/client';
+  import hostedFields from '@braintree/hosted-fields';
+  import dataCollector from '@braintree/data-collector';
+  import threeDSecure from '@braintree/three-d-secure';*/
   var form = document.querySelector('#hosted-fields-form');
   var submit = document.querySelector('input[type="submit"]');
   var clientToken = '{{{clientToken}}}'//document.getElementById("client-token").innerText;
@@ -286,7 +292,8 @@
         },
         expirationDate: {
           container: '#expiration-date',
-          placeholder: '10/2025'
+          placeholder: '10/2027',
+          formatInput: true
         }
       }
     }, function (hostedFieldsErr, instance) {
@@ -297,6 +304,44 @@
 
       // Try to inspect the hosted fields instance
       console.log("Hosted Fields instance:", instance);
+      console.log("[Version Check] braintree.client.VERSION:", braintree.client.VERSION);
+      console.log("[Version Check] braintree.hostedFields.VERSION:", braintree.hostedFields.VERSION);
+
+      instance.on('validityChange', function (event) {
+        var expField = event.fields.expirationDate;
+        console.log('[Autofill Debug] validityChange - expirationDate:', {
+          isValid: expField.isValid,
+          isPotentiallyValid: expField.isPotentiallyValid,
+          isEmpty: expField.isEmpty,
+        });
+      });
+
+      instance.on('inputSubmitRequest', function () {
+        var state = instance.getState();
+        console.log('[Autofill Debug] inputSubmitRequest - full state:', JSON.stringify(state.fields, null, 2));
+      });
+
+      instance.on('focus', function (event) {
+        if (event.emittedBy === 'expirationDate') {
+          var state = instance.getState();
+          console.log('[Autofill Debug] expirationDate focused:', {
+            isValid: state.fields.expirationDate.isValid,
+            isPotentiallyValid: state.fields.expirationDate.isPotentiallyValid,
+            isEmpty: state.fields.expirationDate.isEmpty,
+          });
+        }
+      });
+
+      instance.on('blur', function (event) {
+        if (event.emittedBy === 'expirationDate') {
+          var state = instance.getState();
+          console.log('[Autofill Debug] expirationDate blurred:', {
+            isValid: state.fields.expirationDate.isValid,
+            isPotentiallyValid: state.fields.expirationDate.isPotentiallyValid,
+            isEmpty: state.fields.expirationDate.isEmpty,
+          });
+        }
+      });
 
       // Once the fields are initialized enable the submit button
       button.removeAttribute("disabled");

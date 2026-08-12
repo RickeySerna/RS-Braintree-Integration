@@ -33,6 +33,8 @@
           <div id="googlePayButtonContainer" style="width: 800px; height: 100px; margin: auto;"></div>
         </div>
 
+        <paypaybutton></paypaybutton>
+
         <!-- Hidden input for the nonce. -->
         <div>
           <input id='gp-payment-method-nonce' name='GPPaymentMethodNonce' type='hidden' />
@@ -54,13 +56,18 @@
 
 </body>
 
-<script>
+<script type="module">
+  /*  import client from '@braintree/client';
+    import googlePayment from '@braintree/google-payment';
+    import threeDSecure from '@braintree/three-d-secure';
+    import dataCollector from '@braintree/data-collector';*/
   var form = document.querySelector('#googlePayForm');
   var submit = document.querySelector('input[type="submit"]');
   var clientToken = '{{{clientToken}}}';
   var theGPNonce = document.querySelector('#gp-payment-method-nonce');
   var GPPaymentData = document.querySelector('#gp-payment-data');
   var deviceDataString = document.querySelector('#device-data-string');
+  var threeDSecureInst;
   var socket = io();
 
   console.log("Client token in Google Pay: " + clientToken);
@@ -154,7 +161,7 @@
             // Handle error in 3D Secure component creation
             return;
           }
-          threeDSecure = threeDSecureInstance;
+          threeDSecureInst = threeDSecureInstance;
         });
 
         // Setting up Google Pay button with Google's API
@@ -264,11 +271,11 @@
                     if ((threeDSChecker == true) && (vaultChecker == false)) {
                       // Checking whether or not the Google Pay card is network tokenized. 3DS only eligible for non-NT GP cards.
                       if (result.details.isNetworkTokenized == false) {
-                        threeDSecure.on('lookup-complete', function (data, next) {
+                        threeDSecureInst.on('lookup-complete', function (data, next) {
                           next();
                         });
 
-                        threeDSecure.verifyCard({
+                        threeDSecureInst.verifyCard({
                           nonce: result.nonce,
                           bin: result.details.bin,
                           amount: document.forms["googlePayForm"]["amount"].value,
@@ -366,11 +373,11 @@
                 // Checking that it's parsing correctly (it is).
                 console.log("Address from form: " + GPPaymentDataFromForm.paymentMethodData.info.billingAddress.address1);
 
-                threeDSecure.on('lookup-complete', function (data, next) {
+                threeDSecureInst.on('lookup-complete', function (data, next) {
                   next();
                 });
 
-                threeDSecure.verifyCard({
+                threeDSecureInst.verifyCard({
                   nonce: nonce,
                   bin: bin,
                   amount: document.forms["googlePayForm"]["amount"].value,

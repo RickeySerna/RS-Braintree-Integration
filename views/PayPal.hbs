@@ -7,39 +7,8 @@
   <div id="paypalDiv" style="display:none;">
     <form id="paypal-form" action="/paypal-transaction" method="post">
 
-      <div class="container">
-        <h1 class="display-4" style="color: #E66C2C;">Thanks for choosing our business today!</h1>
-        <p class="lead subtitle" style="color: #E66C2C;">We hope you had a spooky time. Please select a PayPal button
-          below to complete your purchase.</p>
-      </div>
+      <paypal-button style="display:block; width:100%" type="pay" id="paypal-one-time-payment-button"></paypal-button>
 
-      <div class="form-row justify-content-md-center">
-        <div class="col-md-2 mb-3">
-          <label class="PPlabelStyle" for="subscriptionCheck">Create a Subscription</label>
-          <input class="form-control PPinputClass" type="checkbox" id="subscriptionCheck" name="subscriptionCreator">
-        </div>
-        <div class="col-md-2 mb-3">
-          <label class="PPlabelStyle" for="Amount">Amount</label>
-          <input class="form-control PPinputClass" name="amount" id="amount" placeholder="99.99" required>
-        </div>
-      </div>
-
-      <div class="form-row justify-content-md-center">
-        <div class="paypal-container d-flex flex-column mb-3 mx-2">
-          <label class="PPlabelStyle mb-2">Checkout</label>
-          <div id="paypal-button"></div>
-        </div>
-
-        <div class="paypal-container d-flex flex-column mb-3 mx-2">
-          <label class="PPlabelStyle mb-2">Vault</label>
-          <div id="paypal-button2"></div>
-        </div>
-
-        <div class="paypal-container d-flex flex-column mb-3 mx-2">
-          <label class="PPlabelStyle mb-2">Checkout with Vault</label>
-          <div id="paypal-button3"></div>
-        </div>
-      </div>
 
       <!-- Hidden input for the nonce. -->
       <div>
@@ -109,160 +78,189 @@
     }
   }
 
-  braintree.client.create({
-    authorization: clientToken
-  }, function (clientErr, clientInstance) {
-    if (clientErr) {
-      console.error('Error creating client:', clientErr);
-      return;
-    }
-
-    // Create a PayPal Checkout component.
-    braintree.paypalCheckout.create({
-      client: clientInstance
-    }, function (paypalCheckoutErr, paypalCheckoutInstance) {
-      // Stop if there was a problem creating PayPal Checkout.
-      // This could happen if there was a network error or if it's incorrectly configured.
-      if (paypalCheckoutErr) {
-        console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
-        return;
-      }
-      // Render the div holding the PayPal checkout form once we can load the SDK successfully.
+  braintree.client
+    .create({
+      authorization: clientToken,
+    })
+    .then(function (client) {
+      return braintree.paypalCheckoutV6.create({ client: client });
+    })
+    .then(function (paypal) {
       document.getElementById("paypalDiv").style.display = "inline";
-
-      // Load PayPal SDK first, then render buttons
-      var loadPayPalSDKOptions = {
-        currency: 'USD',
-        intent: 'capture'
-      };
-
-      paypalCheckoutInstance.loadPayPalSDK(loadPayPalSDKOptions, function () {
-        // Creating the button for the checkout flow.
-        paypal.Buttons({
-          fundingSource: paypal.FUNDING.PAYPAL,
-
-          onClick: function () {
-            console.log("We are in the checkout flow!");
-            var inputChecker = inputValidation();
-            console.log("Input verified value: " + inputChecker);
-
-            // When the button is clicked, we fill the global var we created above with the original amount entered on the form.
-            // This is so that we can reset the amount back to this in onShippingChange if need be.
-            originalAmount = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-
-            // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
-            if (inputChecker == false) {
-              return;
-            }
-
-            // The checkout flow does not work with subscriptions. Throwing an error if the user tries to create a sub with this flow.
-            // UPDATE: Moving this here so that this triggers as soon as the button is clicked.
-            console.log("Form action in checkout flow: " + form.action);
-            if (form.action == "http://localhost:3000/paypal-subscription") {
-              alert("Subscriptions cannot be generated using a nonce from the checkout flow.");
-              return false;
-            }
-          },
-
-          createOrder: function () {
-            // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
-            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-            console.log("Amount passed: " + amountFromForm);
-
-            return paypalCheckoutInstance.createPayment({
-              flow: "checkout",
-              amount: amountFromForm,
-              currency: "USD",
-              intent: "capture",
-              displayName: "Gardensound Inc.",
-              enableShippingAddress: true,
-              shippingAddressEditable: true,
-              landingPageType: "login"
+      return paypal.loadPayPalSDK().then(function () {
+        return paypal;
+      });
+    })
+    .then(function (paypal) {
+      var session = paypal.createOneTimePaymentSession({
+        amount: "10.00",
+        currency: "USD",
+        intent: "capture",
+        onApprove: function (data) {
+          return paypal
+            .tokenizePayment({
+              payerID: data.payerId,
+              orderID: data.orderId,
+            })
+            .then(function (payload) {
+              console.log("Nonce:", payload.nonce);
             });
-          },
+        },
+      });
+      document
+        .getElementById("paypal-one-time-payment-button")
+        .addEventListener("click", function () {
+          session.start();
+        });
+    });
 
-          onShippingAddressChange: function (data, actions) {
-            var internationalShippingCharge = 20.00;
-            var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
-            var newAmount = (parseFloat(amountFromForm) + internationalShippingCharge).toFixed(2);
-
-            console.log("Entire data object: ", data);
-            console.log("Data object: " + data.shippingAddress.countryCode);
-            console.log("Original amount entered: " + amountFromForm);
-            console.log("data.paymentID: " + data.paymentID);
-
-            if (data.shippingAddress.countryCode !== "US") {
-              return new Promise(function (resolve, reject) {
-                paypalCheckoutInstance.updatePayment(
-                  {
-                    paymentId: data.orderID,
-                    amount: newAmount,
-                    currency: "USD"
-                  },
-                  function (err, response) {
-                    if (err) {
-                      console.error('Error updating payment:', err);
-                      reject(err);
-                    }
-                    else {
-                      console.log('Payment updated successfully:', response);
-                      resolve(response);
-                    }
-                  }
-                );
-              }).then(function (response) {
-                console.log('Payment update completed:', response);
-              }).catch(function (err) {
-                console.error('Payment update failed:', err);
+  /*
+  
+    braintree.paypalCheckout.create({
+        client: clientInstance
+      }, function (paypalCheckoutErr, paypalCheckoutInstance) {
+        // Stop if there was a problem creating PayPal Checkout.
+        // This could happen if there was a network error or if it's incorrectly configured.
+        if (paypalCheckoutErr) {
+          console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
+          return;
+        }
+        // Render the div holding the PayPal checkout form once we can load the SDK successfully.
+        document.getElementById("paypalDiv").style.display = "inline";
+  
+        // Load PayPal SDK first, then render buttons
+        var loadPayPalSDKOptions = {
+          currency: 'USD',
+          intent: 'capture'
+        };
+  
+        paypalCheckoutInstance.loadPayPalSDK(loadPayPalSDKOptions, function () {
+          // Creating the button for the checkout flow.
+          paypal.Buttons({
+            fundingSource: paypal.FUNDING.PAYPAL,
+  
+            onClick: function () {
+              console.log("We are in the checkout flow!");
+              var inputChecker = inputValidation();
+              console.log("Input verified value: " + inputChecker);
+  
+              // When the button is clicked, we fill the global var we created above with the original amount entered on the form.
+              // This is so that we can reset the amount back to this in onShippingChange if need be.
+              originalAmount = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+  
+              // inputValidation() will return false if the amount value is bad, just returning and ending this there if so.
+              if (inputChecker == false) {
+                return;
+              }
+  
+              // The checkout flow does not work with subscriptions. Throwing an error if the user tries to create a sub with this flow.
+              // UPDATE: Moving this here so that this triggers as soon as the button is clicked.
+              console.log("Form action in checkout flow: " + form.action);
+              if (form.action == "http://localhost:3000/paypal-subscription") {
+                alert("Subscriptions cannot be generated using a nonce from the checkout flow.");
+                return false;
+              }
+            },
+  
+            createOrder: function () {
+              // inputValidation() was passed, now grab the amount passed to be used in the createPayment() call.
+              var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+              console.log("Amount passed: " + amountFromForm);
+  
+              return paypalCheckoutInstance.createPayment({
+                flow: "checkout",
+                amount: amountFromForm,
+                currency: "USD",
+                intent: "capture",
+                displayName: "Gardensound Inc.",
+                enableShippingAddress: true,
+                shippingAddressEditable: true,
+                landingPageType: "login"
               });
+            },
+  
+            onShippingAddressChange: function (data, actions) {
+              var internationalShippingCharge = 20.00;
+              var amountFromForm = Number(document.forms["paypal-form"]["amount"].value).toFixed(2);
+              var newAmount = (parseFloat(amountFromForm) + internationalShippingCharge).toFixed(2);
+  
+              console.log("Entire data object: ", data);
+              console.log("Data object: " + data.shippingAddress.countryCode);
+              console.log("Original amount entered: " + amountFromForm);
+              console.log("data.paymentID: " + data.paymentID);
+  
+              if (data.shippingAddress.countryCode !== "US") {
+                return new Promise(function (resolve, reject) {
+                  paypalCheckoutInstance.updatePayment(
+                    {
+                      paymentId: data.orderID,
+                      amount: newAmount,
+                      currency: "USD"
+                    },
+                    function (err, response) {
+                      if (err) {
+                        console.error('Error updating payment:', err);
+                        reject(err);
+                      }
+                      else {
+                        console.log('Payment updated successfully:', response);
+                        resolve(response);
+                      }
+                    }
+                  );
+                }).then(function (response) {
+                  console.log('Payment update completed:', response);
+                }).catch(function (err) {
+                  console.error('Payment update failed:', err);
+                });
+              }
+            },
+  
+            // Triggered when the user successfully completes the PayPal checkout.
+            onApprove: function (data, actions) {
+              return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+                // Here's our nonce!
+                console.log("PayPal checkout flow nonce: " + payload.nonce);
+                console.log("PayPal checkout flow object: ", payload);
+  
+                // Adding it to the form as well as the entire payment data object to the form.
+                // That object contains all of the customer/address information passed in the PayPal form, that info will be used in the server.
+                nonce.value = payload.nonce;
+                PPPaymentData.value = JSON.stringify(payload);
+                PPFlowUsed.value = "checkout";
+                console.log("Flow used: " + PPFlowUsed.value);
+  
+                form.submit();
+              });
+            },
+  
+            // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
+            onCancel: function (data) {
+              console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
+            },
+  
+            // Triggered when there is an error with the PayPal checkout.
+            onError: function (err) {
+              console.error("PayPal error: ", err);
             }
-          },
-
-          // Triggered when the user successfully completes the PayPal checkout.
-          onApprove: function (data, actions) {
-            return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
-              // Here's our nonce!
-              console.log("PayPal checkout flow nonce: " + payload.nonce);
-              console.log("PayPal checkout flow object: ", payload);
-
-              // Adding it to the form as well as the entire payment data object to the form.
-              // That object contains all of the customer/address information passed in the PayPal form, that info will be used in the server.
-              nonce.value = payload.nonce;
-              PPPaymentData.value = JSON.stringify(payload);
-              PPFlowUsed.value = "checkout";
-              console.log("Flow used: " + PPFlowUsed.value);
-
-              form.submit();
-            });
-          },
-
-          // Triggered when the user opens the PayPal checkout, but closes the window without completing it.
-          onCancel: function (data) {
-            console.log("PayPal pop-up closed: ", JSON.stringify(data, 0, 2));
-          },
-
-          // Triggered when there is an error with the PayPal checkout.
-          onError: function (err) {
-            console.error("PayPal error: ", err);
-          }
-
-        }).render('#paypal-button').then(function () {
-          console.log('PayPal button rendered successfully');
+  
+          }).render('#paypal-button').then(function () {
+            console.log('PayPal button rendered successfully');
+          });
         });
       });
-    });
-
+  
     // Creating the data collector instance to pass device data into PayPal txns.
-    braintree.dataCollector.create({
-      client: clientInstance
-    }, function (err, dataCollectorInstance) {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      var deviceData = dataCollectorInstance.deviceData;
-      console.log("Device data: ", deviceData);
-      deviceDataString.value = deviceData;
-    });
-  });
+      braintree.dataCollector.create({
+        client: clientInstance
+      }, function (err, dataCollectorInstance) {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        var deviceData = dataCollectorInstance.deviceData;
+        console.log("Device data: ", deviceData);
+        deviceDataString.value = deviceData;
+      });
+    });*/
 </script>
